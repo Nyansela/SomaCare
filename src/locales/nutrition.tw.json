@@ -1,0 +1,22 @@
+{
+  "nutrition": {
+    "title": "Aduan",
+    "subtitle": "Wo aduan nhyehyɛe",
+    "generating": "Erewie...",
+    "regenerate": "Sesa Aduan",
+    "medicationTiming": "Nnoɔma bere",
+    "disclaimer": "Nnoɔma bere a yɛkyerɛ yi yɛ mmoa nko ara. Di w'aduruyɛ ho afotu akyi.",
+    "noPlan": "Aduan nhyehyɛe nni hɔ",
+    "noPlanBody": "Hyehyɛ aduan nhyehyɛe.",
+    "generate": "Hyehyɛ Me Plan",
+    "breakfast": "Anɔpa aduan",
+    "calories": "cal",
+    "lunch": "Awia aduan",
+    "dinner": "Anadwo aduan",
+    "dailyTotal": "Daa",
+    "snacks": "Nneɛma a yɛnom:",
+    "medicationDisclaimer": "General guidance - follow your doctor's instructions",
+    "notes": "Nkyerɛw",
+    "previousPlans": "Nhyehyɛe a atwam"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "nutrition": {
+    "title": "Nutrition (Ga - AI)",
+    "subtitle": "Nutrition (Ga - AI)",
+    "generating": "Generating (Ga - AI)",
+    "regenerate": "Regenerate (Ga - AI)",
+    "medicationTiming": "Timing (Ga - AI)",
+    "disclaimer": "Disclaimer (Ga - AI)",
+    "noPlan": "No plan (Ga - AI)",
+    "noPlanBody": "No plan (Ga - AI)",
+    "generate": "Generate (Ga - AI)",
+    "breakfast": "Breakfast (Ga - AI)",
+    "calories": "cal (Ga - AI)",
+    "lunch": "Lunch (Ga - AI)",
+    "dinner": "Dinner (Ga - AI)",
+    "dailyTotal": "Daily (Ga - AI)",
+    "snacks": "Snacks: (Ga - AI)",
+    "medicationDisclaimer": "General guidance (Ga - AI)",
+    "notes": "Notes (Ga - AI)",
+    "previousPlans": "Previous (Ga - AI)"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "healthVault": {
+    "shareWithDoctor": "Share with Doctor",
+    "createShareLink": "Create Share Link",
+    "noShareLinks": "No share links created yet. Generate a secure, time-limited link to share your Health Vault snapshot with your doctor.",
+    "generateShareLink": "Generate Doctor Share Link",
+    "shareDisclaimer": "This will generate a secure, read-only link containing your Health Vault snapshot (vitals, allergies, medications, and history).",
+    "linkExpiration": "Link Expiration",
+    "hours24": "24 Hours (Recommended)",
+    "hours48": "48 Hours",
+    "hours72": "72 Hours (3 Days)",
+    "generateAndCopy": "Generate & Copy Link",
+    "successCreated": "Share link created successfully!",
+    "successCopied": "Link copied to clipboard!",
+    "successRevoked": "Share link revoked.",
+    "errorCreate": "Failed to create share link",
+    "errorRevoke": "Failed to revoke share link"
+  },
+  "common": {
+    "active": "Active",
+    "expired": "Expired",
+    "revoked": "Revoked",
+    "created": "Created:",
+    "expires": "Expires:",
+    "copyLink": "Copy Link",
+    "revoke": "Revoke",
+    "cancel": "Cancel",
+    "generating": "Generating..."
+  }
+}

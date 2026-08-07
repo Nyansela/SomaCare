@@ -1,0 +1,231 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+/* HeroUI — scoped to the Badge component only (do not import the full theme,
+ * it would clash with the shadcn/ui design system used app-wide). */
+@import "@heroui/styles/components/badge.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* SomaLabsGH design system — indigo, soft, medical, premium.
+ * All tokens in oklch. Semantic tokens only in components. */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-pill: 9999px;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-strong: var(--primary-strong);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-info: var(--info);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-surface: var(--surface);
+  --color-surface-soft: var(--surface-soft);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+
+  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-card: 0 1px 2px oklch(0.5 0.05 145 / 0.04), 0 8px 30px oklch(0.5 0.05 145 / 0.06);
+  --shadow-glow-primary: 0 20px 45px -20px oklch(0.55 0.18 145 / 0.55);
+  --shadow-glow-success: 0 20px 45px -20px oklch(0.72 0.17 165 / 0.5);
+  --shadow-glow-danger: 0 20px 45px -20px oklch(0.7 0.2 20 / 0.5);
+}
+
+:root {
+  --radius: 0.9rem;
+
+  /* Light theme — green/black/white palette with red accent */
+  --background: oklch(0.985 0.004 145);        /* Near-white with subtle green warmth */
+  --foreground: oklch(0.16 0.02 145);           /* Near-black with green tint */
+
+  --surface: oklch(1 0 0);                      /* Pure white */
+  --surface-soft: oklch(0.99 0.003 145);        /* Barely tinted white */
+
+  --card: oklch(1 0 0);                         /* Pure white cards */
+  --card-foreground: oklch(0.16 0.02 145);      /* Matches foreground */
+
+  --popover: oklch(1 0 0);                      /* Pure white popovers */
+  --popover-foreground: oklch(0.16 0.02 145);   /* Matches foreground */
+
+  --primary: oklch(0.55 0.16 145);              /* Green — primary actions */
+  --primary-strong: oklch(0.48 0.18 145);       /* Deeper green for emphasis */
+  --primary-foreground: oklch(0.98 0 0);        /* White on primary */
+
+  --secondary: oklch(0.95 0.008 145);           /* Light green-tinted gray */
+  --secondary-foreground: oklch(0.28 0.02 145); /* Dark green-tinted gray */
+
+  --muted: oklch(0.96 0.006 145);               /* Muted backgrounds */
+  --muted-foreground: oklch(0.52 0.015 145);    /* Muted text */
+
+  --accent: oklch(0.93 0.015 145);              /* Subtle green-tinted accent bg */
+  --accent-foreground: oklch(0.3 0.03 145);     /* Accent text */
+
+  --destructive: oklch(0.6 0.22 0);             /* Red — danger/destructive */
+  --destructive-foreground: oklch(0.98 0 0);    /* White on destructive */
+  --success: oklch(0.55 0.16 145);              /* Same green as primary */
+  --success-foreground: oklch(0.98 0 0);        /* White on success */
+  --info: oklch(0.6 0.12 200);                  /* Blue-green for info */
+  --warning: oklch(0.75 0.15 75);               /* Amber for warnings */
+
+  --border: oklch(0.9 0.01 145);                /* Subtle green-tinted borders */
+  --input: oklch(0.92 0.01 145);                /* Input backgrounds */
+  --ring: oklch(0.55 0.16 145);                 /* Primary ring */
+
+  --sidebar: oklch(0.99 0.003 145);             /* Sidebar background */
+  --sidebar-foreground: oklch(0.5 0.02 145);    /* Sidebar text */
+}
+
+.dark {
+  /* Dark theme — true neutral dark grays with green primary, red for danger */
+  --background: #121212;                          /* Material Design neutral dark background */
+  --foreground: oklch(0.96 0.005 145);          /* Near-white with green warmth */
+
+  --surface: #1e1e1e;                            /* Material Design surface (one level up) */
+  --surface-soft: oklch(0.16 0.01 145);         /* Lighter charcoal */
+
+  --card: #1e1e1e;                              /* Card background = surface */
+  --card-foreground: oklch(0.96 0.005 145);     /* Light text on cards */
+
+  --popover: oklch(0.16 0.01 145);               /* Popover background */
+  --popover-foreground: oklch(0.96 0.005 145);  /* Popover text */
+
+  --primary: oklch(0.65 0.18 145);              /* Bright green — accessible on dark */
+  --primary-strong: oklch(0.55 0.2 145);        /* Stronger green for emphasis */
+  --primary-foreground: oklch(0.1 0 0);         /* Near-black on primary */
+
+  --secondary: oklch(0.2 0.02 145);             /* Dark gray with green tint */
+  --secondary-foreground: oklch(0.88 0.01 145); /* Light gray-green */
+
+  --muted: oklch(0.18 0.02 145);                 /* Muted backgrounds */
+  --muted-foreground: oklch(0.68 0.02 145);     /* Muted text */
+
+  --accent: oklch(0.22 0.03 145);                /* Dark green-tinted accent */
+  --accent-foreground: oklch(0.95 0 0);          /* White on accent */
+
+  --destructive: oklch(0.6 0.22 0);             /* Red — danger/destructive */
+  --destructive-foreground: oklch(0.98 0 0);    /* White on destructive */
+  --success: oklch(0.65 0.18 145);              /* Green — same as primary */
+  --success-foreground: oklch(0.1 0 0);         /* Near-black on success */
+  --info: oklch(0.7 0.15 258);                   /* Blue-green info */
+  --warning: oklch(0.78 0.17 78);                /* Amber warning */
+
+  --border: oklch(1 0 0 / 10%);                  /* Subtle borders */
+  --input: oklch(1 0 0 / 12%);                   /* Input backgrounds */
+  --ring: oklch(0.65 0.18 145);                  /* Primary ring */
+
+  --sidebar: oklch(0.1 0.005 145);               /* Sidebar background */
+  --sidebar-foreground: oklch(0.8 0.01 145);    /* Sidebar text */
+}
+
+/* Theme Application Root */
+:root {
+  color-scheme: light;
+  --theme-transition: none; /* Will be enabled once custom properties are applied */
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+/* Helper class to ensure smooth theme transitions */
+.theme-transition * {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* System preference fallback - ensure smooth initial load */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    /* Apply dark theme default */
+  }
+}
+
+/* Continue with remaining themes... */
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html, body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+@utility soma-card {
+  background: var(--color-card);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-card);
+}
+
+@utility soma-gradient {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-strong) 100%);
+  color: var(--color-primary-foreground);
+}
+
+@utility soma-glow {
+  box-shadow: var(--shadow-glow-primary);
+}
+
+/* HeroUI Badge token mapping — bridges the badge.css variables to the Soma
+ * design system, so the HeroUI Badge inherits our palette without pulling
+ * in the full HeroUI theme. Scoped to badge usage only. */
+:root {
+  --default: var(--secondary);
+  --default-foreground: var(--secondary-foreground);
+  --default-soft: var(--muted);
+  --default-soft-foreground: var(--muted-foreground);
+  --accent-soft: var(--accent);
+  --accent-soft-foreground: var(--accent-foreground);
+  --success-soft: oklch(0.95 0.05 145);
+  --success-soft-foreground: oklch(0.4 0.12 145);
+  --warning-soft: oklch(0.96 0.06 75);
+  --warning-soft-foreground: oklch(0.48 0.12 75);
+  --danger: var(--destructive);
+  --danger-foreground: var(--destructive-foreground);
+  --danger-soft: oklch(0.96 0.04 0);
+  --danger-soft-foreground: oklch(0.5 0.16 0);
+}
+
+.dark {
+  --success-soft: oklch(0.28 0.06 145);
+  --success-soft-foreground: oklch(0.82 0.14 145);
+  --warning-soft: oklch(0.3 0.07 75);
+  --warning-soft-foreground: oklch(0.85 0.14 75);
+  --danger-soft: oklch(0.3 0.06 0);
+  --danger-soft-foreground: oklch(0.82 0.14 0);
+}

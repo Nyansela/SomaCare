@@ -1,0 +1,22 @@
+{
+  "nutrition": {
+    "title": "Nutrition",
+    "subtitle": "Your personalized meal plan",
+    "generating": "Generating...",
+    "regenerate": "Regenerate Plan",
+    "medicationTiming": "Medication Timing",
+    "disclaimer": "The timing suggestions below are general guidelines only. Always follow your pharmacist or doctor's specific instructions for taking medications.",
+    "noPlan": "No nutrition plan yet",
+    "noPlanBody": "Generate a personalized meal plan based on your health profile and goals.",
+    "generate": "Generate My Plan",
+    "breakfast": "Breakfast",
+    "calories": "cal",
+    "lunch": "Lunch",
+    "dinner": "Dinner",
+    "dailyTotal": "Daily Total",
+    "snacks": "Snacks:",
+    "medicationDisclaimer": "General guidance - follow your doctor's instructions",
+    "notes": "Notes",
+    "previousPlans": "Previous Plans"
+  }
+}
