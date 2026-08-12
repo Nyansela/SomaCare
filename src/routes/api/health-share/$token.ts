@@ -16,7 +16,8 @@ export const Route = createFileRoute("/api/health-share/$token")({
         }
 
         const supabaseUrl = process.env.SUPABASE_URL;
-        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
+        const supabaseServiceKey =
+          process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
 
         if (!supabaseUrl || !supabaseServiceKey) {
           return new Response(JSON.stringify({ error: "Server configuration error" }), {
@@ -46,24 +47,40 @@ export const Route = createFileRoute("/api/health-share/$token")({
         const now = new Date();
         const expiresAt = new Date(share.expires_at);
         if (share.revoked_at || expiresAt <= now) {
-          return new Response(JSON.stringify({ error: "This link has expired or has been revoked", expired: true }), {
-            status: 410,
-            headers: { "Content-Type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({ error: "This link has expired or has been revoked", expired: true }),
+            {
+              status: 410,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
         }
 
         // Fetch health context for user_id
         try {
-          const healthContext = await getHealthContext(supabaseUrl, supabaseServiceKey, share.user_id, true);
-          return new Response(JSON.stringify({ success: true, healthContext, expiresAt: share.expires_at }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          });
-        } catch (err: any) {
-          return new Response(JSON.stringify({ error: err?.message || "Failed to load health context" }), {
-            status: 500,
-            headers: { "Content-Type": "application/json" },
-          });
+          const healthContext = await getHealthContext(
+            supabaseUrl,
+            supabaseServiceKey,
+            share.user_id,
+            true,
+          );
+          return new Response(
+            JSON.stringify({ success: true, healthContext, expiresAt: share.expires_at }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+        } catch (err) {
+          return new Response(
+            JSON.stringify({
+              error: err instanceof Error ? err.message : "Failed to load health context",
+            }),
+            {
+              status: 500,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
         }
       },
     },

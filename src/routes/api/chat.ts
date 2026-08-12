@@ -19,7 +19,7 @@ export const Route = createFileRoute("/api/chat")({
 
         // Check for NVIDIA API key
         const nvidiaApiKey = process.env.NVIDIA_API_KEY;
-        
+
         if (!nvidiaApiKey) {
           return new Response(
             "AI provider not configured. Please set NVIDIA_API_KEY environment variable. Get an API key from https://build.nvidia.com",
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/chat")({
           name: "nvidia-nim",
           baseURL: "https://integrate.api.nvidia.com/v1",
           headers: {
-            "Authorization": `Bearer ${nvidiaApiKey}`,
+            Authorization: `Bearer ${nvidiaApiKey}`,
           },
         });
 
@@ -69,7 +69,7 @@ export const Route = createFileRoute("/api/chat")({
         const healthContext = await getHealthContext(
           process.env.SUPABASE_URL!,
           process.env.SUPABASE_PUBLISHABLE_KEY!,
-          userId
+          userId,
         );
 
         // Fetch user's preferred language from profile preferences
@@ -78,9 +78,16 @@ export const Route = createFileRoute("/api/chat")({
           .select("preferences")
           .eq("id", userId)
           .maybeSingle();
-        const userPrefs = (profileData?.preferences as Record<string, any>) || {};
-        const userLanguage = userPrefs.language || "en";
-        const langName = userLanguage === "tw" ? "Twi (Akan)" : userLanguage === "ee" ? "Ewe" : userLanguage === "ga" ? "Ga" : "English";
+        const userPrefs = (profileData?.preferences as Record<string, unknown>) || {};
+        const userLanguage = (userPrefs.language as string) || "en";
+        const langName =
+          userLanguage === "tw"
+            ? "Twi (Akan)"
+            : userLanguage === "ee"
+              ? "Ewe"
+              : userLanguage === "ga"
+                ? "Ga"
+                : "English";
 
         // Format health context for AI
         const formattedHealthContext = formatHealthContextForAI(healthContext);
@@ -111,7 +118,8 @@ Style: warm, concise, structured with short paragraphs and bullet lists where he
             thread_id: threadId,
             user_id: userId,
             role: "user",
-            parts: lastMsg.parts as unknown as Database["public"]["Tables"]["ai_messages"]["Insert"]["parts"],
+            parts:
+              lastMsg.parts as unknown as Database["public"]["Tables"]["ai_messages"]["Insert"]["parts"],
           });
 
           // Auto-title thread from first user message
@@ -144,7 +152,8 @@ Style: warm, concise, structured with short paragraphs and bullet lists where he
                   thread_id: threadId,
                   user_id: userId,
                   role: "assistant",
-                  parts: assistant.parts as unknown as Database["public"]["Tables"]["ai_messages"]["Insert"]["parts"],
+                  parts:
+                    assistant.parts as unknown as Database["public"]["Tables"]["ai_messages"]["Insert"]["parts"],
                 });
                 await supabaseAdmin
                   .from("ai_threads")

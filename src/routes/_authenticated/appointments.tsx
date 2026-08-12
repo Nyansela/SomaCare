@@ -10,13 +10,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_authenticated/appointments")({
-  head: () => ({ meta: [{ title: "Appointments — SomaCare" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "Appointments — SomaCare" }, { name: "robots", content: "noindex" }],
+  }),
   component: Appointments,
 });
 
@@ -34,10 +47,7 @@ function Appointments() {
   const list = useQuery({
     queryKey: ["appointments", "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("appointments")
-        .select("*")
-        .order("starts_at");
+      const { data, error } = await supabase.from("appointments").select("*").order("starts_at");
       if (error) throw error;
       return data;
     },
@@ -78,27 +88,47 @@ function Appointments() {
             </Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>New appointment</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>New appointment</DialogTitle>
+            </DialogHeader>
             <form
-              onSubmit={(e) => { e.preventDefault(); create.mutate(); }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                create.mutate();
+              }}
               className="space-y-4"
             >
               <div>
                 <Label>Provider name</Label>
-                <Input required value={form.provider_name} onChange={(e) => setForm({ ...form, provider_name: e.target.value })} />
+                <Input
+                  required
+                  value={form.provider_name}
+                  onChange={(e) => setForm({ ...form, provider_name: e.target.value })}
+                />
               </div>
               <div>
                 <Label>Specialty</Label>
-                <Input value={form.specialty} onChange={(e) => setForm({ ...form, specialty: e.target.value })} placeholder="e.g. Cardiology" />
+                <Input
+                  value={form.specialty}
+                  onChange={(e) => setForm({ ...form, specialty: e.target.value })}
+                  placeholder="e.g. Cardiology"
+                />
               </div>
               <div>
                 <Label>Date & time</Label>
-                <Input type="datetime-local" required value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} />
+                <Input
+                  type="datetime-local"
+                  required
+                  value={form.starts_at}
+                  onChange={(e) => setForm({ ...form, starts_at: e.target.value })}
+                />
               </div>
               <div>
                 <Label>Mode</Label>
                 <Select value={form.mode} onValueChange={(v) => setForm({ ...form, mode: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="in_person">In person</SelectItem>
                     <SelectItem value="tele">Telehealth</SelectItem>
@@ -107,10 +137,17 @@ function Appointments() {
               </div>
               <div>
                 <Label>Location / link</Label>
-                <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+                <Input
+                  value={form.location}
+                  onChange={(e) => setForm({ ...form, location: e.target.value })}
+                />
               </div>
               <DialogFooter>
-                <Button type="submit" disabled={create.isPending} className="soma-gradient border-0">
+                <Button
+                  type="submit"
+                  disabled={create.isPending}
+                  className="soma-gradient border-0"
+                >
                   {create.isPending ? "Saving..." : "Save"}
                 </Button>
               </DialogFooter>
@@ -134,15 +171,25 @@ function Appointments() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold">{a.provider_name}</div>
-                  <div className="text-xs text-muted-foreground">{a.specialty || "Consultation"}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {a.specialty || "Consultation"}
+                  </div>
                 </div>
                 <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
-                  {a.mode === "tele" ? <Video className="h-4 w-4 text-primary" /> : <MapPin className="h-4 w-4 text-primary" />}
+                  {a.mode === "tele" ? (
+                    <Video className="h-4 w-4 text-primary" />
+                  ) : (
+                    <MapPin className="h-4 w-4 text-primary" />
+                  )}
                   {a.mode === "tele" ? "Telehealth" : a.location || "In person"}
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-medium">{format(new Date(a.starts_at), "MMM d")}</div>
-                  <div className="text-xs text-muted-foreground">{format(new Date(a.starts_at), "p")}</div>
+                  <div className="text-sm font-medium">
+                    {format(new Date(a.starts_at), "MMM d")}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {format(new Date(a.starts_at), "p")}
+                  </div>
                 </div>
               </li>
             ))}

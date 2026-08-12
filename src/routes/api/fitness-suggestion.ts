@@ -41,8 +41,18 @@ export const Route = createFileRoute("/api/fitness-suggestion")({
         // Fetch health context
         const [{ data: healthVault }, { data: vitals }, { data: fitnessLogs }] = await Promise.all([
           supabase.from("health_vault").select("*").eq("user_id", userId).maybeSingle(),
-          supabase.from("vitals").select("kind, value, unit, taken_at").eq("user_id", userId).order("taken_at", { ascending: false }).limit(10),
-          supabase.from("fitness_logs").select("*").eq("user_id", userId).order("logged_date", { ascending: false }).limit(7),
+          supabase
+            .from("vitals")
+            .select("kind, value, unit, taken_at")
+            .eq("user_id", userId)
+            .order("taken_at", { ascending: false })
+            .limit(10),
+          supabase
+            .from("fitness_logs")
+            .select("*")
+            .eq("user_id", userId)
+            .order("logged_date", { ascending: false })
+            .limit(7),
         ]);
 
         // Get flagged abnormalities from vitals
@@ -74,7 +84,11 @@ export const Route = createFileRoute("/api/fitness-suggestion")({
         }
 
         // Recent workouts to avoid repetition
-        const recentWorkouts = fitnessLogs?.map(l => l.workout_type).filter(Boolean).join(", ") || "none recently";
+        const recentWorkouts =
+          fitnessLogs
+            ?.map((l) => l.workout_type)
+            .filter(Boolean)
+            .join(", ") || "none recently";
 
         // Build context
         const chronicConditions = healthVault?.chronic_conditions?.join(", ") || "None";
@@ -137,7 +151,7 @@ IMPORTANT:
    
 ${suggestionData.reason}
 
-Tips: ${(suggestionData.tips as string[] || []).join(" • ")}
+Tips: ${((suggestionData.tips as string[]) || []).join(" • ")}
 
 ⚠️ ${"Stop and consult a doctor if you feel pain or discomfort during exercise."}`;
 

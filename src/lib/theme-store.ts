@@ -1,6 +1,9 @@
 // Client-side theme + layout customization.
 // Persists to Supabase profiles.preferences and applies CSS variables to <html>.
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
+
 export type ThemePreset = {
   id: string;
   name: string;
@@ -131,26 +134,31 @@ export const DEFAULT_THEME: ThemeSettings = {
 /**
  * Load theme from Supabase profiles.preferences, fallback to localStorage
  */
-export async function loadThemeFromSupabase(supabase: any): Promise<ThemeSettings> {
+export async function loadThemeFromSupabase(
+  supabase: SupabaseClient<Database>,
+): Promise<ThemeSettings> {
   if (typeof window === "undefined") return DEFAULT_THEME;
-  
+
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return loadTheme();
-    
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("preferences")
       .eq("id", user.id)
       .maybeSingle();
-    
-    if (profile?.preferences?.theme) {
-      return { ...DEFAULT_THEME, ...profile.preferences.theme };
+
+    const prefs = profile?.preferences as { theme?: Partial<ThemeSettings> } | null;
+    if (prefs?.theme) {
+      return { ...DEFAULT_THEME, ...prefs.theme };
     }
   } catch (e) {
     console.warn("Failed to load theme from Supabase:", e);
   }
-  
+
   return loadTheme();
 }
 
@@ -170,26 +178,25 @@ export function saveTheme(s: ThemeSettings) {
   window.localStorage.setItem(KEY, JSON.stringify(s));
 }
 
-export async function saveThemeToSupabase(supabase: any, s: ThemeSettings) {
+export async function saveThemeToSupabase(supabase: SupabaseClient<Database>, s: ThemeSettings) {
   if (typeof window === "undefined") return;
-  
-  const { data: { user } } = await supabase.auth.getUser();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return;
-  
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("preferences")
     .eq("id", user.id)
     .maybeSingle();
-  
-  const currentPrefs = profile?.preferences || {};
+
+  const currentPrefs = (profile?.preferences as Record<string, unknown> | null) || {};
   const newPrefs = { ...currentPrefs, theme: s };
-  
-  await supabase
-    .from("profiles")
-    .update({ preferences: newPrefs })
-    .eq("id", user.id);
-  
+
+  await supabase.from("profiles").update({ preferences: newPrefs }).eq("id", user.id);
+
   // Also save to localStorage as backup
   saveTheme(s);
 }
@@ -206,8 +213,7 @@ export function applyTheme(s: ThemeSettings) {
 
   const prefersDark =
     s.appearance === "dark" ||
-    (s.appearance === "system" &&
-      window.matchMedia?.("(prefers-color-scheme: dark)").matches);
+    (s.appearance === "system" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
   root.classList.toggle("dark", prefersDark);
 
   root.dataset.layout = s.layout;

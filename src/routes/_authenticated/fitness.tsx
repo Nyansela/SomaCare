@@ -16,9 +16,26 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from "recharts";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell,
+} from "recharts";
 
 export const Route = createFileRoute("/_authenticated/fitness")({
   head: () => ({ meta: [{ title: "Fitness — SomaCare" }, { name: "robots", content: "noindex" }] }),
@@ -41,7 +58,7 @@ function FitnessPage() {
   const qc = useQueryClient();
 
   const [gettingSuggestion, setGettingSuggestion] = useState(false);
-  
+
   // Form state
   const [workoutType, setWorkoutType] = useState("");
   const [customWorkout, setCustomWorkout] = useState("");
@@ -49,7 +66,7 @@ function FitnessPage() {
   const [intensity, setIntensity] = useState<string | undefined>();
   const [notes, setNotes] = useState("");
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
-  
+
   // User preferences
   const [wantsSuggestions, setWantsSuggestions] = useState(false);
   const [dailySuggestion, setDailySuggestion] = useState<string | null>(null);
@@ -64,13 +81,13 @@ function FitnessPage() {
     { value: "swimming", label: t("fitness.types.swimming", "Swimming") },
     { value: "cycling", label: t("fitness.types.cycling", "Cycling") },
     { value: "stretching", label: t("fitness.types.stretching", "Stretching") },
-    { value: "other", label: t("fitness.types.other", "Other") }
+    { value: "other", label: t("fitness.types.other", "Other") },
   ];
 
   const INTENSITY_OPTIONS = [
     { value: "light", label: t("fitness.intensityLight", "Light") },
     { value: "moderate", label: t("fitness.intensityModerate", "Moderate") },
-    { value: "intense", label: t("fitness.intensityIntense", "Intense") }
+    { value: "intense", label: t("fitness.intensityIntense", "Intense") },
   ];
 
   // Fetch fitness logs
@@ -83,7 +100,7 @@ function FitnessPage() {
         .order("logged_date", { ascending: false })
         .limit(50);
       if (error) throw error;
-      return data as FitnessLog[] || [];
+      return (data as FitnessLog[]) || [];
     },
   });
 
@@ -91,16 +108,18 @@ function FitnessPage() {
   const userPrefs = useQuery({
     queryKey: ["fitness", "prefs"],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return { wants_suggestions: false };
-      
+
       // Try to get from profiles table, default to false
       const { data, error } = await supabase
         .from("profiles")
         .select("preferences")
         .eq("id", session.user.id)
         .maybeSingle();
-      
+
       if (error || !data) return { wants_suggestions: false };
       const prefs = data.preferences as Record<string, unknown> | null;
       return { wants_suggestions: prefs?.fitness_suggestions === true };
@@ -120,7 +139,7 @@ function FitnessPage() {
   startOfWeek.setDate(today.getDate() - today.getDay());
   const weekStart = startOfWeek.toISOString().split("T")[0];
 
-  const weekLogs = fitnessLogs.data?.filter(log => log.logged_date >= weekStart) || [];
+  const weekLogs = fitnessLogs.data?.filter((log) => log.logged_date >= weekStart) || [];
   const weekMinutes = weekLogs.reduce((sum, log) => sum + log.duration_minutes, 0);
   const weekWorkouts = weekLogs.length;
 
@@ -131,8 +150,8 @@ function FitnessPage() {
     return date.toISOString().split("T")[0];
   });
 
-  const chartData = last7Days.map(date => {
-    const dayLogs = fitnessLogs.data?.filter(log => log.logged_date === date) || [];
+  const chartData = last7Days.map((date) => {
+    const dayLogs = fitnessLogs.data?.filter((log) => log.logged_date === date) || [];
     const total = dayLogs.reduce((sum, log) => sum + log.duration_minutes, 0);
     return {
       date: format(new Date(date), "EEE"),
@@ -143,7 +162,9 @@ function FitnessPage() {
 
   const logWorkoutMutation = useMutation({
     mutationFn: async (durationNum: number) => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
       const type = workoutType === "other" ? customWorkout : workoutType;
@@ -193,7 +214,9 @@ function FitnessPage() {
   const getSuggestion = async () => {
     setGettingSuggestion(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
       const response = await fetch("/api/fitness-suggestion", {
@@ -223,7 +246,9 @@ function FitnessPage() {
   const toggleSuggestionsMutation = useMutation({
     mutationFn: async () => {
       const newValue = !wantsSuggestions;
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
       // Get current preferences
@@ -261,13 +286,19 @@ function FitnessPage() {
       title={t("fitness.title", "Fitness")}
       subtitle={t("fitness.subtitle", "Track your workouts and activity")}
       action={
-        <Button 
-          onClick={getSuggestion} 
-          disabled={gettingSuggestion} 
+        <Button
+          onClick={getSuggestion}
+          disabled={gettingSuggestion}
           className="soma-gradient soma-glow border-0 text-white"
         >
-          {gettingSuggestion ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Info className="mr-2 h-4 w-4" />}
-          {gettingSuggestion ? t("fitness.getting", "Getting...") : t("fitness.getSuggestion", "Get Suggestion")}
+          {gettingSuggestion ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Info className="mr-2 h-4 w-4" />
+          )}
+          {gettingSuggestion
+            ? t("fitness.getting", "Getting...")
+            : t("fitness.getSuggestion", "Get Suggestion")}
         </Button>
       }
     >
@@ -282,7 +313,9 @@ function FitnessPage() {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">{weekMinutes} min</p>
-              <p className="text-xs text-muted-foreground">{t("fitness.totalActivity", "total activity")}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("fitness.totalActivity", "total activity")}
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -293,10 +326,11 @@ function FitnessPage() {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">{weekWorkouts}</p>
-              <p className="text-xs text-muted-foreground">{t("fitness.thisWeekLabel", "this week")}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("fitness.thisWeekLabel", "this week")}
+              </p>
             </CardContent>
           </Card>
-
         </div>
 
         {/* AI Suggestion */}
@@ -329,7 +363,9 @@ function FitnessPage() {
               <Plus className="h-5 w-5" />
               {t("fitness.logWorkout", "Log Workout")}
             </CardTitle>
-            <CardDescription>{t("fitness.logWorkoutDesc", "Record a completed workout")}</CardDescription>
+            <CardDescription>
+              {t("fitness.logWorkoutDesc", "Record a completed workout")}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
@@ -340,13 +376,15 @@ function FitnessPage() {
                     <SelectValue placeholder={t("fitness.selectType", "Select type")} />
                   </SelectTrigger>
                   <SelectContent>
-                    {WORKOUT_TYPES.map(type => (
-                      <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                    {WORKOUT_TYPES.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              
+
               {workoutType === "other" && (
                 <div>
                   <Label>{t("fitness.specify", "Specify workout")}</Label>
@@ -357,7 +395,7 @@ function FitnessPage() {
                   />
                 </div>
               )}
-              
+
               <div>
                 <Label>{t("fitness.duration", "Duration (minutes)")}</Label>
                 <Input
@@ -367,7 +405,7 @@ function FitnessPage() {
                   onChange={(e) => setDuration(e.target.value)}
                 />
               </div>
-              
+
               <div>
                 <Label>{t("fitness.intensity", "Intensity")}</Label>
                 <Select value={intensity} onValueChange={setIntensity}>
@@ -375,13 +413,15 @@ function FitnessPage() {
                     <SelectValue placeholder={t("fitness.placeholderIntensity", "Optional")} />
                   </SelectTrigger>
                   <SelectContent>
-                    {INTENSITY_OPTIONS.map(opt => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    {INTENSITY_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <Label>{t("fitness.date", "Date")}</Label>
                 <Input
@@ -392,7 +432,7 @@ function FitnessPage() {
                 />
               </div>
             </div>
-            
+
             <div className="mt-4">
               <Label>{t("fitness.notes", "Notes (optional)")}</Label>
               <Textarea
@@ -402,19 +442,29 @@ function FitnessPage() {
                 className="mt-1"
               />
             </div>
-            
-            <Button onClick={logWorkout} disabled={logWorkoutMutation.isPending} className="mt-4 soma-gradient soma-glow border-0 text-white">
-              {logWorkoutMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+
+            <Button
+              onClick={logWorkout}
+              disabled={logWorkoutMutation.isPending}
+              className="mt-4 soma-gradient soma-glow border-0 text-white"
+            >
+              {logWorkoutMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="mr-2 h-4 w-4" />
+              )}
               {t("fitness.logButton", "Log Workout")}
             </Button>
           </CardContent>
         </Card>
 
         {/* Weekly Chart */}
-        {chartData.length > 0 && chartData.some(d => d.minutes > 0) && (
+        {chartData.length > 0 && chartData.some((d) => d.minutes > 0) && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">{t("fitness.weeklyActivity", "This Week's Activity")}</CardTitle>
+              <CardTitle className="text-sm">
+                {t("fitness.weeklyActivity", "This Week's Activity")}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-48">
@@ -429,11 +479,21 @@ function FitnessPage() {
                         border: "1px solid var(--border)",
                         borderRadius: "8px",
                       }}
-                      formatter={(value: number) => [`${value} min`, t("fitness.minutes", "Minutes")]}
+                      formatter={(value: number) => [
+                        `${value} min`,
+                        t("fitness.minutes", "Minutes"),
+                      ]}
                     />
-                    <Bar dataKey="minutes" name={t("fitness.minutes", "Minutes")} radius={[4, 4, 0, 0]}>
+                    <Bar
+                      dataKey="minutes"
+                      name={t("fitness.minutes", "Minutes")}
+                      radius={[4, 4, 0, 0]}
+                    >
                       {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.minutes > 0 ? "var(--warning)" : "var(--border)"} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.minutes > 0 ? "var(--warning)" : "var(--border)"}
+                        />
                       ))}
                     </Bar>
                   </BarChart>
@@ -458,34 +518,39 @@ function FitnessPage() {
         ) : fitnessLogs.data && fitnessLogs.data.length > 0 ? (
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">{t("fitness.recentWorkouts", "Recent Workouts")}</CardTitle>
+              <CardTitle className="text-sm">
+                {t("fitness.recentWorkouts", "Recent Workouts")}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <AnimatePresence initial={false}>
-                {fitnessLogs.data.slice(0, 10).map((log) => (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15 }}
-                    key={log.id}
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Dumbbell className="h-4 w-4 text-[var(--warning)]" />
-                      <div>
-                        <p className="font-medium">{log.workout_type || "Workout"}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {log.duration_minutes} min • {log.intensity || "N/A"}
-                        </p>
+                  {fitnessLogs.data.slice(0, 10).map((log) => (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      key={log.id}
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Dumbbell className="h-4 w-4 text-[var(--warning)]" />
+                        <div>
+                          <p className="font-medium">{log.workout_type || "Workout"}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {log.duration_minutes} min • {log.intensity || "N/A"}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm">{format(new Date(log.logged_date), "MMM d")}</p>
-                      {log.notes && <p className="text-xs text-muted-foreground line-clamp-1">{log.notes}</p>}
-                    </div>
-                  </motion.div>
-                ))}
+                      <div className="text-right">
+                        <p className="text-sm">{format(new Date(log.logged_date), "MMM d")}</p>
+                        {log.notes && (
+                          <p className="text-xs text-muted-foreground line-clamp-1">{log.notes}</p>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
                 </AnimatePresence>
               </div>
             </CardContent>
@@ -494,7 +559,10 @@ function FitnessPage() {
           <EmptyState
             icon={Dumbbell}
             title={t("fitness.noWorkouts", "No workouts logged yet")}
-            body={t("fitness.noWorkoutsBody", "Start tracking your fitness activities to see your progress.")}
+            body={t(
+              "fitness.noWorkoutsBody",
+              "Start tracking your fitness activities to see your progress.",
+            )}
           />
         )}
       </div>

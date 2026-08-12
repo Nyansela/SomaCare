@@ -38,10 +38,7 @@ export function FlowingMenu({ items, backgroundImage }: FlowingMenuProps) {
         className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
       >
         Explore
-        <motion.div
-          animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
-        >
+        <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
           <ChevronDown className="h-4 w-4" />
         </motion.div>
       </button>
@@ -59,7 +56,7 @@ export function FlowingMenu({ items, backgroundImage }: FlowingMenuProps) {
       >
         {/* Background Image */}
         {backgroundImage && (
-          <div 
+          <div
             className="absolute inset-0 bg-cover bg-center opacity-20"
             style={{ backgroundImage: `url(${backgroundImage})` }}
           />
@@ -79,9 +76,7 @@ export function FlowingMenu({ items, backgroundImage }: FlowingMenuProps) {
             >
               <div className="font-medium text-sm">{item.label}</div>
               {item.description && (
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  {item.description}
-                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">{item.description}</div>
               )}
             </motion.a>
           ))}

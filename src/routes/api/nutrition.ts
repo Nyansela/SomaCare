@@ -4,8 +4,6 @@ import { createClient } from "@supabase/supabase-js";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { Database } from "@/integrations/supabase/types";
 
-type GenerateBody = {};
-
 export const Route = createFileRoute("/api/nutrition")({
   server: {
     handlers: {
@@ -41,15 +39,30 @@ export const Route = createFileRoute("/api/nutrition")({
         const userId = userData.user.id;
 
         // Fetch health context
-        const [{ data: profile }, { data: healthVault }, { data: medications }] = await Promise.all([
-          supabase.from("profiles").select("*, allergies, chronic_conditions").eq("id", userId).maybeSingle(),
-          supabase.from("health_vault").select("*").eq("user_id", userId).maybeSingle(),
-          supabase.from("medications").select("name, dose, frequency").eq("user_id", userId).eq("active", true).limit(20),
-        ]);
+        const [{ data: profile }, { data: healthVault }, { data: medications }] = await Promise.all(
+          [
+            supabase
+              .from("profiles")
+              .select("*, allergies, chronic_conditions")
+              .eq("id", userId)
+              .maybeSingle(),
+            supabase.from("health_vault").select("*").eq("user_id", userId).maybeSingle(),
+            supabase
+              .from("medications")
+              .select("name, dose, frequency")
+              .eq("user_id", userId)
+              .eq("active", true)
+              .limit(20),
+          ],
+        );
 
         // Build user context for prompt
-        const allergies = healthVault?.allergies?.join(", ") || profile?.allergies?.join(", ") || "None";
-        const chronicConditions = healthVault?.chronic_conditions?.join(", ") || profile?.chronic_conditions?.join(", ") || "None";
+        const allergies =
+          healthVault?.allergies?.join(", ") || profile?.allergies?.join(", ") || "None";
+        const chronicConditions =
+          healthVault?.chronic_conditions?.join(", ") ||
+          profile?.chronic_conditions?.join(", ") ||
+          "None";
         const dietaryPreference = healthVault?.dietary_preference || "none";
         const dietaryOther = healthVault?.dietary_preference_other || "";
         const healthGoals = healthVault?.health_goals?.join(", ") || "General wellness";
@@ -59,9 +72,12 @@ export const Route = createFileRoute("/api/nutrition")({
         const isPregnant = healthVault?.is_pregnant ? "Yes" : "No";
 
         // Format medications for the prompt
-        const medsList = medications?.map(m => {
-          return `${m.name}${m.dose ? ` ${m.dose}` : ''}${m.frequency ? ` (${m.frequency})` : ''}`;
-        }).join(", ") || "None";
+        const medsList =
+          medications
+            ?.map((m) => {
+              return `${m.name}${m.dose ? ` ${m.dose}` : ""}${m.frequency ? ` (${m.frequency})` : ""}`;
+            })
+            .join(", ") || "None";
 
         // Create NVIDIA provider
         const nvidia = createOpenAICompatible({
@@ -132,7 +148,9 @@ IMPORTANT:
         }
 
         // Extract medication reminders for storage
-        const medicationReminders = (planData.medication_timing || []).map((m: Record<string, string>) => ({
+        const medicationTimings = planData.medication_timing as
+          Array<{ medication: string; timing: string; reason?: string }> | undefined;
+        const medicationReminders = (medicationTimings || []).map((m) => ({
           medication: m.medication,
           timing: m.timing,
           reason: m.reason,

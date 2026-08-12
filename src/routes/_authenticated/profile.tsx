@@ -3,7 +3,21 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, Mail, Calendar, Heart, Shield, Award, Save, Loader2, Phone, MapPin, Stethoscope, Activity, FileText } from "lucide-react";
+import {
+  User,
+  Mail,
+  Calendar,
+  Heart,
+  Shield,
+  Award,
+  Save,
+  Loader2,
+  Phone,
+  MapPin,
+  Stethoscope,
+  Activity,
+  FileText,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app-shell";
@@ -11,11 +25,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   component: ProfilePage,
 });
+
+type EmergencyContact = { name?: string; phone?: string; relation?: string };
 
 function ProfilePage() {
   const qc = useQueryClient();
@@ -41,7 +63,9 @@ function ProfilePage() {
   const { data: profileData, isLoading } = useQuery({
     queryKey: ["user-profile-details"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
       setUserId(user.id);
       setEmail(user.email || "");
@@ -60,7 +84,7 @@ function ProfilePage() {
   useEffect(() => {
     if (profileData) {
       const contacts = Array.isArray(profileData.emergency_contacts)
-        ? (profileData.emergency_contacts[0] as any) || {}
+        ? (profileData.emergency_contacts[0] as EmergencyContact) || {}
         : {};
 
       setFormData({
@@ -78,7 +102,7 @@ function ProfilePage() {
     }
   }, [profileData]);
 
-  const updateField = (field: string, value: any) => {
+  const updateField = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setHasChanges(true);
   };
@@ -88,7 +112,13 @@ function ProfilePage() {
       if (!userId) throw new Error("No user ID");
 
       const emergencyContacts = formData.emergency_name
-        ? [{ name: formData.emergency_name, phone: formData.emergency_phone, relation: formData.emergency_relation }]
+        ? [
+            {
+              name: formData.emergency_name,
+              phone: formData.emergency_phone,
+              relation: formData.emergency_relation,
+            },
+          ]
         : [];
 
       const { error } = await supabase
@@ -138,7 +168,11 @@ function ProfilePage() {
           disabled={!hasChanges || saveMutation.isPending}
           className="soma-gradient soma-glow border-0 text-white"
         >
-          {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          {saveMutation.isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="mr-2 h-4 w-4" />
+          )}
           Save Changes
         </Button>
       }
@@ -149,13 +183,19 @@ function ProfilePage() {
           <CardContent className="flex flex-col md:flex-row items-center gap-6 p-6">
             <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-3xl overflow-hidden border-2 border-primary/20">
               {formData.avatar_url ? (
-                <img src={formData.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                <img
+                  src={formData.avatar_url}
+                  alt="Avatar"
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 <User className="h-12 w-12" />
               )}
             </div>
             <div className="flex-1 text-center md:text-left space-y-1">
-              <h2 className="text-2xl font-bold font-display">{formData.display_name || "SomaCare User"}</h2>
+              <h2 className="text-2xl font-bold font-display">
+                {formData.display_name || "SomaCare User"}
+              </h2>
               <p className="text-sm text-muted-foreground flex items-center justify-center md:justify-start gap-1.5">
                 <Mail className="h-4 w-4" /> {email}
               </p>
@@ -179,7 +219,9 @@ function ProfilePage() {
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5 text-primary" /> Personal Information
             </CardTitle>
-            <CardDescription>Update your personal details used across your health records and AI assistance.</CardDescription>
+            <CardDescription>
+              Update your personal details used across your health records and AI assistance.
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
             <div>
@@ -217,13 +259,18 @@ function ProfilePage() {
             </div>
             <div>
               <Label htmlFor="blood_type">Blood Type</Label>
-              <Select value={formData.blood_type} onValueChange={(v) => updateField("blood_type", v)}>
+              <Select
+                value={formData.blood_type}
+                onValueChange={(v) => updateField("blood_type", v)}
+              >
                 <SelectTrigger id="blood_type" className="mt-1.5">
                   <SelectValue placeholder="Select blood type" />
                 </SelectTrigger>
                 <SelectContent>
                   {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((b) => (
-                    <SelectItem key={b} value={b}>{b}</SelectItem>
+                    <SelectItem key={b} value={b}>
+                      {b}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

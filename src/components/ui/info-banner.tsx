@@ -38,7 +38,13 @@ interface InfoBannerProps {
 export function InfoBanner({ tone = "accent", title, icon, className, children }: InfoBannerProps) {
   const Icon = icon ?? TONE_ICONS[tone];
   return (
-    <div className={cn("flex items-start gap-2.5 rounded-xl border p-3 text-sm", TONE_STYLES[tone], className)}>
+    <div
+      className={cn(
+        "flex items-start gap-2.5 rounded-xl border p-3 text-sm",
+        TONE_STYLES[tone],
+        className,
+      )}
+    >
       <Icon className="mt-0.5 h-4 w-4 shrink-0" />
       <div className="min-w-0">
         {title && <div className="font-semibold">{title}</div>}

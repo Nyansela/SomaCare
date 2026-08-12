@@ -6,8 +6,20 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type HealthShare = {
   id: string;
@@ -26,7 +38,9 @@ export function HealthVaultShareManager() {
   const sharesQuery = useQuery({
     queryKey: ["health-shares"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
       const { data, error } = await supabase
@@ -42,7 +56,9 @@ export function HealthVaultShareManager() {
 
   const createShareMutation = useMutation({
     mutationFn: async (hours: number) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
       const token = crypto.randomUUID();
@@ -65,8 +81,12 @@ export function HealthVaultShareManager() {
       navigator.clipboard.writeText(shareUrl);
       toast.info(t("healthVault.linkCopied", "Link copied to clipboard!"));
     },
-    onError: (err: any) => {
-      toast.error(err?.message || t("healthVault.shareCreateFailed", "Failed to create share link"));
+    onError: (err) => {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t("healthVault.shareCreateFailed", "Failed to create share link"),
+      );
     },
   });
 
@@ -103,7 +123,10 @@ export function HealthVaultShareManager() {
           <Share2 className="h-5 w-5 text-primary" />
           {t("healthVault.shareWithDoctor", "Share with Doctor")}
         </CardTitle>
-        <Button onClick={() => setShowCreateModal(true)} className="soma-gradient soma-glow border-0 text-white">
+        <Button
+          onClick={() => setShowCreateModal(true)}
+          className="soma-gradient soma-glow border-0 text-white"
+        >
           <Plus className="h-4 w-4 mr-1.5" />
           {t("healthVault.createShareLink", "Create Share Link")}
         </Button>
@@ -112,7 +135,10 @@ export function HealthVaultShareManager() {
         {shares.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground text-sm">
             {t("healthVault.noShares", "No share links created yet.")}{" "}
-            {t("healthVault.noSharesBody", "Generate a secure, time-limited link to share your Health Vault snapshot with your doctor.")}
+            {t(
+              "healthVault.noSharesBody",
+              "Generate a secure, time-limited link to share your Health Vault snapshot with your doctor.",
+            )}
           </div>
         ) : (
           <div className="space-y-3">
@@ -122,27 +148,53 @@ export function HealthVaultShareManager() {
               const isActive = !isExpired && !isRevoked;
 
               return (
-                <div key={share.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-muted/50 border">
+                <div
+                  key={share.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-muted/50 border"
+                >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-muted-foreground">{share.token.slice(0, 8)}...</span>
-                      {isActive && <StatusToneBadge tone="success">{t("healthVault.active", "Active")}</StatusToneBadge>}
-                      {isExpired && <StatusToneBadge tone="warning">{t("healthVault.expired", "Expired")}</StatusToneBadge>}
-                      {isRevoked && <StatusToneBadge tone="danger">{t("healthVault.revoked", "Revoked")}</StatusToneBadge>}
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {share.token.slice(0, 8)}...
+                      </span>
+                      {isActive && (
+                        <StatusToneBadge tone="success">
+                          {t("healthVault.active", "Active")}
+                        </StatusToneBadge>
+                      )}
+                      {isExpired && (
+                        <StatusToneBadge tone="warning">
+                          {t("healthVault.expired", "Expired")}
+                        </StatusToneBadge>
+                      )}
+                      {isRevoked && (
+                        <StatusToneBadge tone="danger">
+                          {t("healthVault.revoked", "Revoked")}
+                        </StatusToneBadge>
+                      )}
                     </div>
                     <div className="text-xs text-muted-foreground flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {t("healthVault.created", "Created")}: {new Date(share.created_at).toLocaleDateString()} • {t("healthVault.expires", "Expires")}: {new Date(share.expires_at).toLocaleString()}
+                      {t("healthVault.created", "Created")}:{" "}
+                      {new Date(share.created_at).toLocaleDateString()} •{" "}
+                      {t("healthVault.expires", "Expires")}:{" "}
+                      {new Date(share.expires_at).toLocaleString()}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {isActive && (
                       <Button variant="outline" size="sm" onClick={() => handleCopy(share.token)}>
-                        <Copy className="h-3.5 w-3.5 mr-1" /> {t("healthVault.copyLink", "Copy Link")}
+                        <Copy className="h-3.5 w-3.5 mr-1" />{" "}
+                        {t("healthVault.copyLink", "Copy Link")}
                       </Button>
                     )}
                     {isActive && (
-                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => revokeShareMutation.mutate(share.id)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => revokeShareMutation.mutate(share.id)}
+                      >
                         <Trash2 className="h-3.5 w-3.5 mr-1" /> {t("healthVault.revoke", "Revoke")}
                       </Button>
                     )}
@@ -157,28 +209,41 @@ export function HealthVaultShareManager() {
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("healthVault.generateShareLink", "Generate Doctor Share Link")}</DialogTitle>
+            <DialogTitle>
+              {t("healthVault.generateShareLink", "Generate Doctor Share Link")}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <p className="text-sm text-muted-foreground">
-              {t("healthVault.shareLinkDisclaimer", "This will generate a secure, read-only link containing your Health Vault snapshot (vitals, allergies, medications, and history).")}
+              {t(
+                "healthVault.shareLinkDisclaimer",
+                "This will generate a secure, read-only link containing your Health Vault snapshot (vitals, allergies, medications, and history).",
+              )}
             </p>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">{t("healthVault.linkExpiration", "Link Expiration")}</label>
+              <label className="text-sm font-medium mb-1.5 block">
+                {t("healthVault.linkExpiration", "Link Expiration")}
+              </label>
               <Select value={expireHours} onValueChange={setExpireHours}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="24">{t("healthVault.hours24", "24 Hours (Recommended)")}</SelectItem>
+                  <SelectItem value="24">
+                    {t("healthVault.hours24", "24 Hours (Recommended)")}
+                  </SelectItem>
                   <SelectItem value="48">{t("healthVault.hours48", "48 Hours")}</SelectItem>
-                  <SelectItem value="72">{t("healthVault.hours72", "72 Hours (3 Days)")}</SelectItem>
+                  <SelectItem value="72">
+                    {t("healthVault.hours72", "72 Hours (3 Days)")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateModal(false)}>{t("healthVault.cancel", "Cancel")}</Button>
+            <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+              {t("healthVault.cancel", "Cancel")}
+            </Button>
             <Button
               onClick={() => createShareMutation.mutate(parseInt(expireHours))}
               disabled={createShareMutation.isPending}
@@ -195,14 +260,22 @@ export function HealthVaultShareManager() {
   );
 }
 
-function StatusToneBadge({ tone, children }: { tone: "success" | "warning" | "danger"; children: React.ReactNode }) {
+function StatusToneBadge({
+  tone,
+  children,
+}: {
+  tone: "success" | "warning" | "danger";
+  children: React.ReactNode;
+}) {
   const colors = {
     success: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
     warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
     danger: "bg-destructive/10 text-destructive border-destructive/20",
   };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${colors[tone]}`}>
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${colors[tone]}`}
+    >
       {children}
     </span>
   );

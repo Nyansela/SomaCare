@@ -12,8 +12,12 @@ export const Route = createFileRoute("/api/whatsapp-webhook")({
       // and so Twilio's console URL check does not report an error.
       GET: async () => {
         return new Response(
-          JSON.stringify({ ok: true, endpoint: "/api/whatsapp-webhook", expects: "POST (Twilio webhook)" }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
+          JSON.stringify({
+            ok: true,
+            endpoint: "/api/whatsapp-webhook",
+            expects: "POST (Twilio webhook)",
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
         );
       },
       POST: async ({ request }) => {
@@ -40,17 +44,18 @@ export const Route = createFileRoute("/api/whatsapp-webhook")({
           if (!senderPhone) {
             return new Response(
               `<Response><Message>Error: Missing sender phone number.</Message></Response>`,
-              { status: 400, headers: { "Content-Type": "text/xml" } }
+              { status: 400, headers: { "Content-Type": "text/xml" } },
             );
           }
 
           const supabaseUrl = process.env.SUPABASE_URL;
-          const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
+          const supabaseServiceKey =
+            process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
 
           if (!supabaseUrl || !supabaseServiceKey) {
             return new Response(
               `<Response><Message>System configuration error. Please try again later.</Message></Response>`,
-              { status: 500, headers: { "Content-Type": "text/xml" } }
+              { status: 500, headers: { "Content-Type": "text/xml" } },
             );
           }
 
@@ -70,7 +75,12 @@ export const Route = createFileRoute("/api/whatsapp-webhook")({
             const userId = linkRecord.user_id;
 
             // Fetch health context
-            const healthContext = await getHealthContext(supabaseUrl, supabaseServiceKey, userId, true);
+            const healthContext = await getHealthContext(
+              supabaseUrl,
+              supabaseServiceKey,
+              userId,
+              true,
+            );
 
             // Fetch user language preference
             const { data: profileData } = await supabase
@@ -78,9 +88,16 @@ export const Route = createFileRoute("/api/whatsapp-webhook")({
               .select("preferences")
               .eq("id", userId)
               .maybeSingle();
-            const userPrefs = (profileData?.preferences as Record<string, any>) || {};
-            const userLanguage = userPrefs.language || "en";
-            const langName = userLanguage === "tw" ? "Twi (Akan)" : userLanguage === "ee" ? "Ewe" : userLanguage === "ga" ? "Ga" : "English";
+            const userPrefs = (profileData?.preferences as Record<string, unknown>) || {};
+            const userLanguage = (userPrefs.language as string) || "en";
+            const langName =
+              userLanguage === "tw"
+                ? "Twi (Akan)"
+                : userLanguage === "ee"
+                  ? "Ewe"
+                  : userLanguage === "ga"
+                    ? "Ga"
+                    : "English";
 
             const formattedHealthContext = formatHealthContextForAI(healthContext);
 
@@ -99,7 +116,8 @@ Your instructions:
 - Never provide emergency medical advice — urge them to call local emergency services if urgent.`;
 
             const nvidiaApiKey = process.env.NVIDIA_API_KEY;
-            let aiReply = "Hello! I received your message, but my AI service is currently unconfigured. Please check your API key.";
+            let aiReply =
+              "Hello! I received your message, but my AI service is currently unconfigured. Please check your API key.";
 
             if (nvidiaApiKey) {
               const nvidia = createOpenAICompatible({
@@ -117,14 +135,15 @@ Your instructions:
                 aiReply = aiResult.text || "I'm here to help with your health questions!";
               } catch (aiErr) {
                 console.error("WhatsApp AI generation error:", aiErr);
-                aiReply = "Sorry, I encountered an issue processing your health query right now. Please try again soon.";
+                aiReply =
+                  "Sorry, I encountered an issue processing your health query right now. Please try again soon.";
               }
             }
 
-            return new Response(
-              `<Response><Message>${escapeXml(aiReply)}</Message></Response>`,
-              { status: 200, headers: { "Content-Type": "text/xml" } }
-            );
+            return new Response(`<Response><Message>${escapeXml(aiReply)}</Message></Response>`, {
+              status: 200,
+              headers: { "Content-Type": "text/xml" },
+            });
           } else {
             // 2. Not linked yet. Check if incomingMessage matches any pending linking_code
             const { data: pendingLink } = await supabase
@@ -144,25 +163,27 @@ Your instructions:
                 })
                 .eq("id", pendingLink.id);
 
-              const successText = "Your WhatsApp number has been successfully linked to SomaCare! You can now chat with Adwoa right here.";
+              const successText =
+                "Your WhatsApp number has been successfully linked to SomaCare! You can now chat with Adwoa right here.";
               return new Response(
                 `<Response><Message>${escapeXml(successText)}</Message></Response>`,
-                { status: 200, headers: { "Content-Type": "text/xml" } }
+                { status: 200, headers: { "Content-Type": "text/xml" } },
               );
             } else {
               // Not linked and code didn't match
-              const instructions = "Welcome to SomaCare! Your WhatsApp number is not linked to an account. Please go to SomaCare Settings -> Integrations to get your unique linking code and send it here.";
+              const instructions =
+                "Welcome to SomaCare! Your WhatsApp number is not linked to an account. Please go to SomaCare Settings -> Integrations to get your unique linking code and send it here.";
               return new Response(
                 `<Response><Message>${escapeXml(instructions)}</Message></Response>`,
-                { status: 200, headers: { "Content-Type": "text/xml" } }
+                { status: 200, headers: { "Content-Type": "text/xml" } },
               );
             }
           }
-        } catch (err: any) {
+        } catch (err) {
           console.error("WhatsApp webhook error:", err);
           return new Response(
             `<Response><Message>An error occurred processing your request.</Message></Response>`,
-            { status: 500, headers: { "Content-Type": "text/xml" } }
+            { status: 500, headers: { "Content-Type": "text/xml" } },
           );
         }
       },

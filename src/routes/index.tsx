@@ -1,7 +1,24 @@
 import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import { useRef } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Bot, CheckCircle, ChevronRight, Clock, EyeOff, HeartPulse, Leaf, Lock, Pill, Shield, ShieldCheck, Sparkles, Star, Stethoscope, Users } from "lucide-react";
+import {
+  ArrowRight,
+  Bot,
+  CheckCircle,
+  ChevronRight,
+  Clock,
+  EyeOff,
+  HeartPulse,
+  Leaf,
+  Lock,
+  Pill,
+  Shield,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Stethoscope,
+  Users,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Capacitor } from "@capacitor/core";
@@ -14,7 +31,9 @@ import { FlowingMenu } from "@/components/landing/flowing-menu";
 export const Route = createFileRoute("/")({
   beforeLoad: async () => {
     if (typeof window !== "undefined") {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session) {
         throw redirect({ to: "/app" });
       }
@@ -28,7 +47,8 @@ export const Route = createFileRoute("/")({
       { title: "SomaCare — Your AI Health Companion" },
       {
         name: "description",
-        content: "SomaCare unifies your vitals, medications, appointments and a context-aware AI assistant into one calm, secure health workspace.",
+        content:
+          "SomaCare unifies your vitals, medications, appointments and a context-aware AI assistant into one calm, secure health workspace.",
       },
     ],
   }),
@@ -51,39 +71,45 @@ function Landing() {
   const features = [
     {
       title: "Health Vault",
-      description: "Your complete health profile — conditions, allergies, medications, and emergency contacts in one secure place.",
+      description:
+        "Your complete health profile — conditions, allergies, medications, and emergency contacts in one secure place.",
       icon: <Stethoscope className="h-6 w-6" />,
       image: "/images/landing/feature-vault.jpg",
       colSpan: 2,
     },
     {
       title: "Adwoa AI Assistant",
-      description: "Chat about symptoms, upload reports, and get grounded answers that know your history.",
+      description:
+        "Chat about symptoms, upload reports, and get grounded answers that know your history.",
       icon: <Bot className="h-6 w-6" />,
       image: "/images/landing/feature-ai-chat.jpg",
     },
     {
       title: "Live Vitals Tracking",
-      description: "Blood pressure, glucose, heart rate, weight — visualized and trended in real time with intelligent alerts.",
+      description:
+        "Blood pressure, glucose, heart rate, weight — visualized and trended in real time with intelligent alerts.",
       icon: <HeartPulse className="h-6 w-6" />,
       image: "/images/landing/feature-vitals.jpg",
     },
     {
       title: "Wellness Integration",
-      description: "Nutrition, fitness, sleep, hydration, and mood — with AI-generated plans that adapt to your goals.",
+      description:
+        "Nutrition, fitness, sleep, hydration, and mood — with AI-generated plans that adapt to your goals.",
       icon: <Sparkles className="h-6 w-6" />,
       image: "/images/landing/feature-wellness.jpg",
       colSpan: 2,
     },
     {
       title: "Smart Scheduling",
-      description: "Your day at a glance — appointments, medications, meals, and workouts unified in one timeline.",
+      description:
+        "Your day at a glance — appointments, medications, meals, and workouts unified in one timeline.",
       icon: <Clock className="h-6 w-6" />,
       image: "/images/landing/feature-schedule.jpg",
     },
     {
       title: "Medication Safety",
-      description: "AI-powered medication verification — check for allergy conflicts and drug interactions.",
+      description:
+        "AI-powered medication verification — check for allergy conflicts and drug interactions.",
       icon: <Pill className="h-6 w-6" />,
       image: "/images/landing/feature-medverify.jpg",
     },
@@ -93,21 +119,24 @@ function Landing() {
     {
       id: "1",
       title: "Transformed My Chronic Care",
-      content: "SomaCare has completely transformed how I manage my Type 2 Diabetes. The AI actually knows my history and provides personalized advice that aligns with my treatment plan.",
+      content:
+        "SomaCare has completely transformed how I manage my Type 2 Diabetes. The AI actually knows my history and provides personalized advice that aligns with my treatment plan.",
       author: "Sarah M.",
       role: "Patient, Type 2 Diabetes",
     },
     {
       id: "2",
       title: "Peace of Mind for Caregivers",
-      content: "As a caregiver, having all my mother's health data in one place with intelligent medication reminders has been life-changing. I finally feel organized and in control.",
+      content:
+        "As a caregiver, having all my mother's health data in one place with intelligent medication reminders has been life-changing. I finally feel organized and in control.",
       author: "James K.",
       role: "Caregiver",
     },
     {
       id: "3",
       title: "The Health App That Understands",
-      content: "I've tried many health apps over the years, but SomaCare is the first one that actually understands my complete health picture. The AI assistant is remarkably context-aware.",
+      content:
+        "I've tried many health apps over the years, but SomaCare is the first one that actually understands my complete health picture. The AI assistant is remarkably context-aware.",
       author: "Maria L.",
       role: "Patient, Multiple Conditions",
     },
@@ -129,13 +158,17 @@ function Landing() {
       />
 
       {/* Hero Section */}
-      <section id="hero" className="relative min-h-screen flex items-center overflow-hidden" ref={heroRef}>
+      <section
+        id="hero"
+        className="relative min-h-screen flex items-center overflow-hidden"
+        ref={heroRef}
+      >
         {/* Green/black/white ColorBends background */}
         <div className="absolute inset-0 -z-10">
           <div className="absolute inset-0 bg-gradient-to-br from-background via-background/90 to-background/80" />
           <ColorBends
             className="absolute inset-0 opacity-30"
-            colors={["rgba(var(--primary-rgb), 0.1)", "rgba(var(--primary-rgb), 0.05)", "rgba(var(--primary-strong-rgb), 0.08)"]}
+            colors={["#3f9b63", "#2f7d4d", "#57b276"]}
             speed={0.2}
             density={0.8}
           />
@@ -179,7 +212,9 @@ function Landing() {
                 transition={{ duration: 0.6, delay: 0.5 }}
                 className="max-w-xl text-xl text-muted-foreground leading-relaxed"
               >
-                SomaCare integrates your medical data, AI-powered insights, and daily health tracking into one elegant platform. Designed for real life, with privacy at its core.
+                SomaCare integrates your medical data, AI-powered insights, and daily health
+                tracking into one elegant platform. Designed for real life, with privacy at its
+                core.
               </motion.p>
 
               <motion.div
@@ -189,13 +224,20 @@ function Landing() {
                 className="flex flex-wrap gap-4"
               >
                 <Link to="/auth">
-                  <Button size="lg" className="h-12 px-8 soma-gradient border-0 text-white shadow-lg hover:shadow-primary/30 transition-shadow">
+                  <Button
+                    size="lg"
+                    className="h-12 px-8 soma-gradient border-0 text-white shadow-lg hover:shadow-primary/30 transition-shadow"
+                  >
                     Get Started
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
                 <a href="#features">
-                  <Button size="lg" variant="outline" className="h-12 px-8 border-border/50 hover:bg-surface/50 transition-colors">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="h-12 px-8 border-border/50 hover:bg-surface/50 transition-colors"
+                  >
                     Discover Features
                   </Button>
                 </a>
@@ -208,9 +250,21 @@ function Landing() {
                 className="grid grid-cols-3 gap-8 mt-8 text-sm"
               >
                 {[
-                  { icon: <Lock className="h-5 w-5 text-[var(--primary)]" />, k: "End-to-end", v: "encryption" },
-                  { icon: <ShieldCheck className="h-5 w-5 text-[var(--primary)]" />, k: "HIPAA-aligned", v: "privacy" },
-                  { icon: <EyeOff className="h-5 w-5 text-[var(--primary)]" />, k: "Zero", v: "data sharing" },
+                  {
+                    icon: <Lock className="h-5 w-5 text-[var(--primary)]" />,
+                    k: "End-to-end",
+                    v: "encryption",
+                  },
+                  {
+                    icon: <ShieldCheck className="h-5 w-5 text-[var(--primary)]" />,
+                    k: "HIPAA-aligned",
+                    v: "privacy",
+                  },
+                  {
+                    icon: <EyeOff className="h-5 w-5 text-[var(--primary)]" />,
+                    k: "Zero",
+                    v: "data sharing",
+                  },
                 ].map((s) => (
                   <div key={s.k} className="flex items-center gap-3">
                     {s.icon}
@@ -243,11 +297,13 @@ function Landing() {
 
                   <div className="mt-6 space-y-4">
                     <div className="rounded-xl rounded-tl-sm bg-secondary/60 p-4 text-sm">
-                      My blood pressure was 142/90 this morning. Should I be concerned about this reading?
+                      My blood pressure was 142/90 this morning. Should I be concerned about this
+                      reading?
                     </div>
 
                     <div className="rounded-xl rounded-tr-sm bg-[var(--primary)]/90 text-white p-4 text-sm">
-                      This reading indicates elevated blood pressure. Given your history and current medication, I recommend:
+                      This reading indicates elevated blood pressure. Given your history and current
+                      medication, I recommend:
                       <ol className="mt-3 space-y-2 list-decimal list-inside">
                         <li>Logging this in your vitals tracker</li>
                         <li>Monitoring hydration levels</li>
@@ -261,9 +317,24 @@ function Landing() {
 
                   <div className="mt-6 grid grid-cols-3 gap-3">
                     {[
-                      { l: "BP Trend", v: "138/88", sub: "7-day avg", icon: <HeartPulse className="h-4 w-4 text-[var(--primary)]" /> },
-                      { l: "Resting HR", v: "68 bpm", sub: "Normal", icon: <HeartPulse className="h-4 w-4 text-[var(--primary)]" /> },
-                      { l: "Sleep", v: "7h 12m", sub: "Last night", icon: <ChevronRight className="h-4 w-4 text-[var(--primary)]" /> },
+                      {
+                        l: "BP Trend",
+                        v: "138/88",
+                        sub: "7-day avg",
+                        icon: <HeartPulse className="h-4 w-4 text-[var(--primary)]" />,
+                      },
+                      {
+                        l: "Resting HR",
+                        v: "68 bpm",
+                        sub: "Normal",
+                        icon: <HeartPulse className="h-4 w-4 text-[var(--primary)]" />,
+                      },
+                      {
+                        l: "Sleep",
+                        v: "7h 12m",
+                        sub: "Last night",
+                        icon: <ChevronRight className="h-4 w-4 text-[var(--primary)]" />,
+                      },
                     ].map((s) => (
                       <div key={s.l} className="rounded-lg bg-surface p-3 text-center">
                         <div className="flex justify-center mb-1">{s.icon}</div>
@@ -314,7 +385,8 @@ function Landing() {
               viewport={{ once: true }}
               className="max-w-3xl mx-auto mt-6 text-xl text-muted-foreground leading-relaxed"
             >
-              SomaCare integrates your medical data, daily tracking, and AI-powered insights into one elegant platform. Designed for real life, with privacy and security at its core.
+              SomaCare integrates your medical data, daily tracking, and AI-powered insights into
+              one elegant platform. Designed for real life, with privacy and security at its core.
             </motion.p>
           </div>
 
@@ -358,7 +430,8 @@ function Landing() {
               viewport={{ once: true }}
               className="max-w-2xl mx-auto mt-6 text-lg text-muted-foreground"
             >
-              See how SomaCare is helping people take control of their health with confidence and clarity.
+              See how SomaCare is helping people take control of their health with confidence and
+              clarity.
             </motion.p>
           </div>
 
@@ -406,7 +479,8 @@ function Landing() {
                 viewport={{ once: true }}
                 className="mt-6 max-w-lg text-lg text-muted-foreground leading-relaxed"
               >
-                SomaCare is built with enterprise-grade security and privacy protections. Your health data is encrypted end-to-end and never shared with third parties.
+                SomaCare is built with enterprise-grade security and privacy protections. Your
+                health data is encrypted end-to-end and never shared with third parties.
               </motion.p>
 
               <motion.div
@@ -417,10 +491,26 @@ function Landing() {
                 className="mt-8 grid grid-cols-2 gap-8 text-sm"
               >
                 {[
-                  { icon: <Lock className="h-5 w-5 text-[var(--primary)]" />, k: "End-to-end", v: "encryption" },
-                  { icon: <ShieldCheck className="h-5 w-5 text-[var(--primary)]" />, k: "HIPAA-aligned", v: "privacy" },
-                  { icon: <EyeOff className="h-5 w-5 text-[var(--primary)]" />, k: "Zero", v: "data sharing" },
-                  { icon: <CheckCircle className="h-5 w-5 text-[var(--primary)]" />, k: "Regular", v: "security audits" },
+                  {
+                    icon: <Lock className="h-5 w-5 text-[var(--primary)]" />,
+                    k: "End-to-end",
+                    v: "encryption",
+                  },
+                  {
+                    icon: <ShieldCheck className="h-5 w-5 text-[var(--primary)]" />,
+                    k: "HIPAA-aligned",
+                    v: "privacy",
+                  },
+                  {
+                    icon: <EyeOff className="h-5 w-5 text-[var(--primary)]" />,
+                    k: "Zero",
+                    v: "data sharing",
+                  },
+                  {
+                    icon: <CheckCircle className="h-5 w-5 text-[var(--primary)]" />,
+                    k: "Regular",
+                    v: "security audits",
+                  },
                 ].map((s) => (
                   <div key={s.k} className="flex items-center gap-3">
                     {s.icon}
@@ -457,17 +547,34 @@ function Landing() {
                     </div>
                     <div>
                       <div className="font-semibold">Enterprise-grade security</div>
-                      <div className="text-sm text-muted-foreground">Built for healthcare data protection</div>
+                      <div className="text-sm text-muted-foreground">
+                        Built for healthcare data protection
+                      </div>
                     </div>
                   </div>
 
                   <div className="space-y-4">
                     {[
-                      { icon: <ShieldCheck className="h-4 w-4 text-[var(--primary)]" />, title: "Data encryption", desc: "At rest and in transit" },
-                      { icon: <EyeOff className="h-4 w-4 text-[var(--primary)]" />, title: "Privacy first", desc: "Your data stays yours" },
-                      { icon: <CheckCircle className="h-4 w-4 text-[var(--primary)]" />, title: "Compliance ready", desc: "GDPR & HIPAA inspired" },
+                      {
+                        icon: <ShieldCheck className="h-4 w-4 text-[var(--primary)]" />,
+                        title: "Data encryption",
+                        desc: "At rest and in transit",
+                      },
+                      {
+                        icon: <EyeOff className="h-4 w-4 text-[var(--primary)]" />,
+                        title: "Privacy first",
+                        desc: "Your data stays yours",
+                      },
+                      {
+                        icon: <CheckCircle className="h-4 w-4 text-[var(--primary)]" />,
+                        title: "Compliance ready",
+                        desc: "GDPR & HIPAA inspired",
+                      },
                     ].map((item) => (
-                      <div key={item.title} className="flex items-center gap-3 p-3 rounded-lg bg-surface">
+                      <div
+                        key={item.title}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-surface"
+                      >
                         <div className="grid h-8 w-8 place-items-center rounded-full bg-[var(--primary)]/10">
                           {item.icon}
                         </div>
@@ -510,7 +617,8 @@ function Landing() {
                   </span>
                 </h2>
                 <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground leading-relaxed">
-                  SomaCare is built by SomaLabsGH to help you take control of your health with confidence, clarity, and privacy.
+                  SomaCare is built by SomaLabsGH to help you take control of your health with
+                  confidence, clarity, and privacy.
                 </p>
               </motion.div>
 

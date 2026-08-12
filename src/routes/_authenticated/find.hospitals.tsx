@@ -23,23 +23,97 @@ const CATEGORIES = [
   { key: "imaging", fallback: "Imaging", query: "radiology imaging" },
 ];
 
-const BROWSER_KEY = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY as string | undefined;
+const BROWSER_KEY = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY as
+  string | undefined;
+
+// Minimal typings for the Google Maps JS API surface we use.
+// (The full @types/google.maps package is not installed in this project.)
+type GoogleLatLng = { lat(): number; lng(): number };
+
+type GooglePlace = {
+  name: string;
+  vicinity?: string;
+  place_id?: string;
+  geometry: { location: GoogleLatLng };
+};
+
+type GoogleMap = {
+  setCenter(center: { lat: number; lng: number }): void;
+};
+
+type GoogleMarker = {
+  setMap(map: GoogleMap | null): void;
+  addListener(event: string, handler: () => void): void;
+};
+
+type GoogleDirectionsResult = { routes: unknown[] };
+
+type GoogleDirectionsRenderer = {
+  setMap(map: GoogleMap | null): void;
+  setDirections(result: GoogleDirectionsResult): void;
+};
+
+type GooglePlaceService = {
+  nearbySearch(
+    request: unknown,
+    callback: (results: GooglePlace[] | null, status: string) => void,
+  ): void;
+};
+
+type GoogleDirectionsService = {
+  route(
+    request: unknown,
+    callback: (result: GoogleDirectionsResult | null, status: string) => void,
+  ): void;
+};
+
+type GoogleMapsNamespace = {
+  Map: new (element: HTMLElement, options: Record<string, unknown>) => GoogleMap;
+  Marker: new (options: {
+    position: unknown;
+    map: GoogleMap | null;
+    title?: string;
+    icon?: unknown;
+  }) => GoogleMarker;
+  SymbolPath: { CIRCLE: number };
+  places: {
+    PlacesService: new (map: GoogleMap) => GooglePlaceService;
+    PlacesServiceStatus: { OK: string };
+  };
+  DirectionsRenderer: new (options: Record<string, unknown>) => GoogleDirectionsRenderer;
+  DirectionsService: new () => GoogleDirectionsService;
+  TravelMode: { DRIVING: string };
+};
+
+type GoogleMapsApi = { maps: GoogleMapsNamespace };
+
+type SomaWindow = {
+  google?: GoogleMapsApi;
+  __somaInitMap?: () => void;
+};
+
+function getGoogle(): GoogleMapsApi | undefined {
+  return (window as SomaWindow).google;
+}
 
 // Module-level singleton so navigating away/back doesn't re-add the script.
-let mapsPromise: Promise<any> | null = null;
-function loadGoogleMaps(): Promise<any> {
+let mapsPromise: Promise<GoogleMapsApi> | null = null;
+function loadGoogleMaps(): Promise<GoogleMapsApi> {
   if (typeof window === "undefined") return Promise.reject(new Error("no window"));
-  if ((window as any).google?.maps) return Promise.resolve((window as any).google);
+  if (getGoogle()?.maps) return Promise.resolve(getGoogle()!);
   if (mapsPromise) return mapsPromise;
   if (!BROWSER_KEY) return Promise.reject(new Error("Google Maps key not configured"));
 
-  mapsPromise = new Promise((resolve, reject) => {
-    (window as any).__somaInitMap = () => resolve((window as any).google);
+  mapsPromise = new Promise<GoogleMapsApi>((resolve, reject) => {
+    (window as SomaWindow).__somaInitMap = () => resolve(getGoogle()!);
     const s = document.createElement("script");
     s.src = `https://maps.googleapis.com/maps/api/js?key=${BROWSER_KEY}&libraries=places&loading=async&callback=__somaInitMap`;
     s.async = true;
     s.defer = true;
-    s.onerror = () => reject(new Error("Failed to load Google Maps"));
+    s.onerror = () => {
+      mapsPromise = null;
+      reject(new Error("Failed to load Google Maps"));
+    };
     document.head.appendChild(s);
   });
   return mapsPromise;
@@ -62,10 +136,10 @@ function FindHospitals() {
 
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const routeDivRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<any>(null);
-  const routeMapRef = useRef<any>(null);
-  const directionsRendererRef = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
+  const mapRef = useRef<GoogleMap | null>(null);
+  const routeMapRef = useRef<GoogleMap | null>(null);
+  const directionsRendererRef = useRef<GoogleDirectionsRenderer | null>(null);
+  const markersRef = useRef<GoogleMarker[]>([]);
 
   const locate = () => {
     if (!navigator.geolocation) return;
@@ -129,7 +203,8 @@ function FindHospitals() {
 
   const runSearch = (q: string) => {
     if (!coords || !mapRef.current) return;
-    const google = (window as any).google;
+    const google = getGoogle();
+    if (!google) return;
     const service = new google.maps.places.PlacesService(mapRef.current);
     service.nearbySearch(
       {
@@ -137,7 +212,7 @@ function FindHospitals() {
         radius: 5000,
         keyword: q,
       },
-      (results: any[], status: any) => {
+      (results: GooglePlace[] | null, status: string) => {
         if (status !== google.maps.places.PlacesServiceStatus.OK || !results) return;
         markersRef.current.forEach((m) => m.setMap(null));
         markersRef.current = [];
@@ -189,8 +264,10 @@ function FindHospitals() {
           destination: { lat: selected.lat, lng: selected.lng },
           travelMode: google.maps.TravelMode.DRIVING,
         },
-        (res: any, status: any) => {
-          if (status === "OK" && res) directionsRendererRef.current.setDirections(res);
+        (res: GoogleDirectionsResult | null, status: string) => {
+          if (status === "OK" && res && directionsRendererRef.current) {
+            directionsRendererRef.current.setDirections(res);
+          }
         },
       );
     });
@@ -221,7 +298,10 @@ function FindHospitals() {
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={t("findCare.searchPlaceholder", "Search for hospitals, cardiologists, pharmacies…")}
+                placeholder={t(
+                  "findCare.searchPlaceholder",
+                  "Search for hospitals, cardiologists, pharmacies…",
+                )}
                 className="border-0 bg-transparent pl-9 shadow-none focus-visible:ring-0"
               />
             </div>
@@ -250,14 +330,17 @@ function FindHospitals() {
           {/* DISCOVERY MAP */}
           <Card className="overflow-hidden">
             <div className="flex items-center justify-between border-b border-border px-4 py-2 text-xs">
-              <span className="font-medium">{t("findCare.nearby", "Nearby {{query}}", { query: activeQuery })}</span>
+              <span className="font-medium">
+                {t("findCare.nearby", "Nearby {{query}}", { query: activeQuery })}
+              </span>
               <a
                 href={mapsExternalUrl(activeQuery)}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 text-primary hover:underline"
               >
-                {t("findCare.openInGoogleMaps", "Open in Google Maps")} <ExternalLink className="h-3 w-3" />
+                {t("findCare.openInGoogleMaps", "Open in Google Maps")}{" "}
+                <ExternalLink className="h-3 w-3" />
               </a>
             </div>
             <div className="relative aspect-[16/10] w-full bg-secondary/40">
@@ -284,9 +367,7 @@ function FindHospitals() {
               <div className="flex items-center justify-between border-b border-border px-4 py-2 text-xs">
                 <div>
                   <p className="font-semibold text-foreground">{selected.name}</p>
-                  {selected.address && (
-                    <p className="text-muted-foreground">{selected.address}</p>
-                  )}
+                  {selected.address && <p className="text-muted-foreground">{selected.address}</p>}
                 </div>
                 <a
                   href={`https://www.google.com/maps/dir/?api=1&origin=${coords?.lat},${coords?.lng}&destination=${selected.lat},${selected.lng}${
@@ -296,7 +377,8 @@ function FindHospitals() {
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 rounded-md soma-gradient px-2.5 py-1.5 text-xs font-medium text-white"
                 >
-                  {t("findCare.startNavigation", "Start navigation")} <ExternalLink className="h-3 w-3" />
+                  {t("findCare.startNavigation", "Start navigation")}{" "}
+                  <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
               <div className="aspect-[16/9] w-full">
@@ -314,7 +396,10 @@ function FindHospitals() {
             <div>
               <CardTitle>{t("findCare.yourLocation", "Your location")}</CardTitle>
               <CardDescription className="text-xs">
-                {t("findCare.yourLocationDescription", "Share your location for accurate maps and directions")}
+                {t(
+                  "findCare.yourLocationDescription",
+                  "Share your location for accurate maps and directions",
+                )}
               </CardDescription>
             </div>
           </CardHeader>

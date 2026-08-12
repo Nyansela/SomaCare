@@ -1,6 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Stethoscope, AlertTriangle, ShieldCheck, Clock, User, Heart, AlertCircle, Phone } from "lucide-react";
+import {
+  Stethoscope,
+  AlertTriangle,
+  ShieldCheck,
+  Clock,
+  User,
+  Heart,
+  AlertCircle,
+  Phone,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
 import type { HealthContext } from "@/integrations/supabase/health-vault";
@@ -19,7 +28,9 @@ function DoctorShareViewPage() {
   const { token } = Route.useParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<{ healthContext: HealthContext; expiresAt: string } | null>(null);
+  const [data, setData] = useState<{ healthContext: HealthContext; expiresAt: string } | null>(
+    null,
+  );
 
   useEffect(() => {
     async function fetchShare() {
@@ -73,9 +84,12 @@ function DoctorShareViewPage() {
             <CardTitle className="text-xl">Link Unavailable</CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <p className="text-muted-foreground">{error || "This link has expired, been revoked, or is invalid."}</p>
+            <p className="text-muted-foreground">
+              {error || "This link has expired, been revoked, or is invalid."}
+            </p>
             <div className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-              For security and patient privacy, shared health links have a limited lifespan and can be revoked by the patient at any time.
+              For security and patient privacy, shared health links have a limited lifespan and can
+              be revoked by the patient at any time.
             </div>
           </CardContent>
         </Card>
@@ -84,7 +98,15 @@ function DoctorShareViewPage() {
   }
 
   const { healthContext, expiresAt } = data;
-  const { profile, healthVault, allergies, medicalHistoryEvents, latestVitals, activeMedications, flaggedAbnormalities } = healthContext;
+  const {
+    profile,
+    healthVault,
+    allergies,
+    medicalHistoryEvents,
+    latestVitals,
+    activeMedications,
+    flaggedAbnormalities,
+  } = healthContext;
 
   return (
     <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
@@ -141,11 +163,15 @@ function DoctorShareViewPage() {
               </div>
               <div className="flex justify-between py-1 border-b">
                 <span className="text-muted-foreground">Age</span>
-                <span className="font-medium">{healthVault.age ? `${healthVault.age} yrs` : "Not specified"}</span>
+                <span className="font-medium">
+                  {healthVault.age ? `${healthVault.age} yrs` : "Not specified"}
+                </span>
               </div>
               <div className="flex justify-between py-1 border-b">
                 <span className="text-muted-foreground">Gender / Sex</span>
-                <span className="font-medium">{healthVault.gender || profile.sex || "Not specified"}</span>
+                <span className="font-medium">
+                  {healthVault.gender || profile.sex || "Not specified"}
+                </span>
               </div>
               <div className="flex justify-between py-1 border-b">
                 <span className="text-muted-foreground">Blood Type</span>
@@ -154,13 +180,20 @@ function DoctorShareViewPage() {
               <div className="flex justify-between py-1 border-b">
                 <span className="text-muted-foreground">Height / Weight</span>
                 <span className="font-medium">
-                  {[profile.height_cm ? `${profile.height_cm} cm` : null, healthVault.body_weight_kg ? `${healthVault.body_weight_kg} kg` : null].filter(Boolean).join(" / ") || "Not specified"}
+                  {[
+                    profile.height_cm ? `${profile.height_cm} cm` : null,
+                    healthVault.body_weight_kg ? `${healthVault.body_weight_kg} kg` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" / ") || "Not specified"}
                 </span>
               </div>
               {healthVault.is_pregnant !== null && (
                 <div className="flex justify-between py-1 border-b">
                   <span className="text-muted-foreground">Pregnancy Status</span>
-                  <span className="font-medium">{healthVault.is_pregnant ? "Pregnant" : "Not pregnant"}</span>
+                  <span className="font-medium">
+                    {healthVault.is_pregnant ? "Pregnant" : "Not pregnant"}
+                  </span>
                 </div>
               )}
             </CardContent>
@@ -177,16 +210,22 @@ function DoctorShareViewPage() {
             <CardContent className="space-y-2 text-sm">
               <div className="flex justify-between py-1 border-b">
                 <span className="text-muted-foreground">Smoking Status</span>
-                <span className="font-medium capitalize">{healthVault.smoking_status || "Not specified"}</span>
+                <span className="font-medium capitalize">
+                  {healthVault.smoking_status || "Not specified"}
+                </span>
               </div>
               <div className="flex justify-between py-1 border-b">
                 <span className="text-muted-foreground">Alcohol Use</span>
-                <span className="font-medium capitalize">{healthVault.alcohol_use || "Not specified"}</span>
+                <span className="font-medium capitalize">
+                  {healthVault.alcohol_use || "Not specified"}
+                </span>
               </div>
               <div className="flex justify-between py-1 border-b">
                 <span className="text-muted-foreground">Dietary Preference</span>
                 <span className="font-medium capitalize">
-                  {healthVault.dietary_preference === "other" ? healthVault.dietary_preference_other : healthVault.dietary_preference || "Not specified"}
+                  {healthVault.dietary_preference === "other"
+                    ? healthVault.dietary_preference_other
+                    : healthVault.dietary_preference || "Not specified"}
                 </span>
               </div>
               {healthVault.health_goals && healthVault.health_goals.length > 0 && (
@@ -194,7 +233,10 @@ function DoctorShareViewPage() {
                   <span className="text-muted-foreground block mb-1">Health Goals</span>
                   <div className="flex flex-wrap gap-1">
                     {healthVault.health_goals.map((g, i) => (
-                      <span key={i} className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium">
+                      <span
+                        key={i}
+                        className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium"
+                      >
                         {g.replace(/_/g, " ")}
                       </span>
                     ))}
@@ -213,15 +255,20 @@ function DoctorShareViewPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {(!allergies || allergies.length === 0) ? (
+              {!allergies || allergies.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No known allergies recorded.</p>
               ) : (
                 <div className="space-y-2">
                   {allergies.map((a, i) => (
-                    <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/50 text-sm">
+                    <div
+                      key={i}
+                      className="flex items-center justify-between p-2 rounded-lg bg-muted/50 text-sm"
+                    >
                       <div>
                         <span className="font-medium">{a.allergen}</span>
-                        {a.reaction && <span className="text-muted-foreground block text-xs">{a.reaction}</span>}
+                        {a.reaction && (
+                          <span className="text-muted-foreground block text-xs">{a.reaction}</span>
+                        )}
                       </div>
                       <StatusBadge tone={severityTone(a.severity)}>
                         {a.severity?.replace(/_/g, " ") || "unknown"}
@@ -242,17 +289,26 @@ function DoctorShareViewPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {(!activeMedications || activeMedications.length === 0) ? (
+              {!activeMedications || activeMedications.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No active medications recorded.</p>
               ) : (
                 <div className="space-y-2">
                   {activeMedications.map((m, i) => (
-                    <div key={i} className="p-2 rounded-lg bg-muted/50 text-sm flex justify-between items-center">
+                    <div
+                      key={i}
+                      className="p-2 rounded-lg bg-muted/50 text-sm flex justify-between items-center"
+                    >
                       <div>
                         <span className="font-medium">{m.name}</span>
-                        {m.dose && <span className="text-muted-foreground text-xs ml-2">({m.dose})</span>}
+                        {m.dose && (
+                          <span className="text-muted-foreground text-xs ml-2">({m.dose})</span>
+                        )}
                       </div>
-                      {m.frequency && <span className="text-xs bg-background px-2 py-1 rounded border">{m.frequency}</span>}
+                      {m.frequency && (
+                        <span className="text-xs bg-background px-2 py-1 rounded border">
+                          {m.frequency}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -267,37 +323,52 @@ function DoctorShareViewPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
               <div>
-                <span className="text-muted-foreground block font-medium mb-1">Chronic Conditions</span>
-                {(!healthVault.chronic_conditions || healthVault.chronic_conditions.length === 0) ? (
+                <span className="text-muted-foreground block font-medium mb-1">
+                  Chronic Conditions
+                </span>
+                {!healthVault.chronic_conditions || healthVault.chronic_conditions.length === 0 ? (
                   <p className="text-xs text-muted-foreground">None recorded</p>
                 ) : (
                   <div className="flex flex-wrap gap-1">
                     {healthVault.chronic_conditions.map((c, i) => (
-                      <span key={i} className="rounded-md bg-primary/10 text-primary px-2 py-1 text-xs font-medium">{c}</span>
+                      <span
+                        key={i}
+                        className="rounded-md bg-primary/10 text-primary px-2 py-1 text-xs font-medium"
+                      >
+                        {c}
+                      </span>
                     ))}
                   </div>
                 )}
               </div>
               <div>
                 <span className="text-muted-foreground block font-medium mb-1">Past Illnesses</span>
-                {(!healthVault.past_illnesses || healthVault.past_illnesses.length === 0) ? (
+                {!healthVault.past_illnesses || healthVault.past_illnesses.length === 0 ? (
                   <p className="text-xs text-muted-foreground">None recorded</p>
                 ) : (
                   <div className="flex flex-wrap gap-1">
                     {healthVault.past_illnesses.map((p, i) => (
-                      <span key={i} className="rounded-md bg-muted px-2 py-1 text-xs font-medium">{p}</span>
+                      <span key={i} className="rounded-md bg-muted px-2 py-1 text-xs font-medium">
+                        {p}
+                      </span>
                     ))}
                   </div>
                 )}
               </div>
               {medicalHistoryEvents && medicalHistoryEvents.length > 0 && (
                 <div>
-                  <span className="text-muted-foreground block font-medium mb-1">Surgeries & Procedures</span>
+                  <span className="text-muted-foreground block font-medium mb-1">
+                    Surgeries & Procedures
+                  </span>
                   <div className="space-y-1">
                     {medicalHistoryEvents.map((e, i) => (
                       <div key={i} className="text-xs bg-muted/50 p-2 rounded flex justify-between">
-                        <span>{e.description} ({e.event_type})</span>
-                        {e.event_date && <span className="text-muted-foreground">{e.event_date}</span>}
+                        <span>
+                          {e.description} ({e.event_type})
+                        </span>
+                        {e.event_date && (
+                          <span className="text-muted-foreground">{e.event_date}</span>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -312,17 +383,24 @@ function DoctorShareViewPage() {
               <CardTitle className="text-base">Latest Vitals</CardTitle>
             </CardHeader>
             <CardContent>
-              {(!latestVitals || latestVitals.length === 0) ? (
+              {!latestVitals || latestVitals.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No recent vitals recorded.</p>
               ) : (
                 <div className="space-y-2">
                   {latestVitals.map((v, i) => (
-                    <div key={i} className="flex justify-between items-center p-2 rounded-lg bg-muted/50 text-sm">
+                    <div
+                      key={i}
+                      className="flex justify-between items-center p-2 rounded-lg bg-muted/50 text-sm"
+                    >
                       <span className="capitalize font-medium">{v.kind.replace(/_/g, " ")}</span>
                       <div className="text-right">
                         <span className="font-bold">{v.value}</span>
-                        {v.unit && <span className="text-muted-foreground text-xs ml-1">{v.unit}</span>}
-                        <span className="text-muted-foreground text-xs block">{new Date(v.taken_at).toLocaleDateString()}</span>
+                        {v.unit && (
+                          <span className="text-muted-foreground text-xs ml-1">{v.unit}</span>
+                        )}
+                        <span className="text-muted-foreground text-xs block">
+                          {new Date(v.taken_at).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -343,11 +421,16 @@ function DoctorShareViewPage() {
             </CardHeader>
             <CardContent className="flex items-center justify-between text-sm">
               <div>
-                <span className="font-medium block">{healthVault.emergency_contact_name || "Not specified"}</span>
+                <span className="font-medium block">
+                  {healthVault.emergency_contact_name || "Not specified"}
+                </span>
                 <span className="text-muted-foreground text-xs">Emergency Contact</span>
               </div>
               {healthVault.emergency_contact_phone && (
-                <a href={`tel:${healthVault.emergency_contact_phone}`} className="font-semibold text-primary hover:underline">
+                <a
+                  href={`tel:${healthVault.emergency_contact_phone}`}
+                  className="font-semibold text-primary hover:underline"
+                >
                   {healthVault.emergency_contact_phone}
                 </a>
               )}

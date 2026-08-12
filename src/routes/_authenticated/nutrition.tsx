@@ -12,7 +12,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { InfoBanner } from "@/components/ui/info-banner";
 
 export const Route = createFileRoute("/_authenticated/nutrition")({
-  head: () => ({ meta: [{ title: "Nutrition — SomaCare" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "Nutrition — SomaCare" }, { name: "robots", content: "noindex" }],
+  }),
   component: Nutrition,
 });
 
@@ -65,7 +67,9 @@ function Nutrition() {
 
   const generatePlanMutation = useMutation({
     mutationFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
       const response = await fetch("/api/nutrition", {
@@ -115,25 +119,46 @@ function Nutrition() {
       title={t("nutrition.title", "Nutrition")}
       subtitle={t("nutrition.subtitle", "Your personalized meal plan")}
       action={
-        <Button onClick={generatePlan} disabled={generating} className="soma-gradient soma-glow border-0 text-white">
-          {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-          {generating ? t("nutrition.generating", "Generating...") : t("nutrition.regenerate", "Regenerate Plan")}
+        <Button
+          onClick={generatePlan}
+          disabled={generating}
+          className="soma-gradient soma-glow border-0 text-white"
+        >
+          {generating ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="mr-2 h-4 w-4" />
+          )}
+          {generating
+            ? t("nutrition.generating", "Generating...")
+            : t("nutrition.regenerate", "Regenerate Plan")}
         </Button>
       }
     >
       <div className="space-y-6">
         {/* Disclaimer */}
         <InfoBanner tone="warning">
-          <strong>{t("nutrition.medicationTiming", "Medication Timing")}:</strong> {t("nutrition.disclaimer", "The timing suggestions below are general guidelines only. Always follow your pharmacist or doctor's specific instructions for taking medications.")}
+          <strong>{t("nutrition.medicationTiming", "Medication Timing")}:</strong>{" "}
+          {t(
+            "nutrition.disclaimer",
+            "The timing suggestions below are general guidelines only. Always follow your pharmacist or doctor's specific instructions for taking medications.",
+          )}
         </InfoBanner>
 
         {!currentPlan.data && !currentPlan.isLoading ? (
-          <EmptyState 
+          <EmptyState
             icon={Utensils}
             title={t("nutrition.noPlan", "No nutrition plan yet")}
-            body={t("nutrition.noPlanBody", "Generate a personalized meal plan based on your health profile and goals.")}
+            body={t(
+              "nutrition.noPlanBody",
+              "Generate a personalized meal plan based on your health profile and goals.",
+            )}
             action={
-              <Button onClick={generatePlan} disabled={generating} className="soma-gradient soma-glow border-0 text-white">
+              <Button
+                onClick={generatePlan}
+                disabled={generating}
+                className="soma-gradient soma-glow border-0 text-white"
+              >
                 {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {t("nutrition.generate", "Generate My Plan")}
               </Button>
@@ -158,8 +183,13 @@ function Nutrition() {
                     <CardDescription>{currentPlan.data.plan_data.breakfast.time}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="font-medium">{currentPlan.data.plan_data.breakfast.description}</p>
-                    <p className="text-sm text-muted-foreground mt-1">{currentPlan.data.plan_data.breakfast.calories} {t("nutrition.calories", "cal")}</p>
+                    <p className="font-medium">
+                      {currentPlan.data.plan_data.breakfast.description}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {currentPlan.data.plan_data.breakfast.calories}{" "}
+                      {t("nutrition.calories", "cal")}
+                    </p>
                   </CardContent>
                 </Card>
               )}
@@ -175,7 +205,9 @@ function Nutrition() {
                   </CardHeader>
                   <CardContent>
                     <p className="font-medium">{currentPlan.data.plan_data.lunch.description}</p>
-                    <p className="text-sm text-muted-foreground mt-1">{currentPlan.data.plan_data.lunch.calories} {t("nutrition.calories", "cal")}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {currentPlan.data.plan_data.lunch.calories} {t("nutrition.calories", "cal")}
+                    </p>
                   </CardContent>
                 </Card>
               )}
@@ -191,7 +223,9 @@ function Nutrition() {
                   </CardHeader>
                   <CardContent>
                     <p className="font-medium">{currentPlan.data.plan_data.dinner.description}</p>
-                    <p className="text-sm text-muted-foreground mt-1">{currentPlan.data.plan_data.dinner.calories} {t("nutrition.calories", "cal")}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {currentPlan.data.plan_data.dinner.calories} {t("nutrition.calories", "cal")}
+                    </p>
                   </CardContent>
                 </Card>
               )}
@@ -206,46 +240,57 @@ function Nutrition() {
                 <CardContent>
                   <p className="text-2xl font-bold">{totalCalories}</p>
                   <p className="text-sm text-muted-foreground">{t("nutrition.calories", "cal")}</p>
-                  {currentPlan.data.plan_data.snacks && currentPlan.data.plan_data.snacks.length > 0 && (
-                    <div className="mt-3 pt-3 border-t">
-                      <p className="text-xs font-medium mb-1">{t("nutrition.snacks", "Snacks:")}</p>
-                      {currentPlan.data.plan_data.snacks.map((s, i) => (
-                        <p key={i} className="text-xs text-muted-foreground">
-                          {s.time}: {s.description}
+                  {currentPlan.data.plan_data.snacks &&
+                    currentPlan.data.plan_data.snacks.length > 0 && (
+                      <div className="mt-3 pt-3 border-t">
+                        <p className="text-xs font-medium mb-1">
+                          {t("nutrition.snacks", "Snacks:")}
                         </p>
-                      ))}
-                    </div>
-                  )}
+                        {currentPlan.data.plan_data.snacks.map((s, i) => (
+                          <p key={i} className="text-xs text-muted-foreground">
+                            {s.time}: {s.description}
+                          </p>
+                        ))}
+                      </div>
+                    )}
                 </CardContent>
               </Card>
             </div>
 
             {/* Medication Timing */}
-            {currentPlan.data.plan_data.medication_timing && currentPlan.data.plan_data.medication_timing.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    {t("nutrition.medicationTiming", "Medication Timing")}
-                  </CardTitle>
-                  <CardDescription>{t("nutrition.medicationDisclaimer", "General guidance - follow your doctor's instructions")}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {currentPlan.data.plan_data.medication_timing.map((med, i) => (
-                      <div key={i} className="flex items-start gap-3 rounded-lg bg-muted/50 p-3">
-                        <Clock className="h-4 w-4 mt-0.5 text-primary" />
-                        <div>
-                          <p className="font-medium">{med.medication}</p>
-                          <p className="text-sm text-muted-foreground">{med.timing}</p>
-                          {med.reason && <p className="text-xs text-muted-foreground mt-1">{med.reason}</p>}
+            {currentPlan.data.plan_data.medication_timing &&
+              currentPlan.data.plan_data.medication_timing.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-5 w-5" />
+                      {t("nutrition.medicationTiming", "Medication Timing")}
+                    </CardTitle>
+                    <CardDescription>
+                      {t(
+                        "nutrition.medicationDisclaimer",
+                        "General guidance - follow your doctor's instructions",
+                      )}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {currentPlan.data.plan_data.medication_timing.map((med, i) => (
+                        <div key={i} className="flex items-start gap-3 rounded-lg bg-muted/50 p-3">
+                          <Clock className="h-4 w-4 mt-0.5 text-primary" />
+                          <div>
+                            <p className="font-medium">{med.medication}</p>
+                            <p className="text-sm text-muted-foreground">{med.timing}</p>
+                            {med.reason && (
+                              <p className="text-xs text-muted-foreground mt-1">{med.reason}</p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
             {/* Notes */}
             {currentPlan.data.plan_data.notes && (
@@ -263,15 +308,20 @@ function Nutrition() {
             {planHistory.data && planHistory.data.length > 1 && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm">{t("nutrition.previousPlans", "Previous Plans")}</CardTitle>
+                  <CardTitle className="text-sm">
+                    {t("nutrition.previousPlans", "Previous Plans")}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
                     {planHistory.data.slice(1, 6).map((plan) => {
                       const date = new Date(plan.generated_at);
-                      const dateString = `${format(date, "MMM d, yyyy")} ${t('nutrition.at', 'at')} ${format(date, "h:mm a")}`;
+                      const dateString = `${format(date, "MMM d, yyyy")} ${t("nutrition.at", "at")} ${format(date, "h:mm a")}`;
                       return (
-                        <div key={plan.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-3 text-sm">
+                        <div
+                          key={plan.id}
+                          className="flex items-center justify-between rounded-lg bg-muted/50 p-3 text-sm"
+                        >
                           <span className="text-muted-foreground">{dateString}</span>
                         </div>
                       );

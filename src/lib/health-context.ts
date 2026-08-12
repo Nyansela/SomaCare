@@ -11,13 +11,13 @@ export async function getHealthContext(
   supabaseUrl: string,
   supabaseKey: string,
   userId: string,
-  isAdmin: boolean = false
+  isAdmin: boolean = false,
 ): Promise<HealthContext> {
   const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
-    }
+    },
   });
 
   // Parallel fetch all data sources
@@ -35,30 +35,28 @@ export async function getHealthContext(
   ] = await Promise.all([
     supabase
       .from("profiles")
-      .select("display_name, date_of_birth, sex, blood_type, height_cm, allergies, chronic_conditions, emergency_contacts")
+      .select(
+        "display_name, date_of_birth, sex, blood_type, height_cm, allergies, chronic_conditions, emergency_contacts",
+      )
       .eq("id", userId)
       .maybeSingle(),
-    
-    supabase
-      .from("health_vault")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle(),
-    
+
+    supabase.from("health_vault").select("*").eq("user_id", userId).maybeSingle(),
+
     supabase
       .from("vitals")
       .select("kind, value, unit, taken_at")
       .eq("user_id", userId)
       .order("taken_at", { ascending: false })
       .limit(20),
-    
+
     supabase
       .from("medications")
       .select("name, dose, frequency")
       .eq("user_id", userId)
       .eq("active", true)
       .limit(20),
-    
+
     supabase
       .from("appointments")
       .select("provider_name, specialty, starts_at, status")
@@ -108,7 +106,10 @@ export async function getHealthContext(
   ]);
 
   // Process vitals into grouped latest values
-  const latestVitalsMap = new Map<string, { kind: string; value: number; unit: string | null; taken_at: string }>();
+  const latestVitalsMap = new Map<
+    string,
+    { kind: string; value: number; unit: string | null; taken_at: string }
+  >();
   vitals?.forEach((v) => {
     if (!latestVitalsMap.has(v.kind)) {
       latestVitalsMap.set(v.kind, {
@@ -122,13 +123,13 @@ export async function getHealthContext(
 
   // Check for abnormalities in vitals using the shared function
   const flaggedAbnormalities = detectVitalAbnormalities(
-    (vitals || []).map(v => ({
+    (vitals || []).map((v) => ({
       kind: v.kind,
       value: v.value,
       unit: v.unit,
       taken_at: v.taken_at,
-    }))
-  ).map(ab => ab.message);
+    })),
+  ).map((ab) => ab.message);
 
   // Build the context object
   const context: HealthContext = {
@@ -140,9 +141,9 @@ export async function getHealthContext(
       height_cm: profile?.height_cm ?? null,
       allergies: profile?.allergies ?? null,
       chronic_conditions: profile?.chronic_conditions ?? null,
-      emergency_contacts: profile?.emergency_contacts ?? null,
+      emergency_contacts: (profile?.emergency_contacts as unknown[] | null) ?? null,
     },
-    
+
     healthVault: {
       age: healthVault?.age ?? null,
       body_weight_kg: healthVault?.body_weight_kg ?? null,
@@ -153,6 +154,8 @@ export async function getHealthContext(
       hereditary_diseases: healthVault?.hereditary_diseases ?? null,
       emergency_contact_name: healthVault?.emergency_contact_name ?? null,
       emergency_contact_phone: healthVault?.emergency_contact_phone ?? null,
+      allergies: healthVault?.allergies ?? null,
+      chronic_conditions: healthVault?.chronic_conditions ?? null,
       smoking_status: healthVault?.smoking_status ?? null,
       alcohol_use: healthVault?.alcohol_use ?? null,
       dietary_preference: healthVault?.dietary_preference ?? null,
@@ -160,14 +163,14 @@ export async function getHealthContext(
       health_goals: healthVault?.health_goals ?? null,
       is_pregnant: healthVault?.is_pregnant ?? null,
     },
-    
+
     // Structured allergies with severity
     allergies: (allergies ?? []).map((a) => ({
       allergen: a.allergen,
       reaction: a.reaction,
       severity: a.severity,
     })),
-    
+
     // Medical history events
     medicalHistoryEvents: (medicalHistory ?? []).map((e) => ({
       event_type: e.event_type,
@@ -175,20 +178,26 @@ export async function getHealthContext(
       related_person: e.related_person,
       event_date: e.event_date,
     })),
-    
+
     latestVitals: Array.from(latestVitalsMap.values()),
-    
+
     activeMedications: (medications ?? []).map((m) => ({
       name: m.name,
       dose: m.dose,
       frequency: m.frequency,
     })),
-    
+
     flaggedAbnormalities,
 
     // Process sleep data
     sleepLogs: (() => {
-      const logs: Array<{ logged_date: string; bedtime: string; wake_time: string; hours_slept: number; quality_rating: number | null }> = [];
+      const logs: Array<{
+        logged_date: string;
+        bedtime: string;
+        wake_time: string;
+        hours_slept: number;
+        quality_rating: number | null;
+      }> = [];
       sleepLogs?.forEach((log) => {
         const bedtime = new Date(log.bedtime);
         const wakeTime = new Date(log.wake_time);
@@ -205,31 +214,39 @@ export async function getHealthContext(
       return logs;
     })(),
 
-    sleepSummary: sleepLogs && sleepLogs.length > 0 ? {
-      avgHoursPerNight: sleepLogs.reduce((sum, log) => {
-        const bedtime = new Date(log.bedtime);
-        const wakeTime = new Date(log.wake_time);
-        let hours = (wakeTime.getTime() - bedtime.getTime()) / (1000 * 60 * 60);
-        if (hours < 0) hours += 24;
-        return sum + hours;
-      }, 0) / sleepLogs.length,
-      avgQuality: sleepLogs.filter(l => l.quality_rating).length > 0
-        ? sleepLogs.filter(l => l.quality_rating).reduce((sum, l) => sum + (l.quality_rating || 0), 0) / sleepLogs.filter(l => l.quality_rating).length
+    sleepSummary:
+      sleepLogs && sleepLogs.length > 0
+        ? {
+            avgHoursPerNight:
+              sleepLogs.reduce((sum, log) => {
+                const bedtime = new Date(log.bedtime);
+                const wakeTime = new Date(log.wake_time);
+                let hours = (wakeTime.getTime() - bedtime.getTime()) / (1000 * 60 * 60);
+                if (hours < 0) hours += 24;
+                return sum + hours;
+              }, 0) / sleepLogs.length,
+            avgQuality:
+              sleepLogs.filter((l) => l.quality_rating).length > 0
+                ? sleepLogs
+                    .filter((l) => l.quality_rating)
+                    .reduce((sum, l) => sum + (l.quality_rating || 0), 0) /
+                  sleepLogs.filter((l) => l.quality_rating).length
+                : null,
+            totalLogs: sleepLogs.length,
+            lastLoggedDate: sleepLogs[0]?.logged_date || null,
+          }
         : null,
-      totalLogs: sleepLogs.length,
-      lastLoggedDate: sleepLogs[0]?.logged_date || null,
-    } : null,
 
     // Hydration summary
     hydrationSummary: (() => {
       const today = new Date().toISOString().split("T")[0];
-      const todayLogs = hydrationLogs?.filter(log => log.logged_at.split("T")[0] === today) || [];
+      const todayLogs = hydrationLogs?.filter((log) => log.logged_at.split("T")[0] === today) || [];
       const todayTotal = todayLogs.reduce((sum, log) => sum + log.amount_ml, 0);
-      
+
       // Calculate goal: 35ml per kg, fallback to 2500ml
       const weightKg = healthVault?.body_weight_kg;
       const goalMl = weightKg ? Math.round(weightKg * 35) : 2500;
-      
+
       return {
         todayTotalMl: todayTotal,
         dailyGoalMl: goalMl,
@@ -243,7 +260,7 @@ export async function getHealthContext(
       const weekMinutes = fitnessLogs?.reduce((sum, log) => sum + log.duration_minutes, 0) || 0;
       const weekWorkouts = fitnessLogs?.length || 0;
       const lastWorkoutDate = fitnessLogs?.[0]?.logged_date || null;
-      
+
       return {
         weekMinutes,
         weekWorkouts,
@@ -260,7 +277,7 @@ export async function getHealthContext(
  */
 export function formatHealthContextForAI(context: HealthContext): string {
   const parts: string[] = [];
-  
+
   // === DEMOGRAPHICS ===
   parts.push("═══ PATIENT DEMOGRAPHICS ═══");
   if (context.profile.display_name) {
@@ -285,9 +302,11 @@ export function formatHealthContextForAI(context: HealthContext): string {
     parts.push(`Weight: ${context.healthVault.body_weight_kg} kg`);
   }
   if (context.healthVault.city || context.healthVault.country) {
-    parts.push(`Location: ${[context.healthVault.city, context.healthVault.country].filter(Boolean).join(", ")}`);
+    parts.push(
+      `Location: ${[context.healthVault.city, context.healthVault.country].filter(Boolean).join(", ")}`,
+    );
   }
-  
+
   // === LIFESTYLE ===
   parts.push("\n═══ LIFESTYLE ═══");
   if (context.healthVault.smoking_status) {
@@ -297,15 +316,16 @@ export function formatHealthContextForAI(context: HealthContext): string {
     parts.push(`Alcohol: ${context.healthVault.alcohol_use}`);
   }
   if (context.healthVault.dietary_preference) {
-    const diet = context.healthVault.dietary_preference === "other" 
-      ? context.healthVault.dietary_preference_other || "other"
-      : context.healthVault.dietary_preference;
+    const diet =
+      context.healthVault.dietary_preference === "other"
+        ? context.healthVault.dietary_preference_other || "other"
+        : context.healthVault.dietary_preference;
     parts.push(`Diet: ${diet}`);
   }
   if (context.healthVault.health_goals && context.healthVault.health_goals.length > 0) {
     parts.push(`Health Goals: ${context.healthVault.health_goals.join(", ")}`);
   }
-  
+
   // === ALLERGIES (with severity) ===
   if (context.allergies.length > 0) {
     parts.push("\n═══ ALLERGIES ═══");
@@ -315,7 +335,7 @@ export function formatHealthContextForAI(context: HealthContext): string {
       parts.push(`• ${a.allergen}${severity}${reaction}`);
     });
   }
-  
+
   // === MEDICAL HISTORY ===
   if (context.healthVault.past_illnesses && context.healthVault.past_illnesses.length > 0) {
     parts.push("\n═══ PAST ILLNESSES ═══");
@@ -323,16 +343,18 @@ export function formatHealthContextForAI(context: HealthContext): string {
       parts.push(`• ${illness}`);
     });
   }
-  
+
   if (context.healthVault.chronic_conditions && context.healthVault.chronic_conditions.length > 0) {
     parts.push("\n═══ CHRONIC CONDITIONS ═══");
     context.healthVault.chronic_conditions.forEach((condition) => {
       parts.push(`• ${condition}`);
     });
   }
-  
+
   // === FAMILY HISTORY (from medical history events) ===
-  const familyHistory = context.medicalHistoryEvents.filter(e => e.event_type === "family_history");
+  const familyHistory = context.medicalHistoryEvents.filter(
+    (e) => e.event_type === "family_history",
+  );
   if (familyHistory.length > 0) {
     parts.push("\n═══ FAMILY MEDICAL HISTORY ═══");
     familyHistory.forEach((e) => {
@@ -340,9 +362,9 @@ export function formatHealthContextForAI(context: HealthContext): string {
       parts.push(`• ${e.description}${person}`);
     });
   }
-  
+
   // === SURGERIES & PROCEDURES ===
-  const surgeries = context.medicalHistoryEvents.filter(e => e.event_type === "surgery");
+  const surgeries = context.medicalHistoryEvents.filter((e) => e.event_type === "surgery");
   if (surgeries.length > 0) {
     parts.push("\n═══ SURGERIES / PROCEDURES ═══");
     surgeries.forEach((e) => {
@@ -350,9 +372,9 @@ export function formatHealthContextForAI(context: HealthContext): string {
       parts.push(`• ${e.description}${date}`);
     });
   }
-  
+
   // === IMMUNIZATIONS ===
-  const immunizations = context.medicalHistoryEvents.filter(e => e.event_type === "immunization");
+  const immunizations = context.medicalHistoryEvents.filter((e) => e.event_type === "immunization");
   if (immunizations.length > 0) {
     parts.push("\n═══ IMMUNIZATIONS ═══");
     immunizations.forEach((e) => {
@@ -360,7 +382,7 @@ export function formatHealthContextForAI(context: HealthContext): string {
       parts.push(`• ${e.description}${date}`);
     });
   }
-  
+
   // === CURRENT MEDICATIONS ===
   if (context.activeMedications.length > 0) {
     parts.push("\n═══ CURRENT MEDICATIONS ═══");
@@ -370,7 +392,7 @@ export function formatHealthContextForAI(context: HealthContext): string {
       parts.push(`• ${med.name}${dose}${freq}`);
     });
   }
-  
+
   // === LATEST VITALS ===
   if (context.latestVitals.length > 0) {
     parts.push("\n═══ LATEST VITALS ═══");
@@ -380,7 +402,7 @@ export function formatHealthContextForAI(context: HealthContext): string {
       parts.push(`• ${v.kind}: ${v.value}${unit} (${date})`);
     });
   }
-  
+
   // === SLEEP ===
   if (context.sleepSummary && context.sleepSummary.totalLogs > 0) {
     parts.push("\n═══ SLEEP PATTERNS ═══");
@@ -397,13 +419,17 @@ export function formatHealthContextForAI(context: HealthContext): string {
   // === HYDRATION ===
   if (context.hydrationSummary) {
     parts.push("\n═══ HYDRATION TODAY ═══");
-    parts.push(`Intake: ${context.hydrationSummary.todayTotalMl}ml / ${context.hydrationSummary.dailyGoalMl}ml (${context.hydrationSummary.progressPercent}%)`);
+    parts.push(
+      `Intake: ${context.hydrationSummary.todayTotalMl}ml / ${context.hydrationSummary.dailyGoalMl}ml (${context.hydrationSummary.progressPercent}%)`,
+    );
   }
 
   // === FITNESS ACTIVITY ===
   if (context.fitnessSummary && context.fitnessSummary.weekWorkouts > 0) {
     parts.push("\n═══ FITNESS THIS WEEK ═══");
-    parts.push(`Total: ${context.fitnessSummary.weekMinutes} minutes, ${context.fitnessSummary.weekWorkouts} workouts`);
+    parts.push(
+      `Total: ${context.fitnessSummary.weekMinutes} minutes, ${context.fitnessSummary.weekWorkouts} workouts`,
+    );
     if (context.fitnessSummary.lastWorkoutDate) {
       parts.push(`Last workout: ${context.fitnessSummary.lastWorkoutDate}`);
     }
@@ -416,7 +442,7 @@ export function formatHealthContextForAI(context: HealthContext): string {
       parts.push(`⚠️ ${a}`);
     });
   }
-  
+
   // === EMERGENCY CONTACT ===
   if (context.healthVault.emergency_contact_name || context.healthVault.emergency_contact_phone) {
     parts.push("\n═══ EMERGENCY CONTACT ═══");
@@ -427,7 +453,7 @@ export function formatHealthContextForAI(context: HealthContext): string {
       parts.push(`Phone: ${context.healthVault.emergency_contact_phone}`);
     }
   }
-  
+
   return parts.join("\n");
 }
 
@@ -436,43 +462,49 @@ export function formatHealthContextForAI(context: HealthContext): string {
  */
 export function generateDoctorSummary(context: HealthContext): string {
   const lines: string[] = [];
-  
+
   lines.push("═══════════════════════════════════════════════════");
   lines.push("           HEALTH PROFILE SUMMARY");
   lines.push("═══════════════════════════════════════════════════");
   lines.push("");
-  
+
   // Demographics
   lines.push("▸ PERSONAL INFORMATION");
   lines.push("─────────────────────────────────────────────────");
   if (context.profile.display_name) lines.push(`Name: ${context.profile.display_name}`);
   if (context.healthVault.age) lines.push(`Age: ${context.healthVault.age} years`);
   if (context.healthVault.gender) lines.push(`Gender: ${context.healthVault.gender}`);
-  if (context.healthVault.is_pregnant !== null) lines.push(`Pregnant: ${context.healthVault.is_pregnant ? "Yes" : "No"}`);
+  if (context.healthVault.is_pregnant !== null)
+    lines.push(`Pregnant: ${context.healthVault.is_pregnant ? "Yes" : "No"}`);
   if (context.profile.blood_type) lines.push(`Blood Type: ${context.profile.blood_type}`);
   if (context.profile.height_cm) lines.push(`Height: ${context.profile.height_cm} cm`);
-  if (context.healthVault.body_weight_kg) lines.push(`Weight: ${context.healthVault.body_weight_kg} kg`);
+  if (context.healthVault.body_weight_kg)
+    lines.push(`Weight: ${context.healthVault.body_weight_kg} kg`);
   if (context.healthVault.city || context.healthVault.country) {
-    lines.push(`Location: ${[context.healthVault.city, context.healthVault.country].filter(Boolean).join(", ")}`);
+    lines.push(
+      `Location: ${[context.healthVault.city, context.healthVault.country].filter(Boolean).join(", ")}`,
+    );
   }
   lines.push("");
-  
+
   // Lifestyle
   lines.push("▸ LIFESTYLE");
   lines.push("─────────────────────────────────────────────────");
-  if (context.healthVault.smoking_status) lines.push(`Smoking: ${context.healthVault.smoking_status}`);
+  if (context.healthVault.smoking_status)
+    lines.push(`Smoking: ${context.healthVault.smoking_status}`);
   if (context.healthVault.alcohol_use) lines.push(`Alcohol: ${context.healthVault.alcohol_use}`);
   if (context.healthVault.dietary_preference) {
-    const diet = context.healthVault.dietary_preference === "other" 
-      ? context.healthVault.dietary_preference_other || "other"
-      : context.healthVault.dietary_preference;
+    const diet =
+      context.healthVault.dietary_preference === "other"
+        ? context.healthVault.dietary_preference_other || "other"
+        : context.healthVault.dietary_preference;
     lines.push(`Diet: ${diet}`);
   }
   if (context.healthVault.health_goals && context.healthVault.health_goals.length > 0) {
     lines.push(`Goals: ${context.healthVault.health_goals.join(", ")}`);
   }
   lines.push("");
-  
+
   // Allergies
   if (context.allergies.length > 0) {
     lines.push("▸ ALLERGIES");
@@ -484,7 +516,7 @@ export function generateDoctorSummary(context: HealthContext): string {
     });
     lines.push("");
   }
-  
+
   // Medical History
   if (context.healthVault.past_illnesses && context.healthVault.past_illnesses.length > 0) {
     lines.push("▸ PAST ILLNESSES");
@@ -492,16 +524,16 @@ export function generateDoctorSummary(context: HealthContext): string {
     context.healthVault.past_illnesses.forEach((illness) => lines.push(`• ${illness}`));
     lines.push("");
   }
-  
+
   if (context.healthVault.chronic_conditions && context.healthVault.chronic_conditions.length > 0) {
     lines.push("▸ CHRONIC CONDITIONS");
     lines.push("─────────────────────────────────────────────────");
     context.healthVault.chronic_conditions.forEach((condition) => lines.push(`• ${condition}`));
     lines.push("");
   }
-  
+
   // Surgeries
-  const surgeries = context.medicalHistoryEvents.filter(e => e.event_type === "surgery");
+  const surgeries = context.medicalHistoryEvents.filter((e) => e.event_type === "surgery");
   if (surgeries.length > 0) {
     lines.push("▸ SURGERIES / PROCEDURES");
     lines.push("─────────────────────────────────────────────────");
@@ -511,9 +543,9 @@ export function generateDoctorSummary(context: HealthContext): string {
     });
     lines.push("");
   }
-  
+
   // Immunizations
-  const immunizations = context.medicalHistoryEvents.filter(e => e.event_type === "immunization");
+  const immunizations = context.medicalHistoryEvents.filter((e) => e.event_type === "immunization");
   if (immunizations.length > 0) {
     lines.push("▸ IMMUNIZATIONS");
     lines.push("─────────────────────────────────────────────────");
@@ -523,9 +555,11 @@ export function generateDoctorSummary(context: HealthContext): string {
     });
     lines.push("");
   }
-  
+
   // Family History
-  const familyHistory = context.medicalHistoryEvents.filter(e => e.event_type === "family_history");
+  const familyHistory = context.medicalHistoryEvents.filter(
+    (e) => e.event_type === "family_history",
+  );
   if (familyHistory.length > 0) {
     lines.push("▸ FAMILY MEDICAL HISTORY");
     lines.push("─────────────────────────────────────────────────");
@@ -535,7 +569,7 @@ export function generateDoctorSummary(context: HealthContext): string {
     });
     lines.push("");
   }
-  
+
   // Current medications
   if (context.activeMedications.length > 0) {
     lines.push("▸ CURRENT MEDICATIONS");
@@ -547,7 +581,7 @@ export function generateDoctorSummary(context: HealthContext): string {
     });
     lines.push("");
   }
-  
+
   // Latest vitals
   if (context.latestVitals.length > 0) {
     lines.push("▸ LATEST VITALS");
@@ -559,7 +593,7 @@ export function generateDoctorSummary(context: HealthContext): string {
     });
     lines.push("");
   }
-  
+
   // Abnormalities
   if (context.flaggedAbnormalities.length > 0) {
     lines.push("▸ FLAGGED HEALTH CONCERNS");
@@ -584,7 +618,9 @@ export function generateDoctorSummary(context: HealthContext): string {
   if (context.hydrationSummary) {
     lines.push("▸ HYDRATION TODAY");
     lines.push("─────────────────────────────────────────────────");
-    lines.push(`Intake: ${context.hydrationSummary.todayTotalMl}ml / ${context.hydrationSummary.dailyGoalMl}ml (${context.hydrationSummary.progressPercent}%)`);
+    lines.push(
+      `Intake: ${context.hydrationSummary.todayTotalMl}ml / ${context.hydrationSummary.dailyGoalMl}ml (${context.hydrationSummary.progressPercent}%)`,
+    );
     lines.push("");
   }
 
@@ -592,25 +628,29 @@ export function generateDoctorSummary(context: HealthContext): string {
   if (context.fitnessSummary && context.fitnessSummary.weekWorkouts > 0) {
     lines.push("▸ FITNESS THIS WEEK");
     lines.push("─────────────────────────────────────────────────");
-    lines.push(`Total: ${context.fitnessSummary.weekMinutes} minutes, ${context.fitnessSummary.weekWorkouts} workouts`);
+    lines.push(
+      `Total: ${context.fitnessSummary.weekMinutes} minutes, ${context.fitnessSummary.weekWorkouts} workouts`,
+    );
     if (context.fitnessSummary.lastWorkoutDate) {
       lines.push(`Last workout: ${context.fitnessSummary.lastWorkoutDate}`);
     }
     lines.push("");
   }
-  
+
   // Emergency contact
   if (context.healthVault.emergency_contact_name || context.healthVault.emergency_contact_phone) {
     lines.push("▸ EMERGENCY CONTACT");
     lines.push("─────────────────────────────────────────────────");
-    if (context.healthVault.emergency_contact_name) lines.push(`Name: ${context.healthVault.emergency_contact_name}`);
-    if (context.healthVault.emergency_contact_phone) lines.push(`Phone: ${context.healthVault.emergency_contact_phone}`);
+    if (context.healthVault.emergency_contact_name)
+      lines.push(`Name: ${context.healthVault.emergency_contact_name}`);
+    if (context.healthVault.emergency_contact_phone)
+      lines.push(`Phone: ${context.healthVault.emergency_contact_phone}`);
     lines.push("");
   }
-  
+
   lines.push("═══════════════════════════════════════════════════");
   lines.push("Generated by SomaCare");
   lines.push(`Date: ${new Date().toLocaleDateString()}`);
-  
+
   return lines.join("\n");
 }

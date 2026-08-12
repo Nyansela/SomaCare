@@ -27,7 +27,7 @@ export function GooeyNav({ items, logo, cta }: GooeyNavProps) {
     const updatePosition = () => {
       const nav = navRef.current;
       if (!nav) return;
-      
+
       const activeItem = nav.querySelector(`[data-index="${activeIndex}"]`) as HTMLElement;
       if (activeItem) {
         setPosition({
@@ -49,16 +49,22 @@ export function GooeyNav({ items, logo, cta }: GooeyNavProps) {
         {logo && (
           <Link to={logo.href} className="flex items-center gap-2 z-50">
             {logo.image ? (
-              <img
-                src={logo.image}
-                alt="SomaCare Logo"
-                className="h-9 w-auto"
-              />
+              <img src={logo.image} alt="SomaCare Logo" className="h-9 w-auto" />
             ) : (
               <>
                 <div className="grid h-9 w-9 place-items-center rounded-xl soma-gradient soma-glow">
-                  <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  <svg
+                    className="h-5 w-5 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                    />
                   </svg>
                 </div>
                 <span className="font-display text-lg font-bold tracking-tight">{logo.text}</span>
@@ -76,7 +82,9 @@ export function GooeyNav({ items, logo, cta }: GooeyNavProps) {
               to={item.href}
               onMouseEnter={() => setActiveIndex(i)}
               className={`relative px-4 py-2 text-sm font-medium transition-colors ${
-                activeIndex === i ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                activeIndex === i
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {item.label}
@@ -131,9 +139,7 @@ export function GooeyNav({ items, logo, cta }: GooeyNavProps) {
               ))}
               {cta && (
                 <Link to={cta.href} onClick={() => setIsOpen(false)} className="mt-4">
-                  <Button className="w-full soma-gradient soma-glow border-0">
-                    {cta.label}
-                  </Button>
+                  <Button className="w-full soma-gradient soma-glow border-0">{cta.label}</Button>
                 </Link>
               )}
             </div>

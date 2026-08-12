@@ -38,7 +38,9 @@ export interface MedicalHistoryEvent {
 }
 
 export type MedicalHistoryEventInsert = Omit<MedicalHistoryEvent, "id" | "created_at">;
-export type MedicalHistoryEventUpdate = Partial<Omit<MedicalHistoryEvent, "id" | "user_id" | "created_at">>;
+export type MedicalHistoryEventUpdate = Partial<
+  Omit<MedicalHistoryEvent, "id" | "user_id" | "created_at">
+>;
 
 /**
  * Structured health context for AI conversations and PDF export
@@ -65,6 +67,8 @@ export interface HealthContext {
     hereditary_diseases: string[] | null;
     emergency_contact_name: string | null;
     emergency_contact_phone: string | null;
+    allergies: string[] | null;
+    chronic_conditions: string[] | null;
     smoking_status: string | null;
     alcohol_use: string | null;
     dietary_preference: string | null;
@@ -190,8 +194,16 @@ export const HEALTH_GOALS_OPTIONS = [
 export const ALLERGY_SEVERITY_OPTIONS = [
   { value: "mild", label: "Mild", description: "Minor symptoms, no interference" },
   { value: "moderate", label: "Moderate", description: "Noticeable symptoms, some interference" },
-  { value: "severe", label: "Severe", description: "Significant symptoms, interferes with daily life" },
-  { value: "life_threatening", label: "Life-threatening", description: "Anaphylaxis risk, requires immediate care" },
+  {
+    value: "severe",
+    label: "Severe",
+    description: "Significant symptoms, interferes with daily life",
+  },
+  {
+    value: "life_threatening",
+    label: "Life-threatening",
+    description: "Anaphylaxis risk, requires immediate care",
+  },
 ] as const;
 
 // Medical event type options

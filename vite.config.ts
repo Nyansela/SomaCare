@@ -5,8 +5,17 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import type { NitroConfig } from "nitro/types";
 
 export default defineConfig({
+  nitro: {
+    preset: "vercel",
+    // Disable nitro's auto-detected `index.html` renderer template. When a template
+    // is set, nitro never installs the vite SSR renderer, so every request falls
+    // through to the bare index.html shell — a blank page on deployed builds.
+    // TanStack Start's SSR service renders the full HTML itself instead.
+    renderer: false,
+  } as NitroConfig,
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this

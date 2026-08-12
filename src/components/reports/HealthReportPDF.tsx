@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  Document,
-  Page,
-  Text,
-  View,
-  StyleSheet,
-  Font,
-  Image,
-  Link,
-} from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Font, Image, Link } from "@react-pdf/renderer";
 import { format } from "date-fns";
 
 // Use built-in standard PDF fonts (Helvetica / Helvetica-Bold) for 100% reliability
@@ -54,7 +45,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   table: {
-    display: "table",
+    display: "flex",
     width: "auto",
     marginBottom: 10,
   },
@@ -98,12 +89,20 @@ const styles = StyleSheet.create({
   },
 });
 
-// Helper to format missing data
-const formatMissingData = (data: unknown, label: string) => {
-  return data && (Array.isArray(data) ? data.length > 0 : Object.keys(data).length > 0)
-    ? data
-    : { _missing: true, label };
-};
+// Helper to format missing data — returns a discriminated union so callers
+// can safely inspect `_missing` without widening to `unknown`.
+type MissingDataResult<T> = { _missing: true; label: string } | { _missing: false };
+
+function formatMissingData<T>(data: T, label: string): MissingDataResult<T> {
+  const hasData =
+    data != null &&
+    (Array.isArray(data)
+      ? data.length > 0
+      : typeof data === "object"
+        ? Object.keys(data).length > 0
+        : true);
+  return hasData ? { _missing: false } : { _missing: true, label };
+}
 
 // PDF Component
 interface HealthReportPDFProps {
@@ -174,15 +173,14 @@ export const HealthReportPDF = ({
             <Text style={styles.subtitle}>Comprehensive Health Summary</Text>
           </View>
           <View>
-            <Image
-              style={styles.logo}
-              src="/images/branding/logo.svg"
-            />
+            <Image style={styles.logo} src="/images/branding/logo.svg" />
           </View>
         </View>
 
         {/* Timestamp */}
-        <Text style={styles.timestamp}>Generated on {format(timestamp, "MMMM d, yyyy h:mm a")}</Text>
+        <Text style={styles.timestamp}>
+          Generated on {format(timestamp, "MMMM d, yyyy h:mm a")}
+        </Text>
 
         {/* Profile Section */}
         <View style={styles.section}>
@@ -248,7 +246,8 @@ export const HealthReportPDF = ({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Medical History Events</Text>
           <View style={styles.sectionContent}>
-            {formatMissingData(medicalHistoryEvents, "No medical history events logged")._missing ? (
+            {formatMissingData(medicalHistoryEvents, "No medical history events logged")
+              ._missing ? (
               <Text style={styles.noData}>No medical history events logged</Text>
             ) : (
               <View style={styles.table}>
@@ -316,7 +315,9 @@ export const HealthReportPDF = ({
                   <View style={styles.tableRow} key={index}>
                     <Text style={styles.tableCol}>{format(new Date(vital.date), "MMM d")}</Text>
                     <Text style={styles.tableCol}>
-                      {vital.bloodPressure ? `${vital.bloodPressure.systolic}/${vital.bloodPressure.diastolic}` : "—"}
+                      {vital.bloodPressure
+                        ? `${vital.bloodPressure.systolic}/${vital.bloodPressure.diastolic}`
+                        : "—"}
                     </Text>
                     <Text style={styles.tableCol}>{vital.heartRate || "—"}</Text>
                     <Text style={styles.tableCol}>{vital.glucose || "—"}</Text>
@@ -333,26 +334,41 @@ export const HealthReportPDF = ({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent Activity Summary (Last 1-2 Weeks)</Text>
           <View style={styles.sectionContent}>
-            <Text>Sleep: {activitySummary.sleep?.nightsLogged ? `
+            <Text>
+              Sleep:{" "}
+              {activitySummary.sleep?.nightsLogged
+                ? `
               Average: ${activitySummary.sleep.averageHours.toFixed(1)} hours/night, 
               Nights logged: ${activitySummary.sleep.nightsLogged}
-            ` : "No sleep data logged"}</Text>
-            <Text>Hydration: {activitySummary.hydration?.daysLogged ? `
+            `
+                : "No sleep data logged"}
+            </Text>
+            <Text>
+              Hydration:{" "}
+              {activitySummary.hydration?.daysLogged
+                ? `
               Average intake: ${activitySummary.hydration.averageIntake} mL/day, 
               Days logged: ${activitySummary.hydration.daysLogged}
-            ` : "No hydration data logged"}</Text>
-            <Text>Fitness: {activitySummary.fitness?.totalWorkouts ? `
+            `
+                : "No hydration data logged"}
+            </Text>
+            <Text>
+              Fitness:{" "}
+              {activitySummary.fitness?.totalWorkouts
+                ? `
               Total workouts: ${activitySummary.fitness.totalWorkouts}, 
               Total minutes: ${activitySummary.fitness.totalMinutes}
-            ` : "No fitness data logged"}</Text>
+            `
+                : "No fitness data logged"}
+            </Text>
           </View>
         </View>
 
         {/* Footer */}
         <View style={styles.footer}>
           <Text>
-            Generated by SomaCare — Not a substitute for professional medical advice. |
-            For emergencies, contact your local emergency services.
+            Generated by SomaCare — Not a substitute for professional medical advice. | For
+            emergencies, contact your local emergency services.
           </Text>
         </View>
       </Page>

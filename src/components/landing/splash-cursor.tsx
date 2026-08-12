@@ -9,11 +9,7 @@ interface SplashCursorProps {
   roughness?: number;
 }
 
-export function SplashCursor({
-  color = "#8b5cf6",
-  size = 25,
-  roughness = 0.2,
-}: SplashCursorProps) {
+export function SplashCursor({ color = "#8b5cf6", size = 25, roughness = 0.2 }: SplashCursorProps) {
   const cursorRef = useRef<HTMLDivElement>(null);
   const hooks = useRef<HTMLDivElement[]>([]);
 
@@ -40,7 +36,7 @@ export function SplashCursor({
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
         const distance = Math.sqrt(
-          Math.pow(e.clientX - centerX, 2) + Math.pow(e.clientY - centerY, 2)
+          Math.pow(e.clientX - centerX, 2) + Math.pow(e.clientY - centerY, 2),
         );
         const maxDistance = 200;
         const scale = Math.max(0, 1 - distance / maxDistance);

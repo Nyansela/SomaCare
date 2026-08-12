@@ -7,14 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { STORE_CATALOG, STORE_CATEGORIES, CATEGORY_FALLBACK, type StoreItem } from "@/lib/store-catalog";
+  STORE_CATALOG,
+  STORE_CATEGORIES,
+  CATEGORY_FALLBACK,
+  type StoreItem,
+} from "@/lib/store-catalog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -22,7 +21,11 @@ export const Route = createFileRoute("/_authenticated/store")({
   head: () => ({
     meta: [
       { title: "Store — SomaCare" },
-      { name: "description", content: "Buy clinical devices, medications and wellness essentials, delivered from SomaLabsGH." },
+      {
+        name: "description",
+        content:
+          "Buy clinical devices, medications and wellness essentials, delivered from SomaLabsGH.",
+      },
     ],
   }),
   component: StorePage,
@@ -55,7 +58,9 @@ function StorePage() {
 
   const setQty = (id: string, qty: number) => {
     setCart((prev) =>
-      qty <= 0 ? prev.filter((l) => l.item.id !== id) : prev.map((l) => (l.item.id === id ? { ...l, qty } : l)),
+      qty <= 0
+        ? prev.filter((l) => l.item.id !== id)
+        : prev.map((l) => (l.item.id === id ? { ...l, qty } : l)),
     );
   };
 
@@ -71,7 +76,10 @@ function StorePage() {
           <SheetTrigger asChild>
             <Button size="sm" className="soma-gradient soma-glow border-0 text-white">
               <ShoppingCart className="mr-1.5 h-4 w-4" />
-              Cart {count > 0 && <span className="ml-1 rounded-full bg-white/20 px-1.5 text-xs">{count}</span>}
+              Cart{" "}
+              {count > 0 && (
+                <span className="ml-1 rounded-full bg-white/20 px-1.5 text-xs">{count}</span>
+              )}
             </Button>
           </SheetTrigger>
           <SheetContent className="flex w-full flex-col sm:max-w-md">
@@ -80,15 +88,23 @@ function StorePage() {
             </SheetHeader>
             <div className="flex-1 overflow-y-auto py-4">
               {cart.length === 0 ? (
-                <p className="mt-8 text-center text-sm text-muted-foreground">Your cart is empty.</p>
+                <p className="mt-8 text-center text-sm text-muted-foreground">
+                  Your cart is empty.
+                </p>
               ) : (
                 <ul className="space-y-3">
                   {cart.map((l) => (
                     <li key={l.item.id} className="flex gap-3 rounded-xl border border-border p-2">
-                      <img src={l.item.image} alt="" className="h-16 w-16 rounded-lg object-cover" />
+                      <img
+                        src={l.item.image}
+                        alt=""
+                        className="h-16 w-16 rounded-lg object-cover"
+                      />
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-medium">{l.item.name}</div>
-                        <div className="text-xs text-muted-foreground">${l.item.price.toFixed(2)}</div>
+                        <div className="text-xs text-muted-foreground">
+                          ${l.item.price.toFixed(2)}
+                        </div>
                         <div className="mt-1 flex items-center gap-2">
                           <button
                             onClick={() => setQty(l.item.id, l.qty - 1)}
@@ -151,8 +167,12 @@ function StorePage() {
                 Verified suppliers, licensed pharmacists, and same-day dispatch on eligible orders.
               </p>
               <div className="mt-4 flex flex-wrap gap-4 text-xs text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-primary" /> Rx-verified</span>
-                <span className="inline-flex items-center gap-1.5"><Truck className="h-4 w-4 text-primary" /> Free shipping over $35</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <ShieldCheck className="h-4 w-4 text-primary" /> Rx-verified
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Truck className="h-4 w-4 text-primary" /> Free shipping over $35
+                </span>
               </div>
             </div>
           </CardContent>
@@ -203,7 +223,15 @@ function StorePage() {
   );
 }
 
-function ProductCard({ item, onAdd, index }: { item: StoreItem; onAdd: (i: StoreItem) => void; index: number }) {
+function ProductCard({
+  item,
+  onAdd,
+  index,
+}: {
+  item: StoreItem;
+  onAdd: (i: StoreItem) => void;
+  index: number;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -237,7 +265,9 @@ function ProductCard({ item, onAdd, index }: { item: StoreItem; onAdd: (i: Store
         )}
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{item.category}</div>
+        <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          {item.category}
+        </div>
         <h3 className="line-clamp-2 text-sm font-semibold leading-tight">{item.name}</h3>
         <p className="line-clamp-2 text-xs text-muted-foreground">{item.short}</p>
         <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">

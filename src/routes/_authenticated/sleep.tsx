@@ -14,7 +14,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 export const Route = createFileRoute("/_authenticated/sleep")({
   head: () => ({ meta: [{ title: "Sleep — SomaCare" }, { name: "robots", content: "noindex" }] }),
@@ -52,7 +60,7 @@ function SleepPage() {
   const qc = useQueryClient();
 
   const [gettingRecommendations, setGettingRecommendations] = useState(false);
-  
+
   // Form state
   const [bedtime, setBedtime] = useState("");
   const [wakeTime, setWakeTime] = useState("");
@@ -70,7 +78,7 @@ function SleepPage() {
         .order("logged_date", { ascending: false })
         .limit(30);
       if (error) throw error;
-      return data as SleepLog[] || [];
+      return (data as SleepLog[]) || [];
     },
   });
 
@@ -78,7 +86,9 @@ function SleepPage() {
   const recommendations = useQuery({
     queryKey: ["sleep", "recommendations"],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
       const response = await fetch("/api/sleep", {
@@ -103,7 +113,9 @@ function SleepPage() {
 
   const logSleepMutation = useMutation({
     mutationFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
       // Combine date with time
@@ -163,46 +175,56 @@ function SleepPage() {
   };
 
   // Prepare chart data
-  const chartData = sleepLogs.data
-    ?.slice(0, 14)
-    .reverse()
-    .map((log) => {
-      const bedtime = new Date(log.bedtime);
-      const wakeTime = new Date(log.wake_time);
-      let hours = (wakeTime.getTime() - bedtime.getTime()) / (1000 * 60 * 60);
-      if (hours < 0) hours += 24;
-      return {
-        date: format(new Date(log.logged_date), "MMM d"),
-        hours: Math.round(hours * 10) / 10,
-        quality: log.quality_rating,
-      };
-    }) || [];
-
-  const avgHours = sleepLogs.data && sleepLogs.data.length > 0
-    ? sleepLogs.data.reduce((sum, log) => {
+  const chartData =
+    sleepLogs.data
+      ?.slice(0, 14)
+      .reverse()
+      .map((log) => {
         const bedtime = new Date(log.bedtime);
         const wakeTime = new Date(log.wake_time);
         let hours = (wakeTime.getTime() - bedtime.getTime()) / (1000 * 60 * 60);
         if (hours < 0) hours += 24;
-        return sum + hours;
-      }, 0) / sleepLogs.data.length
-    : 0;
+        return {
+          date: format(new Date(log.logged_date), "MMM d"),
+          hours: Math.round(hours * 10) / 10,
+          quality: log.quality_rating,
+        };
+      }) || [];
 
-  const avgQuality = sleepLogs.data && sleepLogs.data.filter(l => l.quality_rating).length > 0
-    ? sleepLogs.data.filter(l => l.quality_rating).reduce((sum, l) => sum + (l.quality_rating || 0), 0) / sleepLogs.data.filter(l => l.quality_rating).length
-    : null;
+  const avgHours =
+    sleepLogs.data && sleepLogs.data.length > 0
+      ? sleepLogs.data.reduce((sum, log) => {
+          const bedtime = new Date(log.bedtime);
+          const wakeTime = new Date(log.wake_time);
+          let hours = (wakeTime.getTime() - bedtime.getTime()) / (1000 * 60 * 60);
+          if (hours < 0) hours += 24;
+          return sum + hours;
+        }, 0) / sleepLogs.data.length
+      : 0;
+
+  const avgQuality =
+    sleepLogs.data && sleepLogs.data.filter((l) => l.quality_rating).length > 0
+      ? sleepLogs.data
+          .filter((l) => l.quality_rating)
+          .reduce((sum, l) => sum + (l.quality_rating || 0), 0) /
+        sleepLogs.data.filter((l) => l.quality_rating).length
+      : null;
 
   return (
     <AppShell
       title="Sleep"
       subtitle="Track and optimize your sleep"
       action={
-        <Button 
-          onClick={getRecommendations} 
-          disabled={gettingRecommendations || sleepLogs.data?.length === 0} 
+        <Button
+          onClick={getRecommendations}
+          disabled={gettingRecommendations || sleepLogs.data?.length === 0}
           className="soma-gradient soma-glow border-0 text-white"
         >
-          {gettingRecommendations ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Info className="mr-2 h-4 w-4" />}
+          {gettingRecommendations ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Info className="mr-2 h-4 w-4" />
+          )}
           {gettingRecommendations ? "Analyzing..." : "Get AI Recommendations"}
         </Button>
       }
@@ -261,7 +283,9 @@ function SleepPage() {
                     >
                       <Star
                         className={`h-5 w-5 ${
-                          star <= qualityRating ? "fill-[var(--warning)] text-[var(--warning)]" : "text-muted-foreground"
+                          star <= qualityRating
+                            ? "fill-[var(--warning)] text-[var(--warning)]"
+                            : "text-muted-foreground"
                         }`}
                       />
                     </button>
@@ -269,8 +293,16 @@ function SleepPage() {
                 </div>
               </div>
               <div className="flex items-end">
-                <Button onClick={logSleep} disabled={logSleepMutation.isPending} className="w-full soma-gradient soma-glow border-0 text-white">
-                  {logSleepMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Moon className="mr-2 h-4 w-4" />}
+                <Button
+                  onClick={logSleep}
+                  disabled={logSleepMutation.isPending}
+                  className="w-full soma-gradient soma-glow border-0 text-white"
+                >
+                  {logSleepMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Moon className="mr-2 h-4 w-4" />
+                  )}
                   Log Sleep
                 </Button>
               </div>
@@ -335,50 +367,63 @@ function SleepPage() {
                 <Info className="h-5 w-5 text-primary" />
                 Personalized Sleep Recommendations
               </CardTitle>
-              <CardDescription>Based on your recent sleep patterns and health context</CardDescription>
+              <CardDescription>
+                Based on your recent sleep patterns and health context
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-3 mb-6">
                 <div className="bg-muted/50 rounded-lg p-4">
                   <p className="text-sm text-muted-foreground mb-1">Recommended Bedtime</p>
-                  <p className="text-2xl font-bold">{recommendations.data.recommendations.recommendedBedtime}</p>
+                  <p className="text-2xl font-bold">
+                    {recommendations.data.recommendations.recommendedBedtime}
+                  </p>
                 </div>
                 <div className="bg-muted/50 rounded-lg p-4">
                   <p className="text-sm text-muted-foreground mb-1">Recommended Wake Time</p>
-                  <p className="text-2xl font-bold">{recommendations.data.recommendations.recommendedWakeTime}</p>
+                  <p className="text-2xl font-bold">
+                    {recommendations.data.recommendations.recommendedWakeTime}
+                  </p>
                 </div>
                 <div className="bg-muted/50 rounded-lg p-4">
                   <p className="text-sm text-muted-foreground mb-1">Target Duration</p>
-                  <p className="text-2xl font-bold">{recommendations.data.recommendations.sleepDuration}</p>
+                  <p className="text-2xl font-bold">
+                    {recommendations.data.recommendations.sleepDuration}
+                  </p>
                 </div>
               </div>
-              
-              {recommendations.data.recommendations.tips && recommendations.data.recommendations.tips.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="font-medium">Tips for Better Sleep</h4>
-                  {recommendations.data.recommendations.tips.map((tip, i) => (
-                    <div key={i} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                      <AlertCircle className="h-4 w-4 mt-0.5 text-primary shrink-0" />
-                      <div>
-                        <p className="font-medium text-sm">{tip.title}</p>
-                        <p className="text-sm text-muted-foreground">{tip.description}</p>
+
+              {recommendations.data.recommendations.tips &&
+                recommendations.data.recommendations.tips.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Tips for Better Sleep</h4>
+                    {recommendations.data.recommendations.tips.map((tip, i) => (
+                      <div key={i} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                        <AlertCircle className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                        <div>
+                          <p className="font-medium text-sm">{tip.title}</p>
+                          <p className="text-sm text-muted-foreground">{tip.description}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
 
               {recommendations.data.recommendations.notes && (
                 <div className="mt-4">
-                  <InfoBanner tone="accent">{recommendations.data.recommendations.notes}</InfoBanner>
+                  <InfoBanner tone="accent">
+                    {recommendations.data.recommendations.notes}
+                  </InfoBanner>
                 </div>
               )}
 
               <div className="mt-4 pt-4 border-t">
                 <p className="text-xs text-muted-foreground">
-                  <strong>Your Sleep Stats:</strong> Average {recommendations.data.sleepStats.avgHours.toFixed(1)} hrs/night, 
-                  Consistency: {recommendations.data.sleepStats.consistencyScore}/10
-                  {recommendations.data.sleepStats.avgQuality && `, Avg Quality: ${recommendations.data.sleepStats.avgQuality.toFixed(1)}/5`}
+                  <strong>Your Sleep Stats:</strong> Average{" "}
+                  {recommendations.data.sleepStats.avgHours.toFixed(1)} hrs/night, Consistency:{" "}
+                  {recommendations.data.sleepStats.consistencyScore}/10
+                  {recommendations.data.sleepStats.avgQuality &&
+                    `, Avg Quality: ${recommendations.data.sleepStats.avgQuality.toFixed(1)}/5`}
                 </p>
               </div>
             </CardContent>
@@ -434,43 +479,50 @@ function SleepPage() {
             <CardContent>
               <div className="space-y-2">
                 <AnimatePresence initial={false}>
-                {sleepLogs.data.slice(0, 10).map((log) => {
-                  const bedtime = new Date(log.bedtime);
-                  const wakeTime = new Date(log.wake_time);
-                  let hours = (wakeTime.getTime() - bedtime.getTime()) / (1000 * 60 * 60);
-                  if (hours < 0) hours += 24;
-                  
-                  return (
-                    <motion.div
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                      key={log.id}
-                      className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
-                      <div>
-                        <p className="font-medium">{format(new Date(log.logged_date), "EEEE, MMM d")}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(bedtime, "h:mm a")} → {format(wakeTime, "h:mm a")}
-                          {" "}({hours.toFixed(1)} hrs)
-                        </p>
-                        {log.notes && <p className="text-xs text-muted-foreground mt-1">{log.notes}</p>}
-                      </div>
-                      {log.quality_rating && (
-                        <div className="flex items-center gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={`h-3 w-3 ${
-                                star <= log.quality_rating! ? "fill-[var(--warning)] text-[var(--warning)]" : "text-muted"
-                              }`}
-                            />
-                          ))}
+                  {sleepLogs.data.slice(0, 10).map((log) => {
+                    const bedtime = new Date(log.bedtime);
+                    const wakeTime = new Date(log.wake_time);
+                    let hours = (wakeTime.getTime() - bedtime.getTime()) / (1000 * 60 * 60);
+                    if (hours < 0) hours += 24;
+
+                    return (
+                      <motion.div
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                        key={log.id}
+                        className="flex items-center justify-between rounded-lg bg-muted/50 p-3"
+                      >
+                        <div>
+                          <p className="font-medium">
+                            {format(new Date(log.logged_date), "EEEE, MMM d")}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {format(bedtime, "h:mm a")} → {format(wakeTime, "h:mm a")} (
+                            {hours.toFixed(1)} hrs)
+                          </p>
+                          {log.notes && (
+                            <p className="text-xs text-muted-foreground mt-1">{log.notes}</p>
+                          )}
                         </div>
-                      )}
-                    </motion.div>
-                  );
-                })}
+                        {log.quality_rating && (
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`h-3 w-3 ${
+                                  star <= log.quality_rating!
+                                    ? "fill-[var(--warning)] text-[var(--warning)]"
+                                    : "text-muted"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
                 </AnimatePresence>
               </div>
             </CardContent>

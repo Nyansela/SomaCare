@@ -81,9 +81,7 @@ function RecordsPage() {
   };
 
   const download = async (r: Record) => {
-    const { data, error } = await supabase.storage
-      .from("records")
-      .createSignedUrl(r.file_path, 60);
+    const { data, error } = await supabase.storage.from("records").createSignedUrl(r.file_path, 60);
     if (error || !data) return toast.error("Could not open file");
     window.open(data.signedUrl, "_blank");
   };
@@ -139,7 +137,10 @@ function RecordsPage() {
           title="No records uploaded yet"
           body="Upload lab results, scans or prescriptions to keep them organized and accessible."
           action={
-            <Button onClick={() => fileRef.current?.click()} className="soma-gradient soma-glow border-0 text-white">
+            <Button
+              onClick={() => fileRef.current?.click()}
+              className="soma-gradient soma-glow border-0 text-white"
+            >
               <Upload className="mr-2 h-4 w-4" /> Upload your first record
             </Button>
           }

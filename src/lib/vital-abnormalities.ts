@@ -22,12 +22,12 @@ export interface VitalAbnormality {
  * Normal vital ranges (adults)
  */
 const VITAL_RANGES: Record<string, { low: number; high: number; unit: string }> = {
-  bp_sys: { low: 90, high: 140, unit: "mmHg" },      // Systolic blood pressure
-  bp_dia: { low: 60, high: 90, unit: "mmHg" },       // Diastolic blood pressure
-  heart_rate: { low: 60, high: 100, unit: "bpm" },    // Resting heart rate
-  spo2: { low: 95, high: 100, unit: "%" },            // Blood oxygen
-  glucose: { low: 70, high: 126, unit: "mg/dL" },      // Fasting blood glucose (mg/dL)
-  temperature: { low: 36.1, high: 37.2, unit: "°C" },  // Body temperature
+  bp_sys: { low: 90, high: 140, unit: "mmHg" }, // Systolic blood pressure
+  bp_dia: { low: 60, high: 90, unit: "mmHg" }, // Diastolic blood pressure
+  heart_rate: { low: 60, high: 100, unit: "bpm" }, // Resting heart rate
+  spo2: { low: 95, high: 100, unit: "%" }, // Blood oxygen
+  glucose: { low: 70, high: 126, unit: "mg/dL" }, // Fasting blood glucose (mg/dL)
+  temperature: { low: 36.1, high: 37.2, unit: "°C" }, // Body temperature
   // Weight has no fixed range - skip
 };
 
@@ -37,7 +37,7 @@ const VITAL_RANGES: Record<string, { low: number; high: number; unit: string }> 
  */
 export function detectVitalAbnormalities(vitals: VitalReading[]): VitalAbnormality[] {
   const abnormalities: VitalAbnormality[] = [];
-  
+
   // Get latest reading per kind
   const latestByKind = new Map<string, VitalReading>();
   vitals.forEach((v) => {
@@ -45,23 +45,24 @@ export function detectVitalAbnormalities(vitals: VitalReading[]): VitalAbnormali
       latestByKind.set(v.kind, v);
     }
   });
-  
+
   // Check each kind against normal ranges
   latestByKind.forEach((reading, kind) => {
     const range = VITAL_RANGES[kind.toLowerCase()];
     if (!range) return; // Skip unknown kinds or weight
-    
+
     const value = reading.value;
-    
+
     if (value > range.high) {
-      const severity = (kind === "bp_sys" && value > 180) || 
-                      (kind === "bp_dia" && value > 120) || 
-                      (kind === "heart_rate" && value > 120) ||
-                      (kind === "spo2" && value < 90) ||
-                      (kind === "glucose" && value > 200)
-        ? "critical" 
-        : "warning";
-      
+      const severity =
+        (kind === "bp_sys" && value > 180) ||
+        (kind === "bp_dia" && value > 120) ||
+        (kind === "heart_rate" && value > 120) ||
+        (kind === "spo2" && value < 90) ||
+        (kind === "glucose" && value > 200)
+          ? "critical"
+          : "warning";
+
       abnormalities.push({
         kind: reading.kind,
         value: reading.value,
@@ -70,12 +71,13 @@ export function detectVitalAbnormalities(vitals: VitalReading[]): VitalAbnormali
         severity,
       });
     } else if (value < range.low) {
-      const severity = (kind === "spo2" && value < 88) ||
-                      (kind === "glucose" && value < 50) ||
-                      (kind === "temperature" && value < 35)
-        ? "critical"
-        : "warning";
-      
+      const severity =
+        (kind === "spo2" && value < 88) ||
+        (kind === "glucose" && value < 50) ||
+        (kind === "temperature" && value < 35)
+          ? "critical"
+          : "warning";
+
       abnormalities.push({
         kind: reading.kind,
         value: reading.value,
@@ -85,7 +87,7 @@ export function detectVitalAbnormalities(vitals: VitalReading[]): VitalAbnormali
       });
     }
   });
-  
+
   return abnormalities;
 }
 

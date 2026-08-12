@@ -2,7 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pill, Plus, ShieldCheck, AlertTriangle, X, CheckCircle, AlertCircle, Loader2, History } from "lucide-react";
+import {
+  Pill,
+  Plus,
+  ShieldCheck,
+  AlertTriangle,
+  X,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  History,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, EmptyState } from "@/components/app-shell";
@@ -10,14 +20,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge, medverifyTone } from "@/components/ui/status-badge";
 import { InfoBanner } from "@/components/ui/info-banner";
 
 export const Route = createFileRoute("/_authenticated/medications")({
-  head: () => ({ meta: [{ title: "Medications — SomaCare" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "Medications — SomaCare" }, { name: "robots", content: "noindex" }],
+  }),
   component: Medications,
 });
 
@@ -37,13 +56,22 @@ function Medications() {
   const [verifyMedName, setVerifyMedName] = useState("");
   const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
   const [verifyLoading, setVerifyLoading] = useState(false);
-  const [form, setForm] = useState({ name: "", dose: "", frequency: "", scheduled_time: "", notes: "" });
+  const [form, setForm] = useState({
+    name: "",
+    dose: "",
+    frequency: "",
+    scheduled_time: "",
+    notes: "",
+  });
 
   // Fetch medications
   const list = useQuery({
     queryKey: ["medications", "all"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("medications").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase
+        .from("medications")
+        .select("*")
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -91,7 +119,9 @@ function Medications() {
     setVerifyLoading(true);
     setVerifyResult(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
       const response = await fetch("/api/medverify", {
@@ -110,7 +140,7 @@ function Medications() {
 
       const result = await response.json();
       setVerifyResult(result);
-      
+
       // Refresh history
       qc.invalidateQueries({ queryKey: ["medverify-checks"] });
     } catch (err) {
@@ -121,9 +151,12 @@ function Medications() {
   };
 
   const getStatusColor = (status: string) => {
-    if (status === "safe") return "bg-[var(--success-soft)] text-[var(--success-soft-foreground)] border-[var(--success)]/30";
-    if (status === "caution") return "bg-[var(--warning-soft)] text-[var(--warning-soft-foreground)] border-[var(--warning)]/30";
-    if (status === "unsafe") return "bg-[var(--danger-soft)] text-[var(--danger-soft-foreground)] border-[var(--destructive)]/30";
+    if (status === "safe")
+      return "bg-[var(--success-soft)] text-[var(--success-soft-foreground)] border-[var(--success)]/30";
+    if (status === "caution")
+      return "bg-[var(--warning-soft)] text-[var(--warning-soft-foreground)] border-[var(--warning)]/30";
+    if (status === "unsafe")
+      return "bg-[var(--danger-soft)] text-[var(--danger-soft-foreground)] border-[var(--destructive)]/30";
     return "bg-muted text-muted-foreground border-border";
   };
 
@@ -158,7 +191,11 @@ function Medications() {
                     onChange={(e) => setVerifyMedName(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleVerify()}
                   />
-                  <Button onClick={handleVerify} disabled={verifyLoading || !verifyMedName.trim()} className="soma-gradient soma-glow border-0 text-white">
+                  <Button
+                    onClick={handleVerify}
+                    disabled={verifyLoading || !verifyMedName.trim()}
+                    className="soma-gradient soma-glow border-0 text-white"
+                  >
                     {verifyLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Check"}
                   </Button>
                 </div>
@@ -166,18 +203,21 @@ function Medications() {
                 {verifyResult ? (
                   <>
                     {verifyResult.error ? (
-                      <InfoBanner tone="danger">
-                        {verifyResult.error.details}
-                      </InfoBanner>
+                      <InfoBanner tone="danger">{verifyResult.error.details}</InfoBanner>
                     ) : (
                       <>
                         {/* Allergy Check */}
                         {verifyResult.allergy_check && (
-                          <div className={`p-3 rounded-lg border ${getStatusColor(verifyResult.allergy_check.status)}`}>
+                          <div
+                            className={`p-3 rounded-lg border ${getStatusColor(verifyResult.allergy_check.status)}`}
+                          >
                             <div className="flex items-center gap-2 font-medium">
                               {getStatusIcon(verifyResult.allergy_check.status)}
                               Allergy Check
-                              <StatusBadge tone={medverifyTone(verifyResult.allergy_check.status)} size="sm">
+                              <StatusBadge
+                                tone={medverifyTone(verifyResult.allergy_check.status)}
+                                size="sm"
+                              >
                                 {verifyResult.allergy_check.status}
                               </StatusBadge>
                             </div>
@@ -187,11 +227,16 @@ function Medications() {
 
                         {/* Interaction Check */}
                         {verifyResult.interaction_check && (
-                          <div className={`p-3 rounded-lg border ${getStatusColor(verifyResult.interaction_check.status)}`}>
+                          <div
+                            className={`p-3 rounded-lg border ${getStatusColor(verifyResult.interaction_check.status)}`}
+                          >
                             <div className="flex items-center gap-2 font-medium">
                               {getStatusIcon(verifyResult.interaction_check.status)}
                               Drug Interaction Check
-                              <StatusBadge tone={medverifyTone(verifyResult.interaction_check.status)} size="sm">
+                              <StatusBadge
+                                tone={medverifyTone(verifyResult.interaction_check.status)}
+                                size="sm"
+                              >
                                 {verifyResult.interaction_check.status}
                               </StatusBadge>
                             </div>
@@ -201,11 +246,16 @@ function Medications() {
 
                         {/* Condition Check */}
                         {verifyResult.condition_check && (
-                          <div className={`p-3 rounded-lg border ${getStatusColor(verifyResult.condition_check.status)}`}>
+                          <div
+                            className={`p-3 rounded-lg border ${getStatusColor(verifyResult.condition_check.status)}`}
+                          >
                             <div className="flex items-center gap-2 font-medium">
                               {getStatusIcon(verifyResult.condition_check.status)}
                               Condition Risk Check
-                              <StatusBadge tone={medverifyTone(verifyResult.condition_check.status)} size="sm">
+                              <StatusBadge
+                                tone={medverifyTone(verifyResult.condition_check.status)}
+                                size="sm"
+                              >
                                 {verifyResult.condition_check.status}
                               </StatusBadge>
                             </div>
@@ -215,7 +265,9 @@ function Medications() {
 
                         {/* Overall */}
                         {verifyResult.overall && (
-                          <div className={`p-3 rounded-lg border ${getStatusColor(verifyResult.overall.status)}`}>
+                          <div
+                            className={`p-3 rounded-lg border ${getStatusColor(verifyResult.overall.status)}`}
+                          >
                             <div className="flex items-center gap-2 font-semibold">
                               {getStatusIcon(verifyResult.overall.status)}
                               Overall Assessment:
@@ -241,18 +293,66 @@ function Medications() {
 
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button className="soma-gradient soma-glow border-0 text-white"><Plus className="mr-2 h-4 w-4" /> Add</Button>
+              <Button className="soma-gradient soma-glow border-0 text-white">
+                <Plus className="mr-2 h-4 w-4" /> Add
+              </Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>New medication</DialogTitle></DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); create.mutate(); }} className="space-y-4">
-                <div><Label>Name</Label><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-                <div><Label>Dose</Label><Input value={form.dose} onChange={(e) => setForm({ ...form, dose: e.target.value })} placeholder="e.g. 5mg" /></div>
-                <div><Label>Frequency</Label><Input value={form.frequency} onChange={(e) => setForm({ ...form, frequency: e.target.value })} placeholder="e.g. 2x per day" /></div>
-                <div><Label>Scheduled Time (Reminder)</Label><Input type="time" value={form.scheduled_time} onChange={(e) => setForm({ ...form, scheduled_time: e.target.value })} /></div>
-                <div><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+              <DialogHeader>
+                <DialogTitle>New medication</DialogTitle>
+              </DialogHeader>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  create.mutate();
+                }}
+                className="space-y-4"
+              >
+                <div>
+                  <Label>Name</Label>
+                  <Input
+                    required
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Dose</Label>
+                  <Input
+                    value={form.dose}
+                    onChange={(e) => setForm({ ...form, dose: e.target.value })}
+                    placeholder="e.g. 5mg"
+                  />
+                </div>
+                <div>
+                  <Label>Frequency</Label>
+                  <Input
+                    value={form.frequency}
+                    onChange={(e) => setForm({ ...form, frequency: e.target.value })}
+                    placeholder="e.g. 2x per day"
+                  />
+                </div>
+                <div>
+                  <Label>Scheduled Time (Reminder)</Label>
+                  <Input
+                    type="time"
+                    value={form.scheduled_time}
+                    onChange={(e) => setForm({ ...form, scheduled_time: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Notes</Label>
+                  <Textarea
+                    value={form.notes}
+                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  />
+                </div>
                 <DialogFooter>
-                  <Button type="submit" disabled={create.isPending} className="soma-gradient soma-glow border-0 text-white">
+                  <Button
+                    type="submit"
+                    disabled={create.isPending}
+                    className="soma-gradient soma-glow border-0 text-white"
+                  >
                     {create.isPending ? "Saving..." : "Save"}
                   </Button>
                 </DialogFooter>
@@ -269,33 +369,50 @@ function Medications() {
             <CardTitle>Your Medications</CardTitle>
           </CardHeader>
           <CardContent>
-          {list.isLoading ? (
-            <Skeleton className="h-32 w-full" />
-          ) : list.data && list.data.length > 0 ? (
-            <ul className="grid gap-4 sm:grid-cols-2">
-              <AnimatePresence initial={false}>
-              {list.data.map((m) => (
-                <motion.li
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  key={m.id}
-                  className="flex items-center gap-4 rounded-2xl bg-surface-soft p-4">
-                  <div className="h-12 w-12 shrink-0 rounded-full soma-glow" style={{ background: "linear-gradient(135deg, oklch(0.66 0.16 278), oklch(0.6 0.19 278))" }} />
-                  <div className="min-w-0">
-                    <div className="font-semibold truncate">{m.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {[m.dose, m.frequency, m.scheduled_time ? `Reminder: ${m.scheduled_time}` : null].filter(Boolean).join(" · ") || "No schedule"}
-                    </div>
-                  </div>
-                </motion.li>
-              ))}
-              </AnimatePresence>
-            </ul>
-          ) : (
-            <EmptyState icon={Pill} title="No medications yet" body="Add your first prescription to unlock reminders and interaction checks." />
-          )}
+            {list.isLoading ? (
+              <Skeleton className="h-32 w-full" />
+            ) : list.data && list.data.length > 0 ? (
+              <ul className="grid gap-4 sm:grid-cols-2">
+                <AnimatePresence initial={false}>
+                  {list.data.map((m) => (
+                    <motion.li
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      key={m.id}
+                      className="flex items-center gap-4 rounded-2xl bg-surface-soft p-4"
+                    >
+                      <div
+                        className="h-12 w-12 shrink-0 rounded-full soma-glow"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, oklch(0.66 0.16 278), oklch(0.6 0.19 278))",
+                        }}
+                      />
+                      <div className="min-w-0">
+                        <div className="font-semibold truncate">{m.name}</div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {[
+                            m.dose,
+                            m.frequency,
+                            m.scheduled_time ? `Reminder: ${m.scheduled_time}` : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ") || "No schedule"}
+                        </div>
+                      </div>
+                    </motion.li>
+                  ))}
+                </AnimatePresence>
+              </ul>
+            ) : (
+              <EmptyState
+                icon={Pill}
+                title="No medications yet"
+                body="Add your first prescription to unlock reminders and interaction checks."
+              />
+            )}
           </CardContent>
         </Card>
 
@@ -313,29 +430,34 @@ function Medications() {
             ) : verifyHistory.data && verifyHistory.data.length > 0 ? (
               <ul className="space-y-2">
                 <AnimatePresence initial={false}>
-                {verifyHistory.data.map((check) => (
-                  <motion.li
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15 }}
-                    key={check.id}
-                    className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
-                    <div>
-                      <div className="font-medium">{check.medication_name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(check.created_at).toLocaleString()}
+                  {verifyHistory.data.map((check) => (
+                    <motion.li
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      key={check.id}
+                      className="flex items-center justify-between rounded-lg bg-muted/50 p-3"
+                    >
+                      <div>
+                        <div className="font-medium">{check.medication_name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(check.created_at).toLocaleString()}
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-sm text-muted-foreground text-right max-w-[200px] truncate">
-                      {check.result_summary}
-                    </div>
-                  </motion.li>
-                ))}
+                      <div className="text-sm text-muted-foreground text-right max-w-[200px] truncate">
+                        {check.result_summary}
+                      </div>
+                    </motion.li>
+                  ))}
                 </AnimatePresence>
               </ul>
             ) : (
-              <EmptyState icon={ShieldCheck} title="No safety checks yet" body='Use "Verify Safety" to check a medication.' />
+              <EmptyState
+                icon={ShieldCheck}
+                title="No safety checks yet"
+                body='Use "Verify Safety" to check a medication.'
+              />
             )}
           </CardContent>
         </Card>

@@ -43,7 +43,7 @@ export const Route = createFileRoute("/api/medverify")({
 
         const body = (await request.json()) as VerifyBody;
         const { medicationName } = body;
-        
+
         if (!medicationName || medicationName.trim().length === 0) {
           return new Response("Medication name required", { status: 400 });
         }
@@ -52,14 +52,21 @@ export const Route = createFileRoute("/api/medverify")({
         const healthContext = await getHealthContext(
           process.env.SUPABASE_URL!,
           process.env.SUPABASE_PUBLISHABLE_KEY!,
-          userId
+          userId,
         );
 
         // Build context for medication check
-        const allergies = healthContext.allergies.map(a => `${a.allergen}${a.severity ? ` [${a.severity}]` : ''}`).join(', ') || 'None';
-        const chronicConditions = healthContext.healthVault.chronic_conditions?.join(', ') || 'None';
-        const currentMeds = healthContext.activeMedications.map(m => `${m.name}${m.dose ? ` ${m.dose}` : ''}`).join(', ') || 'None';
-        const pregnancy = healthContext.healthVault.is_pregnant ? 'Yes' : 'No/Not applicable';
+        const allergies =
+          healthContext.allergies
+            .map((a) => `${a.allergen}${a.severity ? ` [${a.severity}]` : ""}`)
+            .join(", ") || "None";
+        const chronicConditions =
+          healthContext.healthVault.chronic_conditions?.join(", ") || "None";
+        const currentMeds =
+          healthContext.activeMedications
+            .map((m) => `${m.name}${m.dose ? ` ${m.dose}` : ""}`)
+            .join(", ") || "None";
+        const pregnancy = healthContext.healthVault.is_pregnant ? "Yes" : "No/Not applicable";
 
         // Create NVIDIA provider
         const nvidia = createOpenAICompatible({
@@ -113,15 +120,19 @@ Respond ONLY with valid JSON, no other text.`;
         } catch {
           // If AI didn't return valid JSON, return a safe fallback
           parsedResult = {
-            error: { status: "error", details: "Could not analyze medication. Please consult your doctor." }
+            error: {
+              status: "error",
+              details: "Could not analyze medication. Please consult your doctor.",
+            },
           };
         }
 
         // Log the check
-        const summary = parsedResult.overall 
-          ? `${parsedResult.overall.status}: ${parsedResult.overall.summary}`
-          : 'Check completed';
-          
+        const overall = parsedResult.overall as { status?: string; summary?: string } | undefined;
+        const summary = overall
+          ? `${overall.status || "unknown"}: ${overall.summary || "Check completed"}`
+          : "Check completed";
+
         await supabase.from("medverify_checks").insert({
           user_id: userId,
           medication_name: medicationName,

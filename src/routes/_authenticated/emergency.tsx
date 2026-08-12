@@ -41,12 +41,14 @@ function EmergencyPage() {
         .select("blood_type,allergies,chronic_conditions,emergency_contacts")
         .eq("id", u.user.id)
         .maybeSingle();
-      setProfile((data as unknown as Profile) ?? {
-        blood_type: null,
-        allergies: [],
-        chronic_conditions: [],
-        emergency_contacts: [],
-      });
+      setProfile(
+        (data as unknown as Profile) ?? {
+          blood_type: null,
+          allergies: [],
+          chronic_conditions: [],
+          emergency_contacts: [],
+        },
+      );
       setLoading(false);
     })();
   }, []);
@@ -132,9 +134,7 @@ function EmergencyPage() {
         <Card>
           <CardHeader>
             <CardTitle>Emergency contacts</CardTitle>
-            <CardDescription className="text-xs">
-              People to notify if you need help
-            </CardDescription>
+            <CardDescription className="text-xs">People to notify if you need help</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -144,10 +144,7 @@ function EmergencyPage() {
                 </p>
               )}
               {(profile?.emergency_contacts ?? []).map((c, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 rounded-lg bg-muted/50 p-3"
-                >
+                <div key={i} className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
                   <div className="grid h-10 w-10 place-items-center rounded-full bg-accent text-primary">
                     <UserIcon className="h-4 w-4" />
                   </div>

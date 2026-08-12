@@ -1,13 +1,29 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, BellOff, Plus, Trash2, Clock as ClockIcon, Pill, Droplet, HeartPulse, Moon } from "lucide-react";
+import {
+  Bell,
+  BellOff,
+  Plus,
+  Trash2,
+  Clock as ClockIcon,
+  Pill,
+  Droplet,
+  HeartPulse,
+  Moon,
+} from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +31,10 @@ export const Route = createFileRoute("/_authenticated/clock")({
   head: () => ({
     meta: [
       { title: "Clock & Reminders — SomaCare" },
-      { name: "description", content: "Live world clock and health reminders for medications, hydration, and check-ins." },
+      {
+        name: "description",
+        content: "Live world clock and health reminders for medications, hydration, and check-ins.",
+      },
     ],
   }),
   component: ClockPage,
@@ -109,18 +128,34 @@ function ClockPage() {
     update(reminders.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r)));
   const remove = (id: string) => update(reminders.filter((r) => r.id !== id));
 
-  const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  const dateStr = now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  const timeStr = now.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  const dateStr = now.toLocaleDateString([], {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 
   return (
-    <AppShell title="Clock & Reminders" subtitle="Time zones, timers and health nudges — all in one place">
+    <AppShell
+      title="Clock & Reminders"
+      subtitle="Time zones, timers and health nudges — all in one place"
+    >
       <div className="grid gap-6 lg:grid-cols-[1.15fr,1fr]">
         {/* Live clock hero */}
         <Card className="relative overflow-hidden">
-          <div className="pointer-events-none absolute inset-0 opacity-70" style={{
-            background: "radial-gradient(60% 60% at 50% 0%, var(--color-primary) 0%, transparent 60%)",
-            filter: "blur(20px)",
-          }} />
+          <div
+            className="pointer-events-none absolute inset-0 opacity-70"
+            style={{
+              background:
+                "radial-gradient(60% 60% at 50% 0%, var(--color-primary) 0%, transparent 60%)",
+              filter: "blur(20px)",
+            }}
+          />
           <CardContent className="relative p-6">
             <div className="flex items-center justify-between text-xs font-medium uppercase tracking-wider text-muted-foreground">
               <span>Local time</span>
@@ -148,8 +183,13 @@ function ClockPage() {
                   timeZone: c.tz,
                 });
                 return (
-                  <div key={c.name} className="rounded-xl border border-border bg-card/60 p-3 backdrop-blur">
-                    <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{c.name}</div>
+                  <div
+                    key={c.name}
+                    className="rounded-xl border border-border bg-card/60 p-3 backdrop-blur"
+                  >
+                    <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                      {c.name}
+                    </div>
                     <div className="font-display text-lg font-bold tabular-nums">{t}</div>
                   </div>
                 );
@@ -164,7 +204,9 @@ function ClockPage() {
         <Card className="flex flex-col">
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <CardTitle>Reminders</CardTitle>
-            <span className="text-xs text-muted-foreground">{reminders.filter((r) => r.enabled).length} active</span>
+            <span className="text-xs text-muted-foreground">
+              {reminders.filter((r) => r.enabled).length} active
+            </span>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col">
             <ReminderForm onAdd={addReminder} />
@@ -252,13 +294,19 @@ function Stopwatch() {
   return (
     <div className="mt-6 rounded-xl border border-border bg-card/60 p-4 backdrop-blur">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Stopwatch</div>
+        <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Stopwatch
+        </div>
         <div className="font-display text-2xl font-bold tabular-nums">
           {String(m).padStart(2, "0")}:{String(s).padStart(2, "0")}.{String(cs).padStart(2, "0")}
         </div>
       </div>
       <div className="mt-3 flex gap-2">
-        <Button size="sm" onClick={() => setRunning((r) => !r)} className="soma-gradient soma-glow border-0 text-white">
+        <Button
+          size="sm"
+          onClick={() => setRunning((r) => !r)}
+          className="soma-gradient soma-glow border-0 text-white"
+        >
           {running ? "Pause" : "Start"}
         </Button>
         <Button
@@ -295,7 +343,11 @@ function ReminderForm({ onAdd }: { onAdd: (r: Omit<Reminder, "id" | "enabled">) 
       <div className="grid gap-2 sm:grid-cols-[1fr,110px]">
         <div>
           <Label className="text-xs">Label</Label>
-          <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Take Metformin 500mg" />
+          <Input
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            placeholder="Take Metformin 500mg"
+          />
         </div>
         <div>
           <Label className="text-xs">Time</Label>

@@ -55,12 +55,7 @@ export function ThemeCustomizer() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative"
-          aria-label="Customize appearance"
-        >
+        <Button variant="ghost" size="icon" className="relative" aria-label="Customize appearance">
           <Palette className="h-5 w-5" />
           <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full soma-gradient" />
         </Button>
@@ -143,7 +138,9 @@ export function ThemeCustomizer() {
                     onClick={() => update({ font: f })}
                     className={cn(
                       "flex items-center justify-between rounded-xl border p-3 text-left transition",
-                      active ? "border-primary bg-accent/50" : "border-border hover:border-primary/40",
+                      active
+                        ? "border-primary bg-accent/50"
+                        : "border-border hover:border-primary/40",
                     )}
                   >
                     <div>
@@ -185,7 +182,11 @@ export function ThemeCustomizer() {
             >
               Reset to defaults
             </button>
-            <Button size="sm" onClick={() => setOpen(false)} className="soma-gradient border-0 text-white">
+            <Button
+              size="sm"
+              onClick={() => setOpen(false)}
+              className="soma-gradient border-0 text-white"
+            >
               Done
             </Button>
           </div>

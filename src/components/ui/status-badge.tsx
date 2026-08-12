@@ -15,7 +15,12 @@ interface StatusBadgeProps {
   children: React.ReactNode;
 }
 
-export function StatusBadge({ tone = "default", size = "sm", className, children }: StatusBadgeProps) {
+export function StatusBadge({
+  tone = "default",
+  size = "sm",
+  className,
+  children,
+}: StatusBadgeProps) {
   return (
     <Badge
       color={tone}

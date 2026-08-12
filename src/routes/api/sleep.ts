@@ -41,7 +41,7 @@ export const Route = createFileRoute("/api/sleep")({
         // Fetch recent sleep logs (last 14 days)
         const twoWeeksAgo = new Date();
         twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-        
+
         const { data: sleepLogs } = await supabase
           .from("sleep_logs")
           .select("*")
@@ -58,7 +58,7 @@ export const Route = createFileRoute("/api/sleep")({
 
         // Calculate sleep statistics
         const sleepStats = calculateSleepStats(sleepLogs || []);
-        
+
         // Create NVIDIA provider
         const nvidia = createOpenAICompatible({
           name: "nvidia-nim",
@@ -124,7 +124,14 @@ IMPORTANT:
   },
 });
 
-function calculateSleepStats(logs: Array<{ bedtime: string; wake_time: string; quality_rating: number | null; logged_date: string }>) {
+function calculateSleepStats(
+  logs: Array<{
+    bedtime: string;
+    wake_time: string;
+    quality_rating: number | null;
+    logged_date: string;
+  }>,
+) {
   if (logs.length === 0) {
     return {
       avgHours: 0,
@@ -175,14 +182,19 @@ function calculateSleepStats(logs: Array<{ bedtime: string; wake_time: string; q
   const avgWakeTime = `${avgWakeHour.toString().padStart(2, "0")}:${avgWakeMin.toString().padStart(2, "0")}`;
 
   // Calculate consistency (standard deviation of bedtimes)
-  const bedtimesStd = Math.sqrt(bedtimes.reduce((sum, val) => sum + Math.pow(val - avgBedtimeMinutes, 2), 0) / bedtimes.length);
+  const bedtimesStd = Math.sqrt(
+    bedtimes.reduce((sum, val) => sum + Math.pow(val - avgBedtimeMinutes, 2), 0) / bedtimes.length,
+  );
   const consistencyScore = Math.max(0, 10 - Math.round(bedtimesStd / 30)); // 10 if very consistent, less if not
 
   // Average quality
-  const qualityRatings = logs.filter((l) => l.quality_rating !== null).map((l) => l.quality_rating!);
-  const avgQuality = qualityRatings.length > 0 
-    ? qualityRatings.reduce((a, b) => a + b, 0) / qualityRatings.length 
-    : null;
+  const qualityRatings = logs
+    .filter((l) => l.quality_rating !== null)
+    .map((l) => l.quality_rating!);
+  const avgQuality =
+    qualityRatings.length > 0
+      ? qualityRatings.reduce((a, b) => a + b, 0) / qualityRatings.length
+      : null;
 
   return {
     avgHours,
@@ -193,22 +205,29 @@ function calculateSleepStats(logs: Array<{ bedtime: string; wake_time: string; q
   };
 }
 
-function formatSleepData(logs: Array<{ bedtime: string; wake_time: string; quality_rating: number | null; logged_date: string }>) {
+function formatSleepData(
+  logs: Array<{
+    bedtime: string;
+    wake_time: string;
+    quality_rating: number | null;
+    logged_date: string;
+  }>,
+) {
   if (logs.length === 0) {
     return "No sleep data available for the past 14 days.";
   }
-  
+
   return logs
     .map((log) => {
       const bedtime = new Date(log.bedtime);
       const wakeTime = new Date(log.wake_time);
       let hours = (wakeTime.getTime() - bedtime.getTime()) / (1000 * 60 * 60);
       if (hours < 0) hours += 24;
-      
+
       const date = log.logged_date;
       const time = `${bedtime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${wakeTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
       const quality = log.quality_rating ? `, Quality: ${log.quality_rating}/5` : "";
-      
+
       return `- ${date}: ${hours.toFixed(1)} hours${quality} (${time})`;
     })
     .join("\n");

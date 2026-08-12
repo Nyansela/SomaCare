@@ -2,7 +2,21 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Plus, Check, X, ChevronLeft, ChevronRight, Clock, Pill, UtensilsCrossed, Dumbbell, Stethoscope, Bell, Link2 } from "lucide-react";
+import {
+  Calendar,
+  Plus,
+  Check,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Pill,
+  UtensilsCrossed,
+  Dumbbell,
+  Stethoscope,
+  Bell,
+  Link2,
+} from "lucide-react";
 import { format, addDays, startOfDay, isSameDay } from "date-fns";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -13,15 +27,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/app-shell";
 
 export const Route = createFileRoute("/_authenticated/schedule")({
-  head: () => ({ meta: [{ title: "Schedule — SomaCare" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "Schedule — SomaCare" }, { name: "robots", content: "noindex" }],
+  }),
   component: SchedulePage,
 });
 
@@ -72,7 +101,6 @@ type FitnessLog = {
   workout_type: string | null;
   duration_minutes: number;
   logged_date: string;
-  time?: string | null;
 };
 
 type TimelineItem = {
@@ -111,7 +139,7 @@ function SchedulePage() {
   const [showWeekView, setShowWeekView] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ScheduleItem | null>(null);
-  
+
   // Form state
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -122,9 +150,11 @@ function SchedulePage() {
   const scheduleItems = useQuery({
     queryKey: ["schedule-items", selectedDate],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return [];
-      
+
       const startOfDay = new Date(selectedDate);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(selectedDate);
@@ -139,7 +169,7 @@ function SchedulePage() {
         .order("scheduled_at", { ascending: true });
 
       if (error) throw error;
-      return data as ScheduleItem[] || [];
+      return (data as ScheduleItem[]) || [];
     },
   });
 
@@ -147,9 +177,11 @@ function SchedulePage() {
   const appointments = useQuery({
     queryKey: ["appointments", selectedDate],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return [];
-      
+
       const startOfDay = new Date(selectedDate);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(selectedDate);
@@ -164,7 +196,7 @@ function SchedulePage() {
         .order("starts_at", { ascending: true });
 
       if (error) throw error;
-      return data as Appointment[] || [];
+      return (data as Appointment[]) || [];
     },
   });
 
@@ -172,9 +204,11 @@ function SchedulePage() {
   const medications = useQuery({
     queryKey: ["medications"],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return [];
-      
+
       const { data, error } = await supabase
         .from("medications")
         .select("id, name, dose, frequency")
@@ -182,7 +216,7 @@ function SchedulePage() {
         .eq("active", true);
 
       if (error) throw error;
-      return data as Medication[] || [];
+      return (data as Medication[]) || [];
     },
   });
 
@@ -190,9 +224,11 @@ function SchedulePage() {
   const nutritionPlan = useQuery({
     queryKey: ["nutrition-today"],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return null;
-      
+
       // Get the most recent nutrition plan
       const { data, error } = await supabase
         .from("nutrition_plans")
@@ -211,17 +247,19 @@ function SchedulePage() {
   const fitnessLogs = useQuery({
     queryKey: ["fitness", selectedDate],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return [];
-      
+
       const { data, error } = await supabase
         .from("fitness_logs")
-        .select("id, workout_type, duration_minutes, logged_date, time")
+        .select("id, workout_type, duration_minutes, logged_date")
         .eq("user_id", session.user.id)
         .eq("logged_date", selectedDate);
 
       if (error) throw error;
-      return data as FitnessLog[] || [];
+      return (data as FitnessLog[]) || [];
     },
   });
 
@@ -229,15 +267,23 @@ function SchedulePage() {
   const timeline: TimelineItem[] = [];
 
   // Add schedule items
-  scheduleItems.data?.forEach(item => {
-    const time = new Date(item.scheduled_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  scheduleItems.data?.forEach((item) => {
+    const time = new Date(item.scheduled_at).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
     timeline.push({
       id: item.id,
       time,
       title: item.title,
       subtitle: item.description || undefined,
       type: item.item_type === "reminder" ? "reminder" : "todo",
-      icon: item.item_type === "reminder" ? <Bell className="h-4 w-4" /> : <Check className="h-4 w-4" />,
+      icon:
+        item.item_type === "reminder" ? (
+          <Bell className="h-4 w-4" />
+        ) : (
+          <Check className="h-4 w-4" />
+        ),
       color: item.item_type === "reminder" ? "border-l-[var(--warning)]" : "border-l-[var(--info)]",
       completed: item.completed,
       onComplete: () => toggleComplete(item),
@@ -246,8 +292,11 @@ function SchedulePage() {
   });
 
   // Add appointments
-  appointments.data?.forEach(apt => {
-    const time = new Date(apt.starts_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  appointments.data?.forEach((apt) => {
+    const time = new Date(apt.starts_at).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
     timeline.push({
       id: apt.id,
       time,
@@ -269,7 +318,7 @@ function SchedulePage() {
       { key: "dinner", data: planData.plan_data.dinner },
     ];
 
-    meals.forEach(meal => {
+    meals.forEach((meal) => {
       if (meal.data?.time && meal.data?.description) {
         timeline.push({
           id: `${planData.id}-${meal.key}`,
@@ -286,11 +335,11 @@ function SchedulePage() {
   }
 
   // Add medication timings from nutrition plan
-  if (nutritionPlan.data?.plan_data?.medication_timing) {
-    const planData = nutritionPlan.data;
-    planData.plan_data.medication_timing.forEach((med, idx) => {
+  const medicationTimings = nutritionPlan.data?.plan_data?.medication_timing;
+  if (medicationTimings && medicationTimings.length > 0) {
+    medicationTimings.forEach((med, idx) => {
       timeline.push({
-        id: `med-${planData.id}-${idx}`,
+        id: `med-${nutritionPlan.data!.id}-${idx}`,
         time: med.timing.split(" ")[0] || "08:00", // Extract just the time portion
         title: `Take: ${med.medication}`,
         subtitle: med.timing,
@@ -303,10 +352,10 @@ function SchedulePage() {
   }
 
   // Add fitness logs
-  fitnessLogs.data?.forEach(log => {
+  fitnessLogs.data?.forEach((log) => {
     timeline.push({
       id: log.id,
-      time: log.time || "Anytime", // Use dynamic time or default to "Anytime"
+      time: "Anytime",
       title: log.workout_type || "Workout",
       subtitle: `${log.duration_minutes} min`,
       type: "workout",
@@ -322,7 +371,9 @@ function SchedulePage() {
   // Mutations
   const createItemMutation = useMutation({
     mutationFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
       const scheduledAt = new Date(`${selectedDate}T${scheduledTime}:00`);
@@ -453,8 +504,10 @@ function SchedulePage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {ITEM_TYPE_OPTIONS.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      {ITEM_TYPE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -485,7 +538,10 @@ function SchedulePage() {
             <Button variant="outline" size="icon" onClick={() => navigateDay(-1)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="outline" onClick={() => setSelectedDate(format(new Date(), "yyyy-MM-dd"))}>
+            <Button
+              variant="outline"
+              onClick={() => setSelectedDate(format(new Date(), "yyyy-MM-dd"))}
+            >
               Today
             </Button>
             <Button variant="outline" size="icon" onClick={() => navigateDay(1)}>
@@ -513,59 +569,68 @@ function SchedulePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.15 }}
           >
-          <Card>
-            <CardContent className="p-4">
-              <div className="grid grid-cols-7 gap-2">
-                {weekDates.map(date => {
-                  const dateStr = format(date, "yyyy-MM-dd");
-                  const isSelected = dateStr === selectedDate;
-                  const isToday = isSameDay(date, new Date());
-                  
-                  return (
-                    <button
-                      key={dateStr}
-                      onClick={() => setSelectedDate(dateStr)}
-                      className={cn(
-                        "p-2 rounded-lg text-center transition-colors",
-                        isSelected ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "hover:bg-muted",
-                        isToday && !isSelected && "border border-[var(--primary)]"
-                      )}
-                    >
-                      <div className="text-xs text-muted-foreground">{format(date, "EEE")}</div>
-                      <div className="text-lg font-semibold">{format(date, "d")}</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="grid grid-cols-7 gap-2">
+                  {weekDates.map((date) => {
+                    const dateStr = format(date, "yyyy-MM-dd");
+                    const isSelected = dateStr === selectedDate;
+                    const isToday = isSameDay(date, new Date());
+
+                    return (
+                      <button
+                        key={dateStr}
+                        onClick={() => setSelectedDate(dateStr)}
+                        className={cn(
+                          "p-2 rounded-lg text-center transition-colors",
+                          isSelected
+                            ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+                            : "hover:bg-muted",
+                          isToday && !isSelected && "border border-[var(--primary)]",
+                        )}
+                      >
+                        <div className="text-xs text-muted-foreground">{format(date, "EEE")}</div>
+                        <div className="text-lg font-semibold">{format(date, "d")}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
         )}
 
         {/* Legend */}
         <div className="flex flex-wrap gap-3 text-xs">
           <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-[var(--accent)] border-[var(--accent)]/30 rounded" /> Appointment
+            <div className="w-3 h-3 bg-[var(--accent)] border-[var(--accent)]/30 rounded" />{" "}
+            Appointment
           </span>
           <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-[var(--destructive)] border-[var(--destructive)]/30 rounded" /> Medication
+            <div className="w-3 h-3 bg-[var(--destructive)] border-[var(--destructive)]/30 rounded" />{" "}
+            Medication
           </span>
           <span className="flex items-center gap-1">
             <div className="w-3 h-3 bg-[var(--success)] border-[var(--success)]/30 rounded" /> Meal
           </span>
           <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-[var(--warning)] border-[var(--warning)]/30 rounded" /> Workout
+            <div className="w-3 h-3 bg-[var(--warning)] border-[var(--warning)]/30 rounded" />{" "}
+            Workout
           </span>
           <span className="flex items-center gap-1">
             <div className="w-3 h-3 bg-[var(--info)] border-[var(--info)]/30 rounded" /> To-Do
           </span>
           <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-[var(--warning)] border-[var(--warning)]/30 rounded" /> Reminder
+            <div className="w-3 h-3 bg-[var(--warning)] border-[var(--warning)]/30 rounded" />{" "}
+            Reminder
           </span>
         </div>
 
         {/* Timeline */}
-        {scheduleItems.isLoading || appointments.isLoading || nutritionPlan.isLoading || fitnessLogs.isLoading ? (
+        {scheduleItems.isLoading ||
+        appointments.isLoading ||
+        nutritionPlan.isLoading ||
+        fitnessLogs.isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-20 w-full rounded-2xl" />
@@ -577,7 +642,10 @@ function SchedulePage() {
             title="Nothing scheduled"
             body="Add to-dos, or view your appointments, meals, and medications for today."
             action={
-              <Button onClick={() => setIsDialogOpen(true)} className="soma-gradient soma-glow border-0 text-white">
+              <Button
+                onClick={() => setIsDialogOpen(true)}
+                className="soma-gradient soma-glow border-0 text-white"
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Item
               </Button>
@@ -586,70 +654,82 @@ function SchedulePage() {
         ) : (
           <div className="space-y-2">
             <AnimatePresence initial={false}>
-            {timeline.map((item) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-              >
-              <Card className={cn(item.color, "border-l-4")}>
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-4">
-                    {/* Time */}
-                    <div className="w-16 shrink-0 flex items-center gap-1 text-sm font-medium text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      {item.time}
-                    </div>
+              {timeline.map((item) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <Card className={cn(item.color, "border-l-4")}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-4">
+                        {/* Time */}
+                        <div className="w-16 shrink-0 flex items-center gap-1 text-sm font-medium text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          {item.time}
+                        </div>
 
-                    {/* Icon & Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        {item.icon}
-                        <span className={cn("font-medium", item.completed && "line-through text-muted-foreground")}>
-                          {item.title}
-                        </span>
-                        <StatusBadge tone={TYPE_BADGE[item.type].tone} size="sm">
-                          {TYPE_BADGE[item.type].label}
-                        </StatusBadge>
-                        {item.link && (
-                          <Link to={item.link} className="text-xs text-primary hover:underline flex items-center gap-1">
-                            <Link2 className="h-3 w-3" /> Edit
-                          </Link>
+                        {/* Icon & Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            {item.icon}
+                            <span
+                              className={cn(
+                                "font-medium",
+                                item.completed && "line-through text-muted-foreground",
+                              )}
+                            >
+                              {item.title}
+                            </span>
+                            <StatusBadge tone={TYPE_BADGE[item.type].tone} size="sm">
+                              {TYPE_BADGE[item.type].label}
+                            </StatusBadge>
+                            {item.link && (
+                              <Link
+                                to={item.link}
+                                className="text-xs text-primary hover:underline flex items-center gap-1"
+                              >
+                                <Link2 className="h-3 w-3" /> Edit
+                              </Link>
+                            )}
+                          </div>
+                          {item.subtitle && (
+                            <p className="text-sm text-muted-foreground mt-1">{item.subtitle}</p>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        {item.onComplete && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={item.onComplete}
+                            className="shrink-0"
+                          >
+                            {item.completed ? (
+                              <X className="h-4 w-4" />
+                            ) : (
+                              <Check className="h-4 w-4" />
+                            )}
+                          </Button>
+                        )}
+                        {item.onDelete && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={item.onDelete}
+                            className="shrink-0 text-destructive"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         )}
                       </div>
-                      {item.subtitle && (
-                        <p className="text-sm text-muted-foreground mt-1">{item.subtitle}</p>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    {item.onComplete && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={item.onComplete}
-                        className="shrink-0"
-                      >
-                        {item.completed ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-                      </Button>
-                    )}
-                    {item.onDelete && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={item.onDelete}
-                        className="shrink-0 text-destructive"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-              </motion.div>
-            ))}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
             </AnimatePresence>
           </div>
         )}

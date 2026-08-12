@@ -104,7 +104,8 @@ function Dashboard() {
       action={
         <Link to="/appointments">
           <Button className="soma-gradient soma-glow border-0 text-white hidden sm:inline-flex">
-            <CalendarPlus className="mr-2 h-4 w-4" /> {t("dashboard.bookAppointment", "Book appointment")}
+            <CalendarPlus className="mr-2 h-4 w-4" />{" "}
+            {t("dashboard.bookAppointment", "Book appointment")}
           </Button>
         </Link>
       }
@@ -114,8 +115,12 @@ function Dashboard() {
         <section className="soma-card p-6 lg:col-span-5">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-display text-lg font-semibold">{t("dashboard.upcomingAppointments", "Upcoming appointments")}</h2>
-              <p className="text-xs text-muted-foreground">{t("dashboard.upcomingAppointmentsSubtitle", "Your next visits")}</p>
+              <h2 className="font-display text-lg font-semibold">
+                {t("dashboard.upcomingAppointments", "Upcoming appointments")}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {t("dashboard.upcomingAppointmentsSubtitle", "Your next visits")}
+              </p>
             </div>
             <Link to="/appointments" className="text-xs text-primary hover:underline">
               {t("dashboard.viewAll", "View all")}
@@ -133,11 +138,15 @@ function Dashboard() {
               <EmptyState
                 icon={CalendarDays}
                 title={t("dashboard.noAppointments", "No upcoming appointments")}
-                body={t("dashboard.noAppointmentsBody", "Book your next visit — in-person or telehealth.")}
+                body={t(
+                  "dashboard.noAppointmentsBody",
+                  "Book your next visit — in-person or telehealth.",
+                )}
                 action={
                   <Link to="/appointments">
                     <Button size="sm" className="soma-gradient soma-glow border-0 text-white">
-                      <CalendarPlus className="mr-2 h-4 w-4" /> {t("dashboard.bookAppointment", "Book")}
+                      <CalendarPlus className="mr-2 h-4 w-4" />{" "}
+                      {t("dashboard.bookAppointment", "Book")}
                     </Button>
                   </Link>
                 }
@@ -151,9 +160,14 @@ function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-display text-lg font-semibold">
-                {t("dashboard.recentResults", "Recent results")} <span className="text-muted-foreground font-normal">· {t("dashboard.glucose", "Glucose")}</span>
+                {t("dashboard.recentResults", "Recent results")}{" "}
+                <span className="text-muted-foreground font-normal">
+                  · {t("dashboard.glucose", "Glucose")}
+                </span>
               </h2>
-              <p className="text-xs text-muted-foreground">{t("dashboard.last7Days", "Last 7 days")}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("dashboard.last7Days", "Last 7 days")}
+              </p>
             </div>
             <Link to="/trackers/vitals" className="text-xs text-primary hover:underline">
               {t("dashboard.allVitals", "All vitals")}
@@ -164,10 +178,12 @@ function Dashboard() {
               <Skeleton className="h-full w-full" />
             ) : vitals.data && vitals.data.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={vitals.data.map((v) => ({
-                  label: format(new Date(v.taken_at), "EEE"),
-                  value: Number(v.value),
-                }))}>
+                <LineChart
+                  data={vitals.data.map((v) => ({
+                    label: format(new Date(v.taken_at), "EEE"),
+                    value: Number(v.value),
+                  }))}
+                >
                   <defs>
                     <linearGradient id="glucose" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.3} />
@@ -175,8 +191,19 @@ function Dashboard() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                  <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
+                  <XAxis
+                    dataKey="label"
+                    stroke="var(--muted-foreground)"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="var(--muted-foreground)"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "var(--card)",
@@ -202,7 +229,9 @@ function Dashboard() {
                 body={t("dashboard.noGlucoseBody", "Log your first vital to start seeing trends.")}
                 action={
                   <Link to="/trackers/vitals">
-                    <Button size="sm" variant="outline">{t("dashboard.logReading", "Log a reading")}</Button>
+                    <Button size="sm" variant="outline">
+                      {t("dashboard.logReading", "Log a reading")}
+                    </Button>
                   </Link>
                 }
               />
@@ -221,11 +250,15 @@ function Dashboard() {
               {t("dashboard.aiShortcutTitle", "Ask about your health — grounded in your data.")}
             </h2>
             <p className="mt-2 text-sm text-white/85">
-              {t("dashboard.aiShortcutBody", "Symptoms, meds, reports and images. Multilingual, private, always available.")}
+              {t(
+                "dashboard.aiShortcutBody",
+                "Symptoms, meds, reports and images. Multilingual, private, always available.",
+              )}
             </p>
             <Link to="/assistant">
               <Button className="mt-6 bg-white text-primary hover:bg-white/90">
-                {t("dashboard.openAssistant", "Open assistant")} <ArrowRight className="ml-2 h-4 w-4" />
+                {t("dashboard.openAssistant", "Open assistant")}{" "}
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
@@ -235,8 +268,12 @@ function Dashboard() {
         <section className="soma-card p-6 lg:col-span-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-display text-lg font-semibold">{t("dashboard.currentPrescription", "Current prescription")}</h2>
-              <p className="text-xs text-muted-foreground">{t("dashboard.activeMedications", "Active medications")}</p>
+              <h2 className="font-display text-lg font-semibold">
+                {t("dashboard.currentPrescription", "Current prescription")}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {t("dashboard.activeMedications", "Active medications")}
+              </p>
             </div>
             <Link to="/medications" className="text-xs text-primary hover:underline">
               {t("dashboard.manage", "Manage")}
@@ -261,10 +298,15 @@ function Dashboard() {
               <EmptyState
                 icon={Pill}
                 title={t("dashboard.noMedications", "No medications yet")}
-                body={t("dashboard.noMedicationsBody", "Add your prescriptions to get reminders and interaction checks.")}
+                body={t(
+                  "dashboard.noMedicationsBody",
+                  "Add your prescriptions to get reminders and interaction checks.",
+                )}
                 action={
                   <Link to="/medications">
-                    <Button size="sm" variant="outline">{t("dashboard.addMedication", "Add medication")}</Button>
+                    <Button size="sm" variant="outline">
+                      {t("dashboard.addMedication", "Add medication")}
+                    </Button>
                   </Link>
                 }
               />
@@ -275,7 +317,9 @@ function Dashboard() {
         {/* Notifications */}
         <section className="soma-card p-6 lg:col-span-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-lg font-semibold">{t("dashboard.notifications", "Notifications")}</h2>
+            <h2 className="font-display text-lg font-semibold">
+              {t("dashboard.notifications", "Notifications")}
+            </h2>
           </div>
           <div className="mt-6 space-y-4">
             {notifications.isLoading ? (
@@ -329,7 +373,11 @@ function AppointmentRow({
 }) {
   const { t } = useTranslation();
   const d = new Date(appt.starts_at);
-  const when = isToday(d) ? t("dashboard.today", "Today") : isTomorrow(d) ? t("dashboard.tomorrow", "Tomorrow") : format(d, "MMM d");
+  const when = isToday(d)
+    ? t("dashboard.today", "Today")
+    : isTomorrow(d)
+      ? t("dashboard.tomorrow", "Tomorrow")
+      : format(d, "MMM d");
   const initials = appt.provider_name.split(" ").slice(-1)[0]?.slice(0, 2).toUpperCase() || "DR";
 
   return (

@@ -12,11 +12,24 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from "recharts";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell,
+} from "recharts";
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_authenticated/hydration")({
-  head: () => ({ meta: [{ title: "Hydration — SomaCare" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "Hydration — SomaCare" }, { name: "robots", content: "noindex" }],
+  }),
   component: HydrationPage,
 });
 
@@ -43,15 +56,17 @@ function HydrationPage() {
   const healthVault = useQuery({
     queryKey: ["health-vault"],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return null;
-      
+
       const { data, error } = await supabase
         .from("health_vault")
         .select("body_weight_kg")
         .eq("user_id", session.user.id)
         .maybeSingle();
-      
+
       if (error) throw error;
       return data;
     },
@@ -67,18 +82,19 @@ function HydrationPage() {
         .order("logged_at", { ascending: false })
         .limit(100);
       if (error) throw error;
-      return data as HydrationLog[] || [];
+      return (data as HydrationLog[]) || [];
     },
   });
 
   // Calculate today's total
   const today = new Date().toISOString().split("T")[0];
-  const todayTotal = hydrationLogs.data
-    ?.filter(log => log.logged_at.split("T")[0] === today)
-    .reduce((sum, log) => sum + log.amount_ml, 0) || 0;
+  const todayTotal =
+    hydrationLogs.data
+      ?.filter((log) => log.logged_at.split("T")[0] === today)
+      .reduce((sum, log) => sum + log.amount_ml, 0) || 0;
 
   // Calculate personalized goal (35ml per kg body weight)
-  const calculatedGoal = healthVault.data?.body_weight_kg 
+  const calculatedGoal = healthVault.data?.body_weight_kg
     ? Math.round(healthVault.data.body_weight_kg * 35)
     : 2500; // Default fallback
 
@@ -92,8 +108,8 @@ function HydrationPage() {
     return date.toISOString().split("T")[0];
   });
 
-  const chartData = last7Days.map(date => {
-    const dayLogs = hydrationLogs.data?.filter(log => log.logged_at.split("T")[0] === date) || [];
+  const chartData = last7Days.map((date) => {
+    const dayLogs = hydrationLogs.data?.filter((log) => log.logged_at.split("T")[0] === date) || [];
     const total = dayLogs.reduce((sum, log) => sum + log.amount_ml, 0);
     return {
       date: format(new Date(date), "EEE"),
@@ -105,7 +121,9 @@ function HydrationPage() {
 
   const logWaterMutation = useMutation({
     mutationFn: async (amount: number) => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
       const { error } = await supabase.from("hydration_logs").insert({
@@ -123,7 +141,9 @@ function HydrationPage() {
       qc.invalidateQueries({ queryKey: ["hydration"] });
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : t("hydration.toastLogFailed", "Failed to log"));
+      toast.error(
+        err instanceof Error ? err.message : t("hydration.toastLogFailed", "Failed to log"),
+      );
     },
     onSettled: () => setLoggingId(null),
   });
@@ -166,14 +186,19 @@ function HydrationPage() {
               {t("hydration.todaysIntake", "Today's Intake")}
             </CardTitle>
             <CardDescription>
-              {t("hydration.goal", "Goal")}: {dailyGoal}ml {customGoal ? t("hydration.goalCustom", "(custom)") : healthVault.data?.body_weight_kg ? `(${healthVault.data.body_weight_kg}kg × 35ml/kg)` : t("hydration.goalDefault", "(default)")}
+              {t("hydration.goal", "Goal")}: {dailyGoal}ml{" "}
+              {customGoal
+                ? t("hydration.goalCustom", "(custom)")
+                : healthVault.data?.body_weight_kg
+                  ? `(${healthVault.data.body_weight_kg}kg × 35ml/kg)`
+                  : t("hydration.goalDefault", "(default)")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {/* Progress bar */}
               <div className="relative h-8 bg-muted rounded-full overflow-hidden">
-                <div 
+                <div
                   className="absolute inset-y-0 left-0 bg-[var(--info)] transition-all duration-500"
                   style={{ width: `${progressPercent}%` }}
                 />
@@ -186,7 +211,7 @@ function HydrationPage() {
 
               {/* Quick log buttons */}
               <div className="flex flex-wrap gap-2">
-                {QUICK_AMOUNTS.map(amount => (
+                {QUICK_AMOUNTS.map((amount) => (
                   <Button
                     key={amount}
                     variant="outline"
@@ -206,7 +231,9 @@ function HydrationPage() {
               {/* Custom amount input */}
               <div className="flex gap-2">
                 <div className="flex-1">
-                  <Label htmlFor="custom-amount">{t("hydration.customAmount", "Custom amount (ml)")}</Label>
+                  <Label htmlFor="custom-amount">
+                    {t("hydration.customAmount", "Custom amount (ml)")}
+                  </Label>
                   <Input
                     ref={customAmountRef}
                     id="custom-amount"
@@ -218,7 +245,11 @@ function HydrationPage() {
                   />
                 </div>
                 <div className="flex items-end">
-                  <Button onClick={handleCustomLog} disabled={loggingId !== null} className="soma-gradient soma-glow border-0 text-white">
+                  <Button
+                    onClick={handleCustomLog}
+                    disabled={loggingId !== null}
+                    className="soma-gradient soma-glow border-0 text-white"
+                  >
                     <Plus className="h-4 w-4 mr-1" />
                     {t("hydration.add", "Add")}
                   </Button>
@@ -254,9 +285,9 @@ function HydrationPage() {
                     />
                     <Bar dataKey="ml" name={t("hydration.intake", "Intake")} radius={[4, 4, 0, 0]}>
                       {chartData.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={entry.ml >= entry.goal ? "var(--success)" : "var(--info)"} 
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.ml >= entry.goal ? "var(--success)" : "var(--info)"}
                         />
                       ))}
                     </Bar>
@@ -295,24 +326,24 @@ function HydrationPage() {
             <CardContent>
               <div className="space-y-2">
                 <AnimatePresence initial={false}>
-                {hydrationLogs.data.slice(0, 10).map((log) => (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15 }}
-                    key={log.id}
-                    className="flex items-center justify-between rounded-lg bg-muted/50 p-3"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Droplets className="h-4 w-4 text-[var(--info)]" />
-                      <span className="font-medium">{log.amount_ml}ml</span>
-                    </div>
-                    <span className="text-sm text-muted-foreground">
-                      {format(new Date(log.logged_at), "MMM d, h:mm a")}
-                    </span>
-                  </motion.div>
-                ))}
+                  {hydrationLogs.data.slice(0, 10).map((log) => (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      key={log.id}
+                      className="flex items-center justify-between rounded-lg bg-muted/50 p-3"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Droplets className="h-4 w-4 text-[var(--info)]" />
+                        <span className="font-medium">{log.amount_ml}ml</span>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {format(new Date(log.logged_at), "MMM d, h:mm a")}
+                      </span>
+                    </motion.div>
+                  ))}
                 </AnimatePresence>
               </div>
             </CardContent>

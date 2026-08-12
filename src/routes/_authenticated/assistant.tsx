@@ -45,10 +45,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/assistant")({
   head: () => ({
-    meta: [
-      { title: "AI Assistant — Adwoa Health" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "AI Assistant — Adwoa Health" }, { name: "robots", content: "noindex" }],
   }),
   component: AssistantPage,
 });
@@ -56,10 +53,30 @@ export const Route = createFileRoute("/_authenticated/assistant")({
 type Thread = { id: string; title: string; updated_at: string };
 
 const SUGGESTIONS = [
-  { icon: HeartPulse, key: "assistant.suggestion1", fallback: "Explain my blood pressure readings in Ghana context", tint: "from-emerald-500/15 to-emerald-500/5" },
-  { icon: Salad, key: "assistant.suggestion2", fallback: "Suggest healthy Ghanaian meals (Waakye, Kontomire, Red Red)", tint: "from-amber-500/15 to-amber-500/5" },
-  { icon: Pill, key: "assistant.suggestion3", fallback: "Check medication interactions and side effects", tint: "from-violet-500/15 to-violet-500/5" },
-  { icon: CalendarDays, key: "assistant.suggestion4", fallback: "Prepare questions for my upcoming clinic visit", tint: "from-sky-500/15 to-sky-500/5" },
+  {
+    icon: HeartPulse,
+    key: "assistant.suggestion1",
+    fallback: "Explain my blood pressure readings in Ghana context",
+    tint: "from-emerald-500/15 to-emerald-500/5",
+  },
+  {
+    icon: Salad,
+    key: "assistant.suggestion2",
+    fallback: "Suggest healthy Ghanaian meals (Waakye, Kontomire, Red Red)",
+    tint: "from-amber-500/15 to-amber-500/5",
+  },
+  {
+    icon: Pill,
+    key: "assistant.suggestion3",
+    fallback: "Check medication interactions and side effects",
+    tint: "from-violet-500/15 to-violet-500/5",
+  },
+  {
+    icon: CalendarDays,
+    key: "assistant.suggestion4",
+    fallback: "Prepare questions for my upcoming clinic visit",
+    tint: "from-sky-500/15 to-sky-500/5",
+  },
 ];
 
 function AssistantPage() {
@@ -122,10 +139,14 @@ function AssistantPage() {
       if (!u.user) throw new Error("Not authenticated");
       const { data, error } = await supabase
         .from("ai_threads")
-        .insert({ user_id: u.user.id, title: t("assistant.newConversationTitle", "New conversation") })
+        .insert({
+          user_id: u.user.id,
+          title: t("assistant.newConversationTitle", "New conversation"),
+        })
         .select("id,title,updated_at")
         .single();
-      if (error || !data) throw new Error(t("assistant.errorNewConversation", "Could not start a new conversation"));
+      if (error || !data)
+        throw new Error(t("assistant.errorNewConversation", "Could not start a new conversation"));
       return data as Thread;
     },
     onSuccess: (created) => {
@@ -151,7 +172,7 @@ function AssistantPage() {
       if (activeId === id) setActiveId(null);
     },
     onError: () => {
-      toast.error(t('assistant.errorDeleteConversation'));
+      toast.error(t("assistant.errorDeleteConversation"));
     },
   });
 
@@ -159,8 +180,8 @@ function AssistantPage() {
 
   return (
     <AppShell
-      title={t('assistant.title')}
-      subtitle={t('assistant.subtitle')}
+      title={t("assistant.title")}
+      subtitle={t("assistant.subtitle")}
       action={
         <div className="flex items-center gap-2">
           <Button
@@ -170,10 +191,14 @@ function AssistantPage() {
             className="hidden lg:flex items-center gap-1.5"
           >
             <PanelLeft className="h-4 w-4" />
-            {sidebarOpen ? t('assistant.hideHistory') : t('assistant.showHistory')}
+            {sidebarOpen ? t("assistant.hideHistory") : t("assistant.showHistory")}
           </Button>
-          <Button size="sm" onClick={newThread} className="soma-gradient soma-glow border-0 text-white">
-            <Plus className="mr-1.5 h-4 w-4" /> {t('assistant.newChatHeader')}
+          <Button
+            size="sm"
+            onClick={newThread}
+            className="soma-gradient soma-glow border-0 text-white"
+          >
+            <Plus className="mr-1.5 h-4 w-4" /> {t("assistant.newChatHeader")}
           </Button>
         </div>
       }
@@ -196,8 +221,12 @@ function AssistantPage() {
                   </div>
                 </div>
               </div>
-              <Button size="sm" onClick={newThread} className="mt-3 w-full soma-gradient border-0 text-white">
-                <Plus className="mr-1.5 h-3.5 w-3.5" /> {t('assistant.newChat')}
+              <Button
+                size="sm"
+                onClick={newThread}
+                className="mt-3 w-full soma-gradient border-0 text-white"
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" /> {t("assistant.newChat")}
               </Button>
             </div>
             <div className="flex items-center justify-between px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/40 bg-muted/30">
@@ -235,7 +264,7 @@ function AssistantPage() {
                             "flex-1 truncate rounded-xl px-3 py-2.5 text-left text-xs transition",
                             activeId === t.id
                               ? "bg-primary/15 font-semibold text-primary border border-primary/20 shadow-sm"
-                              : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                              : "text-muted-foreground hover:bg-secondary hover:text-foreground",
                           )}
                         >
                           {t.title || "Untitled Chat"}
@@ -264,7 +293,9 @@ function AssistantPage() {
             <div className="flex items-center gap-2">
               <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="font-medium text-foreground">Adwoa AI Active</span>
-              <span className="text-muted-foreground hidden sm:inline">• Context: Ghana Healthcare Baseline</span>
+              <span className="text-muted-foreground hidden sm:inline">
+                • Context: Ghana Healthcare Baseline
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="hidden md:inline-flex items-center gap-1 text-muted-foreground text-[11px]">
@@ -291,10 +322,8 @@ function AssistantPage() {
       <AlertDialog open={pendingDelete !== null} onOpenChange={(o) => !o && setPendingDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('assistant.deleteTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('assistant.deleteDescription')}
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("assistant.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("assistant.deleteDescription")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -326,9 +355,14 @@ function EmptyChat({ onStart }: { onStart: () => void }) {
       </motion.div>
       <h2 className="mt-5 font-display text-3xl font-bold">Meet Adwoa AI</h2>
       <p className="mt-2 max-w-md text-sm text-muted-foreground">
-        Your personal AI health companion — tailored for Ghana with your vitals, medications, and medical history.
+        Your personal AI health companion — tailored for Ghana with your vitals, medications, and
+        medical history.
       </p>
-      <Button onClick={onStart} size="lg" className="mt-6 soma-gradient border-0 text-white shadow-md">
+      <Button
+        onClick={onStart}
+        size="lg"
+        className="mt-6 soma-gradient border-0 text-white shadow-md"
+      >
         <Plus className="mr-2 h-4 w-4" /> Start a Conversation
       </Button>
     </div>
@@ -363,7 +397,7 @@ function ChatWindow({
           return { body: { messages, threadId }, headers };
         },
       }),
-    [threadId]
+    [threadId],
   );
 
   const { messages, sendMessage, status, error, stop, regenerate } = useChat({
@@ -411,7 +445,9 @@ function ChatWindow({
             >
               <Sparkles className="h-8 w-8 text-white" />
             </motion.div>
-            <h3 className="mt-4 font-display text-2xl font-bold">Akwaaba! How can Adwoa help you today?</h3>
+            <h3 className="mt-4 font-display text-2xl font-bold">
+              Akwaaba! How can Adwoa help you today?
+            </h3>
             <p className="mt-1 text-sm text-muted-foreground">
               Grounded in your vitals, medications, and Ghanaian health context.
             </p>
@@ -426,7 +462,7 @@ function ChatWindow({
                   onClick={() => send(s.fallback)}
                   className={cn(
                     "group flex items-center gap-3 rounded-2xl border border-border bg-gradient-to-br p-3.5 text-left text-xs transition hover:border-primary/50 hover:shadow-md",
-                    s.tint
+                    s.tint,
                   )}
                 >
                   <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-card text-primary shadow-sm">
@@ -507,7 +543,8 @@ function ChatWindow({
             </div>
           </div>
           <p className="mt-2 text-center text-[11px] text-muted-foreground">
-            Adwoa AI provides general guidance for informational purposes, not formal diagnosis. In emergencies contact local health services.
+            Adwoa AI provides general guidance for informational purposes, not formal diagnosis. In
+            emergencies contact local health services.
           </p>
         </div>
       </form>
@@ -519,9 +556,9 @@ function ThinkingIndicator() {
   const { t } = useTranslation();
   const [step, setStep] = useState(0);
   const steps = [
-    t('assistant.thinkingSteps.vault', 'Accessing your health vault...'),
-    t('assistant.thinkingSteps.vitals', 'Analyzing vitals & medications...'),
-    t('assistant.thinkingSteps.generating', 'Adwoa is crafting a response...'),
+    t("assistant.thinkingSteps.vault", "Accessing your health vault..."),
+    t("assistant.thinkingSteps.vitals", "Analyzing vitals & medications..."),
+    t("assistant.thinkingSteps.generating", "Adwoa is crafting a response..."),
   ];
 
   useEffect(() => {
@@ -578,9 +615,7 @@ function MessageBubble({ message }: { message: UIMessage }) {
       <div
         className={cn(
           "grid h-9 w-9 shrink-0 place-items-center rounded-2xl shadow-sm",
-          isUser
-            ? "bg-secondary text-foreground"
-            : "soma-gradient soma-glow text-white"
+          isUser ? "bg-secondary text-foreground" : "soma-gradient soma-glow text-white",
         )}
       >
         {isUser ? <UserIcon className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
@@ -591,7 +626,7 @@ function MessageBubble({ message }: { message: UIMessage }) {
             "rounded-3xl px-4 py-3.5 text-[15px] leading-relaxed shadow-sm",
             isUser
               ? "rounded-tr-md bg-primary text-primary-foreground font-medium"
-              : "rounded-tl-md border border-border/60 bg-card text-foreground"
+              : "rounded-tl-md border border-border/60 bg-card text-foreground",
           )}
         >
           {isUser ? (

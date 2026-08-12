@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface BentoCard {
   title: string;
   description: string;
-  icon?: string;
+  icon?: ReactNode;
   image?: string;
   colSpan?: number;
   rowSpan?: number;
@@ -39,10 +39,10 @@ function BentoItem({ card, index }: { card: BentoCard; index: number }) {
     img.onerror = () => setImageError(true);
     img.src = card.image;
   }, [card.image]);
-  
+
   const colSpan = card.colSpan || 1;
   const rowSpan = card.rowSpan || 1;
-  
+
   const hasImage = card.image && !imageError;
 
   return (
@@ -55,7 +55,7 @@ function BentoItem({ card, index }: { card: BentoCard; index: number }) {
         "group relative overflow-hidden rounded-2xl soma-card p-6",
         `md:col-span-${colSpan}`,
         `md:row-span-${rowSpan}`,
-        card.className
+        card.className,
       )}
       style={{
         gridColumn: `span ${colSpan}`,
@@ -64,7 +64,7 @@ function BentoItem({ card, index }: { card: BentoCard; index: number }) {
     >
       {/* Background Image or Gradient Fallback */}
       {hasImage ? (
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
           style={{ backgroundImage: `url(${card.image})` }}
         >
@@ -78,10 +78,10 @@ function BentoItem({ card, index }: { card: BentoCard; index: number }) {
       <div className="relative z-10 flex flex-col h-full">
         {card.icon && (
           <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <span className="text-2xl">{card.icon}</span>
+            {card.icon}
           </div>
         )}
-        
+
         <h3 className="font-display text-xl font-semibold">{card.title}</h3>
         <p className="mt-2 text-sm text-muted-foreground">{card.description}</p>
       </div>
@@ -92,17 +92,4 @@ function BentoItem({ card, index }: { card: BentoCard; index: number }) {
       </div>
     </motion.div>
   );
-}
-
-// Helper function to get placeholder image paths
-export function getFeatureImagePath(feature: string): string {
-  const imageMap: Record<string, string> = {
-    "health-vault": "/images/landing/feature-vault.jpg",
-    "ai-chat": "/images/landing/feature-ai-chat.jpg",
-    "vitals": "/images/landing/feature-vitals.jpg",
-    "wellness": "/images/landing/feature-wellness.jpg",
-    "schedule": "/images/landing/feature-schedule.jpg",
-    "medverify": "/images/landing/feature-medverify.jpg",
-  };
-  return imageMap[feature] || "";
 }

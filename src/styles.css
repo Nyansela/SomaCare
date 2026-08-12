@@ -61,86 +61,86 @@
   --radius: 0.9rem;
 
   /* Light theme — green/black/white palette with red accent */
-  --background: oklch(0.985 0.004 145);        /* Near-white with subtle green warmth */
-  --foreground: oklch(0.16 0.02 145);           /* Near-black with green tint */
+  --background: oklch(0.985 0.004 145); /* Near-white with subtle green warmth */
+  --foreground: oklch(0.16 0.02 145); /* Near-black with green tint */
 
-  --surface: oklch(1 0 0);                      /* Pure white */
-  --surface-soft: oklch(0.99 0.003 145);        /* Barely tinted white */
+  --surface: oklch(1 0 0); /* Pure white */
+  --surface-soft: oklch(0.99 0.003 145); /* Barely tinted white */
 
-  --card: oklch(1 0 0);                         /* Pure white cards */
-  --card-foreground: oklch(0.16 0.02 145);      /* Matches foreground */
+  --card: oklch(1 0 0); /* Pure white cards */
+  --card-foreground: oklch(0.16 0.02 145); /* Matches foreground */
 
-  --popover: oklch(1 0 0);                      /* Pure white popovers */
-  --popover-foreground: oklch(0.16 0.02 145);   /* Matches foreground */
+  --popover: oklch(1 0 0); /* Pure white popovers */
+  --popover-foreground: oklch(0.16 0.02 145); /* Matches foreground */
 
-  --primary: oklch(0.55 0.16 145);              /* Green — primary actions */
-  --primary-strong: oklch(0.48 0.18 145);       /* Deeper green for emphasis */
-  --primary-foreground: oklch(0.98 0 0);        /* White on primary */
+  --primary: oklch(0.55 0.16 145); /* Green — primary actions */
+  --primary-strong: oklch(0.48 0.18 145); /* Deeper green for emphasis */
+  --primary-foreground: oklch(0.98 0 0); /* White on primary */
 
-  --secondary: oklch(0.95 0.008 145);           /* Light green-tinted gray */
+  --secondary: oklch(0.95 0.008 145); /* Light green-tinted gray */
   --secondary-foreground: oklch(0.28 0.02 145); /* Dark green-tinted gray */
 
-  --muted: oklch(0.96 0.006 145);               /* Muted backgrounds */
-  --muted-foreground: oklch(0.52 0.015 145);    /* Muted text */
+  --muted: oklch(0.96 0.006 145); /* Muted backgrounds */
+  --muted-foreground: oklch(0.52 0.015 145); /* Muted text */
 
-  --accent: oklch(0.93 0.015 145);              /* Subtle green-tinted accent bg */
-  --accent-foreground: oklch(0.3 0.03 145);     /* Accent text */
+  --accent: oklch(0.93 0.015 145); /* Subtle green-tinted accent bg */
+  --accent-foreground: oklch(0.3 0.03 145); /* Accent text */
 
-  --destructive: oklch(0.6 0.22 0);             /* Red — danger/destructive */
-  --destructive-foreground: oklch(0.98 0 0);    /* White on destructive */
-  --success: oklch(0.55 0.16 145);              /* Same green as primary */
-  --success-foreground: oklch(0.98 0 0);        /* White on success */
-  --info: oklch(0.6 0.12 200);                  /* Blue-green for info */
-  --warning: oklch(0.75 0.15 75);               /* Amber for warnings */
+  --destructive: oklch(0.6 0.22 0); /* Red — danger/destructive */
+  --destructive-foreground: oklch(0.98 0 0); /* White on destructive */
+  --success: oklch(0.55 0.16 145); /* Same green as primary */
+  --success-foreground: oklch(0.98 0 0); /* White on success */
+  --info: oklch(0.6 0.12 200); /* Blue-green for info */
+  --warning: oklch(0.75 0.15 75); /* Amber for warnings */
 
-  --border: oklch(0.9 0.01 145);                /* Subtle green-tinted borders */
-  --input: oklch(0.92 0.01 145);                /* Input backgrounds */
-  --ring: oklch(0.55 0.16 145);                 /* Primary ring */
+  --border: oklch(0.9 0.01 145); /* Subtle green-tinted borders */
+  --input: oklch(0.92 0.01 145); /* Input backgrounds */
+  --ring: oklch(0.55 0.16 145); /* Primary ring */
 
-  --sidebar: oklch(0.99 0.003 145);             /* Sidebar background */
-  --sidebar-foreground: oklch(0.5 0.02 145);    /* Sidebar text */
+  --sidebar: oklch(0.99 0.003 145); /* Sidebar background */
+  --sidebar-foreground: oklch(0.5 0.02 145); /* Sidebar text */
 }
 
 .dark {
   /* Dark theme — true neutral dark grays with green primary, red for danger */
-  --background: #121212;                          /* Material Design neutral dark background */
-  --foreground: oklch(0.96 0.005 145);          /* Near-white with green warmth */
+  --background: #121212; /* Material Design neutral dark background */
+  --foreground: oklch(0.96 0.005 145); /* Near-white with green warmth */
 
-  --surface: #1e1e1e;                            /* Material Design surface (one level up) */
-  --surface-soft: oklch(0.16 0.01 145);         /* Lighter charcoal */
+  --surface: #1e1e1e; /* Material Design surface (one level up) */
+  --surface-soft: oklch(0.16 0.01 145); /* Lighter charcoal */
 
-  --card: #1e1e1e;                              /* Card background = surface */
-  --card-foreground: oklch(0.96 0.005 145);     /* Light text on cards */
+  --card: #1e1e1e; /* Card background = surface */
+  --card-foreground: oklch(0.96 0.005 145); /* Light text on cards */
 
-  --popover: oklch(0.16 0.01 145);               /* Popover background */
-  --popover-foreground: oklch(0.96 0.005 145);  /* Popover text */
+  --popover: oklch(0.16 0.01 145); /* Popover background */
+  --popover-foreground: oklch(0.96 0.005 145); /* Popover text */
 
-  --primary: oklch(0.65 0.18 145);              /* Bright green — accessible on dark */
-  --primary-strong: oklch(0.55 0.2 145);        /* Stronger green for emphasis */
-  --primary-foreground: oklch(0.1 0 0);         /* Near-black on primary */
+  --primary: oklch(0.65 0.18 145); /* Bright green — accessible on dark */
+  --primary-strong: oklch(0.55 0.2 145); /* Stronger green for emphasis */
+  --primary-foreground: oklch(0.1 0 0); /* Near-black on primary */
 
-  --secondary: oklch(0.2 0.02 145);             /* Dark gray with green tint */
+  --secondary: oklch(0.2 0.02 145); /* Dark gray with green tint */
   --secondary-foreground: oklch(0.88 0.01 145); /* Light gray-green */
 
-  --muted: oklch(0.18 0.02 145);                 /* Muted backgrounds */
-  --muted-foreground: oklch(0.68 0.02 145);     /* Muted text */
+  --muted: oklch(0.18 0.02 145); /* Muted backgrounds */
+  --muted-foreground: oklch(0.68 0.02 145); /* Muted text */
 
-  --accent: oklch(0.22 0.03 145);                /* Dark green-tinted accent */
-  --accent-foreground: oklch(0.95 0 0);          /* White on accent */
+  --accent: oklch(0.22 0.03 145); /* Dark green-tinted accent */
+  --accent-foreground: oklch(0.95 0 0); /* White on accent */
 
-  --destructive: oklch(0.6 0.22 0);             /* Red — danger/destructive */
-  --destructive-foreground: oklch(0.98 0 0);    /* White on destructive */
-  --success: oklch(0.65 0.18 145);              /* Green — same as primary */
-  --success-foreground: oklch(0.1 0 0);         /* Near-black on success */
-  --info: oklch(0.7 0.15 258);                   /* Blue-green info */
-  --warning: oklch(0.78 0.17 78);                /* Amber warning */
+  --destructive: oklch(0.6 0.22 0); /* Red — danger/destructive */
+  --destructive-foreground: oklch(0.98 0 0); /* White on destructive */
+  --success: oklch(0.65 0.18 145); /* Green — same as primary */
+  --success-foreground: oklch(0.1 0 0); /* Near-black on success */
+  --info: oklch(0.7 0.15 258); /* Blue-green info */
+  --warning: oklch(0.78 0.17 78); /* Amber warning */
 
-  --border: oklch(1 0 0 / 10%);                  /* Subtle borders */
-  --input: oklch(1 0 0 / 12%);                   /* Input backgrounds */
-  --ring: oklch(0.65 0.18 145);                  /* Primary ring */
+  --border: oklch(1 0 0 / 10%); /* Subtle borders */
+  --input: oklch(1 0 0 / 12%); /* Input backgrounds */
+  --ring: oklch(0.65 0.18 145); /* Primary ring */
 
-  --sidebar: oklch(0.1 0.005 145);               /* Sidebar background */
-  --sidebar-foreground: oklch(0.8 0.01 145);    /* Sidebar text */
+  --sidebar: oklch(0.1 0.005 145); /* Sidebar background */
+  --sidebar-foreground: oklch(0.8 0.01 145); /* Sidebar text */
 }
 
 /* Theme Application Root */
@@ -174,13 +174,17 @@
   * {
     border-color: var(--color-border);
   }
-  html, body {
+  html,
+  body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }

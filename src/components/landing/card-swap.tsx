@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,10 +25,10 @@ export function CardSwap({ cards, autoPlay = true, interval = 5000 }: CardSwapPr
   const [direction, setDirection] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const next = () => {
+  const next = useCallback(() => {
     setDirection(1);
     setCurrentIndex((prev) => (prev + 1) % cards.length);
-  };
+  }, [cards.length]);
 
   const prev = () => {
     setDirection(-1);
@@ -42,7 +42,7 @@ export function CardSwap({ cards, autoPlay = true, interval = 5000 }: CardSwapPr
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [autoPlay, interval]);
+  }, [autoPlay, interval, next]);
 
   const variants = {
     enter: (dir: number) => ({
@@ -82,7 +82,9 @@ export function CardSwap({ cards, autoPlay = true, interval = 5000 }: CardSwapPr
                 {cards[currentIndex].content}
               </p>
               <div>
-                <div className="font-semibold">{cards[currentIndex].author || cards[currentIndex].title}</div>
+                <div className="font-semibold">
+                  {cards[currentIndex].author || cards[currentIndex].title}
+                </div>
                 {cards[currentIndex].role && (
                   <div className="text-sm text-muted-foreground">{cards[currentIndex].role}</div>
                 )}

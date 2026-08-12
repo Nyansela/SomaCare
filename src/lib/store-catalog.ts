@@ -12,8 +12,7 @@ export type StoreItem = {
 };
 
 // Direct Unsplash photo IDs — hand-picked to actually match each product.
-const img = (id: string) =>
-  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=800&q=80`;
+const img = (id: string) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=800&q=80`;
 
 export const STORE_CATALOG: StoreItem[] = [
   {

@@ -47,7 +47,8 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
-      const typedEnv = env as { ASSETS?: { fetch: (req: Request) => Promise<Response> } } | undefined;
+      const typedEnv = env as
+        { ASSETS?: { fetch: (req: Request) => Promise<Response> } } | undefined;
       if (typedEnv?.ASSETS) {
         const url = new URL(request.url);
         // Serve static assets directly (JS, CSS, images, favicon) but NEVER root "/", "/index.html", or HTML navigation pages
@@ -55,13 +56,11 @@ export default {
           url.pathname !== "/" &&
           url.pathname !== "/index.html" &&
           !url.pathname.endsWith(".html") &&
-          (
-            url.pathname.startsWith("/assets/") ||
+          (url.pathname.startsWith("/assets/") ||
             url.pathname.startsWith("/images/") ||
             url.pathname === "/favicon.ico" ||
             url.pathname === "/_headers" ||
-            url.pathname.includes(".")
-          )
+            url.pathname.includes("."))
         ) {
           const assetResponse = await typedEnv.ASSETS.fetch(request);
           if (assetResponse.status !== 404) {

@@ -36,5 +36,11 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
+  {
+    // shadcn/ui components export `variants` helpers alongside components —
+    // the react-refresh rule is not applicable to these boilerplate files.
+    files: ["src/components/ui/**/*.{ts,tsx}"],
+    rules: { "react-refresh/only-export-components": "off" },
+  },
   eslintPluginPrettier,
 );
