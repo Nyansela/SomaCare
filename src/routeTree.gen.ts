@@ -14,7 +14,6 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HealthShareTokenRouteImport } from './routes/health-share/$token'
-import { Route as ApiWhatsappWebhookRouteImport } from './routes/api/whatsapp-webhook'
 import { Route as ApiSleepRouteImport } from './routes/api/sleep'
 import { Route as ApiNutritionRouteImport } from './routes/api/nutrition'
 import { Route as ApiMedverifyRouteImport } from './routes/api/medverify'
@@ -62,11 +61,6 @@ const IndexRoute = IndexRouteImport.update({
 const HealthShareTokenRoute = HealthShareTokenRouteImport.update({
   id: '/health-share/$token',
   path: '/health-share/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWhatsappWebhookRoute = ApiWhatsappWebhookRouteImport.update({
-  id: '/api/whatsapp-webhook',
-  path: '/api/whatsapp-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSleepRoute = ApiSleepRouteImport.update({
@@ -220,7 +214,6 @@ export interface FileRoutesByFullPath {
   '/api/medverify': typeof ApiMedverifyRoute
   '/api/nutrition': typeof ApiNutritionRoute
   '/api/sleep': typeof ApiSleepRoute
-  '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/health-share/$token': typeof HealthShareTokenRoute
   '/find/hospitals': typeof AuthenticatedFindHospitalsRoute
   '/trackers/vitals': typeof AuthenticatedTrackersVitalsRoute
@@ -251,7 +244,6 @@ export interface FileRoutesByTo {
   '/api/medverify': typeof ApiMedverifyRoute
   '/api/nutrition': typeof ApiNutritionRoute
   '/api/sleep': typeof ApiSleepRoute
-  '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/health-share/$token': typeof HealthShareTokenRoute
   '/find/hospitals': typeof AuthenticatedFindHospitalsRoute
   '/trackers/vitals': typeof AuthenticatedTrackersVitalsRoute
@@ -284,7 +276,6 @@ export interface FileRoutesById {
   '/api/medverify': typeof ApiMedverifyRoute
   '/api/nutrition': typeof ApiNutritionRoute
   '/api/sleep': typeof ApiSleepRoute
-  '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/health-share/$token': typeof HealthShareTokenRoute
   '/_authenticated/find/hospitals': typeof AuthenticatedFindHospitalsRoute
   '/_authenticated/trackers/vitals': typeof AuthenticatedTrackersVitalsRoute
@@ -317,7 +308,6 @@ export interface FileRouteTypes {
     | '/api/medverify'
     | '/api/nutrition'
     | '/api/sleep'
-    | '/api/whatsapp-webhook'
     | '/health-share/$token'
     | '/find/hospitals'
     | '/trackers/vitals'
@@ -348,7 +338,6 @@ export interface FileRouteTypes {
     | '/api/medverify'
     | '/api/nutrition'
     | '/api/sleep'
-    | '/api/whatsapp-webhook'
     | '/health-share/$token'
     | '/find/hospitals'
     | '/trackers/vitals'
@@ -380,7 +369,6 @@ export interface FileRouteTypes {
     | '/api/medverify'
     | '/api/nutrition'
     | '/api/sleep'
-    | '/api/whatsapp-webhook'
     | '/health-share/$token'
     | '/_authenticated/find/hospitals'
     | '/_authenticated/trackers/vitals'
@@ -397,7 +385,6 @@ export interface RootRouteChildren {
   ApiMedverifyRoute: typeof ApiMedverifyRoute
   ApiNutritionRoute: typeof ApiNutritionRoute
   ApiSleepRoute: typeof ApiSleepRoute
-  ApiWhatsappWebhookRoute: typeof ApiWhatsappWebhookRoute
   HealthShareTokenRoute: typeof HealthShareTokenRoute
   ApiHealthShareTokenRoute: typeof ApiHealthShareTokenRoute
 }
@@ -437,13 +424,6 @@ declare module '@tanstack/react-router' {
       path: '/health-share/$token'
       fullPath: '/health-share/$token'
       preLoaderRoute: typeof HealthShareTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/whatsapp-webhook': {
-      id: '/api/whatsapp-webhook'
-      path: '/api/whatsapp-webhook'
-      fullPath: '/api/whatsapp-webhook'
-      preLoaderRoute: typeof ApiWhatsappWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/sleep': {
@@ -672,7 +652,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMedverifyRoute: ApiMedverifyRoute,
   ApiNutritionRoute: ApiNutritionRoute,
   ApiSleepRoute: ApiSleepRoute,
-  ApiWhatsappWebhookRoute: ApiWhatsappWebhookRoute,
   HealthShareTokenRoute: HealthShareTokenRoute,
   ApiHealthShareTokenRoute: ApiHealthShareTokenRoute,
 }

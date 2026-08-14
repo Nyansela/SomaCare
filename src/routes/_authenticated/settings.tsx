@@ -39,8 +39,6 @@ import {
   Layout,
   Type,
   Globe,
-  MessageSquare,
-  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -206,65 +204,6 @@ function SettingsPage() {
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState("appearance");
   const [hasChanges, setHasChanges] = useState(false);
-  const [whatsappLink, setWhatsappLink] = useState<{
-    linking_code: string;
-    phone_number: string | null;
-    linked_at: string | null;
-  } | null>(null);
-  const [whatsappLoading, setWhatsappLoading] = useState(true);
-  const [whatsappError, setWhatsappError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function loadWhatsAppLink() {
-      try {
-        setWhatsappLoading(true);
-        setWhatsappError(null);
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) {
-          setWhatsappLoading(false);
-          return;
-        }
-
-        const { data, error: selectErr } = await supabase
-          .from("whatsapp_links")
-          .select("linking_code, phone_number, linked_at")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (selectErr && selectErr.code !== "PGRST116") {
-          throw selectErr;
-        }
-
-        if (data) {
-          setWhatsappLink(data);
-        } else {
-          const code = `SOMA-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-          const { data: inserted, error: insertErr } = await supabase
-            .from("whatsapp_links")
-            .insert({ user_id: user.id, linking_code: code })
-            .select("linking_code, phone_number, linked_at")
-            .single();
-
-          if (insertErr) throw insertErr;
-          if (inserted) {
-            setWhatsappLink(inserted);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load WhatsApp link:", err);
-        setWhatsappError(
-          err instanceof Error
-            ? err.message
-            : "Database table 'whatsapp_links' not found. Please apply migration 20260802000000_whatsapp_links.sql to Supabase.",
-        );
-      } finally {
-        setWhatsappLoading(false);
-      }
-    }
-    loadWhatsAppLink();
-  }, []);
 
   // User preferences state
   const [preferences, setPreferences] = useState({
@@ -1671,118 +1610,6 @@ function SettingsPage() {
               </CardContent>
             </Card>
 
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5 text-emerald-600" />
-                  {t("settings.whatsappIntegration", "WhatsApp Integration (Adwoa AI)")}
-                </CardTitle>
-                <CardDescription>
-                  {t(
-                    "settings.whatsappIntegrationDescription",
-                    "Chat with Adwoa directly via WhatsApp using your Health Vault context.",
-                  )}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {whatsappLoading ? (
-                  <div className="flex items-center gap-2 py-4 text-muted-foreground text-sm">
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                    {t("settings.whatsappLoading", "Loading WhatsApp integration...")}
-                  </div>
-                ) : whatsappError ? (
-                  <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-4 space-y-2">
-                    <div className="font-semibold text-destructive text-sm flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4" />{" "}
-                      {t("settings.migrationRequired", "Database Migration Required")}
-                    </div>
-                    <p className="text-xs text-muted-foreground">{whatsappError}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {t(
-                        "settings.migrationInstructions",
-                        "Run the SQL migration in your Supabase SQL Editor to enable WhatsApp linking.",
-                      )}
-                    </p>
-                  </div>
-                ) : whatsappLink?.linked_at ? (
-                  <div className="flex items-center justify-between rounded-xl bg-emerald-500/15 border border-emerald-500/30 p-4">
-                    <div>
-                      <div className="font-semibold text-emerald-700 dark:text-emerald-400">
-                        {t("settings.whatsappConnected", "WhatsApp Connected")}
-                      </div>
-                      <div className="text-sm text-muted-foreground mt-0.5">
-                        {t("settings.whatsappLinkedNumber", "Linked number: {{number}}", {
-                          number: whatsappLink.phone_number,
-                        })}
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={async () => {
-                        const {
-                          data: { user },
-                        } = await supabase.auth.getUser();
-                        if (!user) return;
-                        await supabase.from("whatsapp_links").delete().eq("user_id", user.id);
-                        setWhatsappLink(null);
-                        toast.success("WhatsApp unlinked successfully.");
-                      }}
-                    >
-                      {t("settings.whatsappUnlink", "Unlink")}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="rounded-xl bg-muted/50 p-4 border space-y-2">
-                      <div className="text-sm font-medium">
-                        {t("settings.whatsappLinkingCode", "Your Unique Linking Code:")}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <code className="text-lg font-mono font-bold bg-background px-3 py-1.5 rounded border tracking-wider text-primary">
-                          {whatsappLink?.linking_code || "Loading..."}
-                        </code>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            if (whatsappLink?.linking_code) {
-                              navigator.clipboard.writeText(whatsappLink.linking_code);
-                              toast.success("Linking code copied to clipboard!");
-                            }
-                          }}
-                        >
-                          {t("settings.whatsappCopyCode", "Copy Code")}
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="text-xs text-muted-foreground space-y-1">
-                      <p className="font-semibold text-foreground">
-                        {t("settings.whatsappHowToConnect", "How to connect:")}
-                      </p>
-                      <p>
-                        {t(
-                          "settings.whatsappStep1",
-                          "1. Join the Twilio WhatsApp Sandbox by sending 'join' code to the number.",
-                        )}
-                      </p>
-                      <p>
-                        {t(
-                          "settings.whatsappStep2",
-                          "2. Send your unique linking code to that same WhatsApp number.",
-                        )}
-                      </p>
-                      <p>
-                        {t(
-                          "settings.whatsappStep3",
-                          "3. Start chatting with Adwoa on WhatsApp with your complete Health Vault context!",
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
         </TabsContent>
 

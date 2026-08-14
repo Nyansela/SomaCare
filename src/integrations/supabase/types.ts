@@ -684,41 +684,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      whatsapp_links: {
-        Row: {
-          created_at: string;
-          id: string;
-          linked_at: string | null;
-          linking_code: string;
-          phone_number: string | null;
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          id?: string;
-          linked_at?: string | null;
-          linking_code: string;
-          phone_number?: string | null;
-          user_id: string;
-        };
-        Update: {
-          created_at?: string;
-          id?: string;
-          linked_at?: string | null;
-          linking_code?: string;
-          phone_number?: string | null;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_links_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       clock_reminders: {
         Row: {
           enabled: boolean;
