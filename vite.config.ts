@@ -9,7 +9,7 @@ import type { NitroConfig } from "nitro/types";
 
 export default defineConfig({
   nitro: {
-    preset: "vercel",
+    preset: "cloudflare-module",
     // Disable nitro's auto-detected `index.html` renderer template. When a template
     // is set, nitro never installs the vite SSR renderer, so every request falls
     // through to the bare index.html shell — a blank page on deployed builds.

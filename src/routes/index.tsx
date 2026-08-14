@@ -74,7 +74,7 @@ function Landing() {
       description:
         "Your complete health profile — conditions, allergies, medications, and emergency contacts in one secure place.",
       icon: <Stethoscope className="h-6 w-6" />,
-      image: "/images/landing/feature-vault.jpg",
+      image: "/images/landing/feature-vault.svg",
       colSpan: 2,
     },
     {
@@ -82,21 +82,21 @@ function Landing() {
       description:
         "Chat about symptoms, upload reports, and get grounded answers that know your history.",
       icon: <Bot className="h-6 w-6" />,
-      image: "/images/landing/feature-ai-chat.jpg",
+      image: "/images/landing/feature-ai-chat.svg",
     },
     {
       title: "Live Vitals Tracking",
       description:
         "Blood pressure, glucose, heart rate, weight — visualized and trended in real time with intelligent alerts.",
       icon: <HeartPulse className="h-6 w-6" />,
-      image: "/images/landing/feature-vitals.jpg",
+      image: "/images/landing/feature-vitals.svg",
     },
     {
       title: "Wellness Integration",
       description:
         "Nutrition, fitness, sleep, hydration, and mood — with AI-generated plans that adapt to your goals.",
       icon: <Sparkles className="h-6 w-6" />,
-      image: "/images/landing/feature-wellness.jpg",
+      image: "/images/landing/feature-wellness.svg",
       colSpan: 2,
     },
     {
@@ -104,14 +104,14 @@ function Landing() {
       description:
         "Your day at a glance — appointments, medications, meals, and workouts unified in one timeline.",
       icon: <Clock className="h-6 w-6" />,
-      image: "/images/landing/feature-schedule.jpg",
+      image: "/images/landing/feature-schedule.svg",
     },
     {
       title: "Medication Safety",
       description:
         "AI-powered medication verification — check for allergy conflicts and drug interactions.",
       icon: <Pill className="h-6 w-6" />,
-      image: "/images/landing/feature-medverify.jpg",
+      image: "/images/landing/feature-medverify.svg",
     },
   ];
 
@@ -599,7 +599,7 @@ function Landing() {
           <div className="relative soma-card p-1 rounded-2xl shadow-xl mb-12">
             <div
               className="absolute inset-0 bg-cover bg-center rounded-2xl opacity-10"
-              style={{ backgroundImage: "url(/images/landing/flowing-menu-bg.jpg)" }}
+              style={{ backgroundImage: "url(/images/landing/flowing-menu-bg.svg)" }}
             />
             <div className="relative z-10 p-8 md:p-12">
               <motion.div
@@ -626,7 +626,7 @@ function Landing() {
               <div className="mt-12 flex justify-center">
                 <FlowingMenu
                   items={footerItems}
-                  backgroundImage="/images/landing/flowing-menu-bg.jpg"
+                  backgroundImage="/images/landing/flowing-menu-bg.svg"
                 />
               </div>
             </div>

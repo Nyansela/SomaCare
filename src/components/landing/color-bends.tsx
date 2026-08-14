@@ -60,7 +60,7 @@ function Bends({ colors, speed, density }: { colors: string[]; speed: number; de
 
   return (
     <>
-      <color attach="background" args={["transparent"]} />
+      {/* Scene background stays null (transparent) so the CSS gradient shows through */}
       <ambientLight intensity={0.4} />
       <pointLight position={[10, 10, 10]} intensity={1} />
 
