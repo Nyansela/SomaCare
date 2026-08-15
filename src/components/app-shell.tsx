@@ -30,7 +30,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ThemeInit } from "@/components/theme-customizer";
+import { ThemeCustomizer } from "@/components/theme-customizer";
 
 const navGroups = [
   {
@@ -151,33 +151,24 @@ export function AppShell({
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    navigate({ to: "/" });
+    navigate({ to: "/auth" });
   };
 
   return (
     <MotionConfig reducedMotion="user">
       <div className="min-h-screen bg-background">
-        <ThemeInit />
         {/* Shared gradient accent - replaces page-specific gradients */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-40 opacity-70"
-          style={{
-            background:
-              "radial-gradient(60% 100% at 50% 0%, var(--color-primary) 0%, transparent 70%)",
-            filter: "blur(40px)",
-            maskImage: "linear-gradient(to bottom, black, transparent)",
-          }}
-        />
+        <div aria-hidden className="soma-glow-top pointer-events-none absolute inset-x-0 top-0" />
         {/* Sidebar */}
         <aside
           className={cn(
-            "fixed inset-y-0 left-0 z-40 w-64 border-r border-border bg-sidebar transition-transform lg:translate-x-0 flex flex-col",
+            "fixed inset-y-0 left-0 z-40 border-r border-border bg-sidebar transition-transform lg:translate-x-0 flex flex-col",
+            "w-[var(--layout-sidebar)]",
             open ? "translate-x-0" : "-translate-x-full",
           )}
         >
           <div className="flex h-16 items-center gap-2 px-6">
-            <Link to="/" className="flex items-center gap-2">
+            <Link to="/app" className="flex items-center gap-2">
               <img
                 src="/images/branding/logo.svg"
                 alt={t("nav.logoAlt", "SomaCare Logo")}
@@ -252,8 +243,8 @@ export function AppShell({
         </aside>
 
         {/* Content */}
-        <div className="lg:pl-64">
-          <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur md:px-8">
+        <div className="lg:pl-[var(--layout-sidebar)]">
+          <header className="sticky top-0 z-30 flex h-[var(--layout-header)] items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur md:px-8">
             <Button
               variant="ghost"
               size="icon"
@@ -269,6 +260,7 @@ export function AppShell({
             </div>
             {action}
             <HeaderClock />
+            <ThemeCustomizer />
             <Button
               variant="ghost"
               size="icon"
@@ -293,7 +285,7 @@ export function AppShell({
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="p-4 md:p-8"
+            className="p-[var(--layout-pad)] md:p-[var(--layout-pad-lg)]"
           >
             {children}
           </motion.main>

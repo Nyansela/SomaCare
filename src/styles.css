@@ -74,7 +74,8 @@
   --popover-foreground: oklch(0.16 0.02 145); /* Matches foreground */
 
   --primary: oklch(0.55 0.16 145); /* Green — primary actions */
-  --primary-strong: oklch(0.48 0.18 145); /* Deeper green for emphasis */
+  /* Derived from --primary so preset & custom accents stay consistent. */
+  --primary-strong: color-mix(in srgb, var(--primary) 82%, black);
   --primary-foreground: oklch(0.98 0 0); /* White on primary */
 
   --secondary: oklch(0.95 0.008 145); /* Light green-tinted gray */
@@ -95,7 +96,8 @@
 
   --border: oklch(0.9 0.01 145); /* Subtle green-tinted borders */
   --input: oklch(0.92 0.01 145); /* Input backgrounds */
-  --ring: oklch(0.55 0.16 145); /* Primary ring */
+  /* Derived from --primary (see --primary-strong above). */
+  --ring: color-mix(in srgb, var(--primary) 88%, transparent);
 
   --sidebar: oklch(0.99 0.003 145); /* Sidebar background */
   --sidebar-foreground: oklch(0.5 0.02 145); /* Sidebar text */
@@ -116,7 +118,7 @@
   --popover-foreground: oklch(0.96 0.005 145); /* Popover text */
 
   --primary: oklch(0.65 0.18 145); /* Bright green — accessible on dark */
-  --primary-strong: oklch(0.55 0.2 145); /* Stronger green for emphasis */
+  /* --primary-strong derives from --primary via color-mix (defined in :root) */
   --primary-foreground: oklch(0.1 0 0); /* Near-black on primary */
 
   --secondary: oklch(0.2 0.02 145); /* Dark gray with green tint */
@@ -137,7 +139,7 @@
 
   --border: oklch(1 0 0 / 10%); /* Subtle borders */
   --input: oklch(1 0 0 / 12%); /* Input backgrounds */
-  --ring: oklch(0.65 0.18 145); /* Primary ring */
+  /* --ring derives from --primary via color-mix (defined in :root) */
 
   --sidebar: oklch(0.1 0.005 145); /* Sidebar background */
   --sidebar-foreground: oklch(0.8 0.01 145); /* Sidebar text */
@@ -151,6 +153,106 @@
 
 .dark {
   color-scheme: dark;
+}
+
+/* Base font size — driven by the Font Size setting (theme-store applies
+ * --font-size-base on <html>, e.g. 0.875rem / 1rem / 1.125rem). Tailwind's
+ * rem-based scale resizes with it. */
+:root {
+  --font-size-base: 1rem;
+}
+
+html {
+  font-size: var(--font-size-base);
+}
+
+/* Layout density — the data-layout attribute is set by theme-store. The shell
+ * (AppShell) consumes these vars for padding, header height and sidebar width. */
+:root {
+  --layout-pad: 1rem; /* main content padding (mobile) */
+  --layout-pad-lg: 2rem; /* main content padding (lg+) */
+  --layout-header: 4rem; /* sticky header height */
+  --layout-sidebar: 16rem; /* sidebar width */
+}
+
+html[data-layout="compact"] {
+  --layout-pad: 0.5rem;
+  --layout-pad-lg: 1rem;
+  --layout-header: 3.5rem;
+  --layout-sidebar: 14rem;
+}
+
+html[data-layout="spacious"] {
+  --layout-pad: 1.5rem;
+  --layout-pad-lg: 3rem;
+  --layout-header: 4.5rem;
+  --layout-sidebar: 18rem;
+}
+
+/* High contrast — set via html[data-high-contrast="true"] by theme-store. */
+html[data-high-contrast="true"] {
+  --border: oklch(0.6 0.03 145);
+  --input: oklch(0.88 0.015 145);
+  --muted-foreground: oklch(0.4 0.03 145);
+}
+
+html[data-high-contrast="true"].dark {
+  --border: oklch(1 0 0 / 30%);
+  --input: oklch(1 0 0 / 26%);
+  --muted-foreground: oklch(0.88 0.02 145);
+}
+
+/* ---------- Global mobile & tablet guards ----------
+ * Never let content push the page wider than the viewport. `clip` (unlike
+ * `hidden`) does not create a scroll container, so sticky headers still work. */
+html,
+body {
+  overflow-x: clip;
+}
+
+/* Media can never be wider than its container. */
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Long unbroken strings (URLs, IDs, medication names) wrap instead of
+ * expanding the layout. Only kicks in when a word exceeds the line box. */
+body {
+  overflow-wrap: break-word;
+}
+
+/* Generated content (AI markdown, reports): scroll inside the element, not
+ * the page. */
+pre {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+code {
+  overflow-wrap: anywhere;
+}
+
+table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Reduced motion — set via html[data-reduced-motion="true"] by theme-store. */
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }
 
 /* Helper class to ensure smooth theme transitions */
@@ -203,6 +305,50 @@
 
 @utility soma-glow {
   box-shadow: var(--shadow-glow-primary);
+}
+
+/* Animated header glow — a soft, pulsing pool of light behind the shell
+ * header. Two radial gradients (primary + a hint of success) drift and
+ * breathe; the animation is disabled for reduced-motion users. */
+@keyframes soma-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes soma-glow-flow {
+  0% {
+    transform: translateX(-5%) scale(1);
+  }
+  50% {
+    transform: translateX(5%) scale(1.06);
+  }
+  100% {
+    transform: translateX(-5%) scale(1);
+  }
+}
+
+.soma-glow-top {
+  height: 17rem;
+  background:
+    radial-gradient(58% 100% at 50% 0%, var(--color-primary) 0%, transparent 68%),
+    radial-gradient(30% 55% at 22% 10%, var(--color-success) 0%, transparent 62%);
+  filter: blur(34px);
+  mask-image: linear-gradient(to bottom, black 0%, transparent 88%);
+  animation:
+    soma-glow-pulse 5s ease-in-out infinite,
+    soma-glow-flow 11s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .soma-glow-top {
+    animation: none;
+  }
 }
 
 /* HeroUI Badge token mapping — bridges the badge.css variables to the Soma

@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { requestNotificationPermissions } from "@/lib/notifications";
+import { ThemeInit } from "@/components/theme-customizer";
 import "../i18n";
 
 function NotFoundComponent() {
@@ -107,7 +108,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Playfair+Display:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap",
       },
     ],
   }),
@@ -121,6 +122,14 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
+        {/* Apply the device-cached theme before first paint to avoid a flash of
+         * the default light theme. Idempotent with theme-store's applyTheme(). */}
+        <script
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{function g(k){try{return localStorage.getItem(k)}catch(e){return null}}var raw=g("soma.theme.v2")||g("soma.theme.v1");if(!raw)return;var s=JSON.parse(raw);if(!s||typeof s!=="object")return;var root=document.documentElement;var dark=s.appearance==="dark"||(s.appearance==="system"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches);root.classList.toggle("dark",!!dark);if(s.layout)root.setAttribute("data-layout",s.layout);if(s.highContrast)root.setAttribute("data-high-contrast","true");if(s.reducedMotion)root.setAttribute("data-reduced-motion","true");var r={sharp:"0.35rem",soft:"0.9rem",pill:"1.6rem"}[s.radius];if(r)root.style.setProperty("--radius",r);var fs={sm:"0.875rem",md:"1rem",lg:"1.125rem"}[s.fontSize];if(fs)root.style.setProperty("--font-size-base",fs);if(typeof s.accentColor==="string"&&/^#[0-9a-f]{6}$/i.test(s.accentColor)){var n=parseInt(s.accentColor.slice(1),16);var rr=((n>>16)&255)/255,gg=((n>>8)&255)/255,bb=(n&255)/255;function lin(c){return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4)}var L=0.2126*lin(rr)+0.7152*lin(gg)+0.0722*lin(bb);root.style.setProperty("--primary",s.accentColor);root.style.setProperty("--primary-foreground",L>0.45?"#000000":"#ffffff")}if(dark&&s.darkModeBackground==="pure-black"){root.style.setProperty("--background","#000000");root.style.setProperty("--surface","#121212");root.style.setProperty("--card","#121212")}else if(dark&&s.darkModeBackground==="custom"&&/^#[0-9a-f]{6}$/i.test(String(s.customDarkBackground||""))){root.style.setProperty("--background",s.customDarkBackground);root.style.setProperty("--surface",s.customDarkBackground);root.style.setProperty("--card",s.customDarkBackground)}}catch(e){}})();`,
+          }}
+        />
         <HeadContent />
       </head>
       <body>
@@ -147,6 +156,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ThemeInit />
       <Outlet />
       <Toaster richColors position="top-right" />
     </QueryClientProvider>

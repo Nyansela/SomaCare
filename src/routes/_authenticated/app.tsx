@@ -110,23 +110,23 @@ function Dashboard() {
         </Link>
       }
     >
-      <div className="grid gap-6 lg:grid-cols-12">
+      <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-12">
         {/* Upcoming appointments */}
-        <section className="soma-card p-6 lg:col-span-5">
+        <section className="soma-card p-4 sm:col-span-2 sm:p-6 lg:col-span-5">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-display text-lg font-semibold">
+            <div className="min-w-0">
+              <h2 className="truncate font-display text-base font-semibold sm:text-lg">
                 {t("dashboard.upcomingAppointments", "Upcoming appointments")}
               </h2>
               <p className="text-xs text-muted-foreground">
                 {t("dashboard.upcomingAppointmentsSubtitle", "Your next visits")}
               </p>
             </div>
-            <Link to="/appointments" className="text-xs text-primary hover:underline">
+            <Link to="/appointments" className="shrink-0 text-xs text-primary hover:underline">
               {t("dashboard.viewAll", "View all")}
             </Link>
           </div>
-          <div className="mt-6 space-y-4">
+          <div className="mt-4 space-y-3 sm:mt-6 sm:space-y-4">
             {appointments.isLoading ? (
               <>
                 <Skeleton className="h-16 w-full" />
@@ -156,10 +156,10 @@ function Dashboard() {
         </section>
 
         {/* Glucose chart */}
-        <section className="soma-card p-6 lg:col-span-7">
+        <section className="soma-card p-4 sm:col-span-2 sm:p-6 lg:col-span-7">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-display text-lg font-semibold">
+            <div className="min-w-0">
+              <h2 className="truncate font-display text-base font-semibold sm:text-lg">
                 {t("dashboard.recentResults", "Recent results")}{" "}
                 <span className="text-muted-foreground font-normal">
                   · {t("dashboard.glucose", "Glucose")}
@@ -169,11 +169,11 @@ function Dashboard() {
                 {t("dashboard.last7Days", "Last 7 days")}
               </p>
             </div>
-            <Link to="/trackers/vitals" className="text-xs text-primary hover:underline">
+            <Link to="/trackers/vitals" className="shrink-0 text-xs text-primary hover:underline">
               {t("dashboard.allVitals", "All vitals")}
             </Link>
           </div>
-          <div className="mt-6 h-64">
+          <div className="mt-4 h-44 sm:mt-6 sm:h-64">
             {vitals.isLoading ? (
               <Skeleton className="h-full w-full" />
             ) : vitals.data && vitals.data.length > 0 ? (
@@ -240,23 +240,23 @@ function Dashboard() {
         </section>
 
         {/* AI shortcut */}
-        <section className="soma-card p-6 lg:col-span-5 relative overflow-hidden">
+        <section className="soma-card relative overflow-hidden p-4 sm:col-span-2 sm:p-6 lg:col-span-5">
           <div className="absolute inset-0 -z-10 soma-gradient opacity-95" />
           <div className="text-white">
-            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-white/80">
+            <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-white/80 sm:text-xs">
               <Bot className="h-4 w-4" /> {t("assistant.brandName", "Adwoa AI")}
             </div>
-            <h2 className="mt-3 font-display text-2xl font-bold">
+            <h2 className="mt-2 font-display text-xl font-bold sm:mt-3 sm:text-2xl">
               {t("dashboard.aiShortcutTitle", "Ask about your health — grounded in your data.")}
             </h2>
-            <p className="mt-2 text-sm text-white/85">
+            <p className="mt-1 text-xs text-white/85 sm:mt-2 sm:text-sm">
               {t(
                 "dashboard.aiShortcutBody",
                 "Symptoms, meds, reports and images. Multilingual, private, always available.",
               )}
             </p>
             <Link to="/assistant">
-              <Button className="mt-6 bg-white text-primary hover:bg-white/90">
+              <Button className="mt-4 bg-white text-primary hover:bg-white/90 sm:mt-6">
                 {t("dashboard.openAssistant", "Open assistant")}{" "}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -265,27 +265,27 @@ function Dashboard() {
         </section>
 
         {/* Current prescription */}
-        <section className="soma-card p-6 lg:col-span-4">
+        <section className="soma-card p-4 sm:p-6 lg:col-span-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-display text-lg font-semibold">
+            <div className="min-w-0">
+              <h2 className="truncate font-display text-base font-semibold sm:text-lg">
                 {t("dashboard.currentPrescription", "Current prescription")}
               </h2>
               <p className="text-xs text-muted-foreground">
                 {t("dashboard.activeMedications", "Active medications")}
               </p>
             </div>
-            <Link to="/medications" className="text-xs text-primary hover:underline">
+            <Link to="/medications" className="shrink-0 text-xs text-primary hover:underline">
               {t("dashboard.manage", "Manage")}
             </Link>
           </div>
-          <div className="mt-6 space-y-4">
+          <div className="mt-4 space-y-3 sm:mt-6 sm:space-y-4">
             {medications.isLoading ? (
               <Skeleton className="h-20 w-full" />
             ) : medications.data && medications.data.length > 0 ? (
               medications.data.map((m) => (
-                <div key={m.id} className="flex items-center gap-4">
-                  <div className="h-10 w-10 shrink-0 rounded-full soma-gradient soma-glow" />
+                <div key={m.id} className="flex items-center gap-3 sm:gap-4">
+                  <div className="h-9 w-9 shrink-0 rounded-full soma-gradient soma-glow sm:h-10 sm:w-10" />
                   <div className="min-w-0">
                     <div className="font-semibold text-sm truncate">{m.name}</div>
                     <div className="text-xs text-muted-foreground truncate">
@@ -315,18 +315,18 @@ function Dashboard() {
         </section>
 
         {/* Notifications */}
-        <section className="soma-card p-6 lg:col-span-3">
+        <section className="soma-card p-4 sm:p-6 lg:col-span-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-lg font-semibold">
+            <h2 className="font-display text-base font-semibold sm:text-lg">
               {t("dashboard.notifications", "Notifications")}
             </h2>
           </div>
-          <div className="mt-6 space-y-4">
+          <div className="mt-4 space-y-3 sm:mt-6 sm:space-y-4">
             {notifications.isLoading ? (
               <Skeleton className="h-16 w-full" />
             ) : notifications.data && notifications.data.length > 0 ? (
               notifications.data.map((n) => (
-                <div key={n.id} className="flex items-start gap-3">
+                <div key={n.id} className="flex items-start gap-2 sm:gap-3">
                   <span
                     className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${
                       n.severity === "danger"
@@ -381,8 +381,8 @@ function AppointmentRow({
   const initials = appt.provider_name.split(" ").slice(-1)[0]?.slice(0, 2).toUpperCase() || "DR";
 
   return (
-    <div className="flex items-center gap-4">
-      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full soma-gradient text-white text-sm font-semibold soma-glow">
+    <div className="flex items-center gap-3 sm:gap-4">
+      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full soma-gradient text-white text-sm font-semibold soma-glow sm:h-12 sm:w-12">
         {appt.provider_avatar_url ? (
           <img
             src={appt.provider_avatar_url}

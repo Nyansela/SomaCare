@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { motion, AnimatePresence } from "framer-motion";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { type Components } from "react-markdown";
 import {
   Sparkles,
   Plus,
@@ -42,6 +42,64 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+/**
+ * Overflow-safe, app-styled markdown renderer for AI messages. Without these
+ * constraints, tables, code blocks and long URLs from the model would push
+ * the page wider than the viewport on mobile. The `prose` typography plugin
+ * is not installed, so spacing is handled here too.
+ */
+const mdComponents: Components = {
+  p: ({ children }) => <p className="my-2 leading-relaxed">{children}</p>,
+  ul: ({ children }) => <ul className="my-2 list-disc space-y-1 pl-5">{children}</ul>,
+  ol: ({ children }) => <ol className="my-2 list-decimal space-y-1 pl-5">{children}</ol>,
+  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+  h1: ({ children }) => <h1 className="mb-2 mt-4 text-lg font-bold">{children}</h1>,
+  h2: ({ children }) => <h2 className="mb-2 mt-4 text-base font-bold">{children}</h2>,
+  h3: ({ children }) => <h3 className="mb-1 mt-3 text-sm font-bold">{children}</h3>,
+  h4: ({ children }) => <h4 className="mb-1 mt-3 text-sm font-semibold">{children}</h4>,
+  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+  hr: () => <hr className="my-3 border-border" />,
+  blockquote: ({ children }) => (
+    <blockquote className="my-2 border-l-2 border-primary/40 pl-3 italic text-muted-foreground">
+      {children}
+    </blockquote>
+  ),
+  a: ({ href, children }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="break-all text-primary underline underline-offset-2 hover:opacity-80"
+    >
+      {children}
+    </a>
+  ),
+  img: ({ src, alt }) => <img src={src} alt={alt} className="my-2 max-w-full rounded-lg" />,
+  pre: ({ children }) => (
+    <pre className="my-2 max-w-full overflow-x-auto rounded-xl border border-border/60 bg-muted/60 p-3 text-[13px] leading-relaxed">
+      {children}
+    </pre>
+  ),
+  code: ({ className, children }) => {
+    const isBlock = typeof className === "string" && className.includes("language-");
+    return (
+      <code
+        className={cn(
+          "rounded-md bg-muted/70 px-1.5 py-0.5 font-mono text-[0.85em]",
+          isBlock && "bg-transparent p-0 text-[13px]",
+        )}
+      >
+        {children}
+      </code>
+    );
+  },
+  table: ({ children }) => (
+    <div className="my-2 max-w-full overflow-x-auto rounded-xl border border-border/60">
+      <table className="w-full border-collapse text-sm">{children}</table>
+    </div>
+  ),
+};
 
 export const Route = createFileRoute("/_authenticated/assistant")({
   head: () => ({
@@ -620,7 +678,7 @@ function MessageBubble({ message }: { message: UIMessage }) {
       >
         {isUser ? <UserIcon className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
       </div>
-      <div className={cn("flex max-w-[85%] flex-col gap-1", isUser && "items-end")}>
+      <div className={cn("flex min-w-0 max-w-[85%] flex-col gap-1", isUser && "items-end")}>
         <div
           className={cn(
             "rounded-3xl px-4 py-3.5 text-[15px] leading-relaxed shadow-sm",
@@ -632,8 +690,8 @@ function MessageBubble({ message }: { message: UIMessage }) {
           {isUser ? (
             <p className="whitespace-pre-wrap">{text}</p>
           ) : (
-            <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-ul:my-2 prose-headings:mt-3 prose-headings:mb-1 prose-strong:text-foreground prose-a:text-primary">
-              <ReactMarkdown>{text}</ReactMarkdown>
+            <div className="min-w-0">
+              <ReactMarkdown components={mdComponents}>{text}</ReactMarkdown>
             </div>
           )}
         </div>

@@ -25,7 +25,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"signin" | "signup">("signin");
+  const [tab, setTab] = useState<"signin" | "signup">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -139,7 +139,7 @@ function AuthPage() {
       {/* Left panel — brand */}
       <div className="relative hidden lg:flex flex-col justify-between p-12 soma-gradient text-white overflow-hidden">
         <div className="absolute inset-0 -z-10 opacity-40 bg-[radial-gradient(circle_at_30%_20%,white,transparent_50%)]" />
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/auth" className="flex items-center gap-2">
           <div className="grid h-9 w-9 place-items-center rounded-xl bg-white/20 backdrop-blur">
             <Stethoscope className="h-5 w-5" />
           </div>
@@ -196,8 +196,8 @@ function AuthPage() {
 
           <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup")}>
             <TabsList className="grid grid-cols-2 w-full">
-              <TabsTrigger value="signin">Sign in</TabsTrigger>
               <TabsTrigger value="signup">Create account</TabsTrigger>
+              <TabsTrigger value="signin">Sign in</TabsTrigger>
             </TabsList>
             <TabsContent value="signin" />
             <TabsContent value="signup" />

@@ -16,7 +16,7 @@ Your spec is written for a Node/Express/Prisma/OpenAI stack. The Lovable stack g
 | JWT + refresh + OAuth (Google/Apple) | Supabase Auth (email/pass + Google + Apple, managed sessions) |
 | AWS S3 / Cloudinary | Supabase Storage buckets |
 | OpenAI (chat, OCR, vision, voice) | AI SDK: Google Gemini 3 Flash (chat + vision + OCR), TTS/STT models |
-| Email/SMS/Push | Email via Resend (secret); SMS via Twilio (secret); Web Push |
+| Email/Push | Email via Resend (secret); Web Push |
 | Stripe/Paystack/Flutterwave | Stripe native integration; Paystack/Flutterwave via secrets + edge fns |
 | Docker/Nginx/Vercel/Railway | Vite + TanStack Start hosting |
 | Leaflet/Google Maps + Weather | Leaflet + OpenStreetMap/Overpass for hospitals/pharmacies; Open-Meteo for weather (no key) |
@@ -100,11 +100,11 @@ Admin overrides via `public.has_role(auth.uid(), 'admin')`.
 ## 4. Backend Boundaries
 
 - **`createServerFn`** — app-internal RPC: dashboard aggregations, med reminder computation, health score, plan generation, order checkout.
-- **Server routes `src/routes/api/*`** — AI chat streaming (`/api/chat`), Stripe webhooks (`/api/public/stripe-webhook`), cron (`/api/public/cron/reminders`), Twilio SMS status.
+- **Server routes `src/routes/api/*`** — AI chat streaming (`/api/chat`), Stripe webhooks (`/api/public/stripe-webhook`), cron (`/api/public/cron/reminders`).
 - **Auth middleware** — `requireSupabaseAuth` on every protected fn. Privileged fns additionally check `has_role`.
 - **Admin client** — service-role only inside webhook/admin handlers, dynamically imported.
 
-Secrets (via `add_secret` / `generate_secret`): `RESEND_API_KEY`, `TWILIO_*`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, optional `PAYSTACK_*`, `FLUTTERWAVE_*`. `LOVABLE_API_KEY` is auto-managed.
+Secrets (via `add_secret` / `generate_secret`): `RESEND_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, optional `PAYSTACK_*`, `FLUTTERWAVE_*`. `LOVABLE_API_KEY` is auto-managed.
 
 ---
 
@@ -152,7 +152,7 @@ Chat UI contract: threaded, database-persisted, dedicated `/assistant/$threadId`
 - Signed URLs for all Storage reads; private buckets.
 - Data export + delete-account endpoints (GDPR).
 - HTTPS enforced by platform. CSP + HSTS headers in root response.
-- Webhooks verify signatures (Stripe, Twilio) with `timingSafeEqual`.
+- Webhooks verify signatures (Stripe) with `timingSafeEqual`.
 
 ---
 
