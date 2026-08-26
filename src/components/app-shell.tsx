@@ -24,6 +24,7 @@ import {
   Dumbbell,
   Calendar,
   ChevronDown,
+  ClipboardList,
 } from "lucide-react";
 import { motion, MotionConfig } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,6 +70,7 @@ const navGroups = [
       { to: "/sleep", labelKey: "nav.sleep", fallbackLabel: "Sleep", icon: Moon },
       { to: "/hydration", labelKey: "nav.hydration", fallbackLabel: "Hydration", icon: Droplets },
       { to: "/fitness", labelKey: "nav.fitness", fallbackLabel: "Fitness", icon: Dumbbell },
+      { to: "/plans", labelKey: "nav.plans", fallbackLabel: "My Plans", icon: ClipboardList },
     ],
   },
   {

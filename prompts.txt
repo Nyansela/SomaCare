@@ -1,0 +1,532 @@
+Add Twi text-to-speech via Ghana NLP (Khaya AI) TTS v2. This is a rebuild — a previous attempt caused a site-wide crash, so follow the constraints below carefully.
+
+CRITICAL CONSTRAINT: Do NOT import the 'ai' package (Vercel AI SDK) broadly, and do NOT let anything trigger '@ai-sdk/gateway'. That package tries to import 'node:fs' at load time, which does not exist in the Cloudflare Workers runtime and crashes SSR site-wide. This voice/TTS feature does not need the 'ai' package at all — it's a direct HTTP call to Khaya's REST API using fetch, nothing more. Do not add any AI SDK import for this feature.
+
+1. Create /api/voice/synthesize (POST { text, language })
+   - Only handle language "tw" for now — for any other value, return { error: "not_yet_supported", language }
+   - POST to https://translation-api.ghananlp.org/tts/v2/synthesize using plain fetch()
+     - Header: Ocp-Apim-Subscription-Key: GHANA_NLP_API_KEY (from env)
+     - Body: { "text": <text>, "language": "tw", "speaker_id": "female" }
+     - Response is raw binary audio/wav — return it with Content-Type: audio/wav, do not attempt to parse as JSON
+
+2. Add caching: hash (text + language), check Supabase table `voice_cache` (id, text_hash, language, audio_url or storage path, created_at) before calling Khaya. Cache on miss, return cached audio on hit. Create the table via migration if it doesn't exist.
+
+3. On any non-200 response from Khaya, return { error: "voice_unavailable" } — do not throw.
+
+4. Log every call: language, cache hit/miss, response status, timestamp.
+
+MANDATORY VERIFICATION before reporting success — do not skip this:
+- Run: npm run build
+- Run: npx wrangler dev --config .output/server/wrangler.json
+- Load http://127.0.0.1:8787 in a browser — confirm the site loads normally (not a 500, not the error fallback page)
+- Then test the endpoint itself: curl -X POST http://127.0.0.1:8787/api/voice/synthesize -H "Content-Type: application/json" -d "{\"text\":\"Wo ho te s3n?\",\"language\":\"tw\"}" --output test.wav
+- Confirm test.wav is a valid, non-empty audio file
+
+Paste the ACTUAL terminal output from wrangler dev showing the site loads with NO node:fs error, NO h3 swallowed error, plus the curl test result. Do not report success without this evidence.
+
+Do NOT touch WhatsApp removal, Cloudflare deploy config, or any existing working routes.
+Add voice playback to the Adwoa AI chat interface, using the /api/voice/synthesize endpoint (currently supports Twi only — handle other languages gracefully as "not yet available").
+
+1. After receiving a text reply from /api/chat, if the current language is "tw", call /api/voice/synthesize with { text: <reply text>, language: "tw" } and play the returned audio automatically. For any other language, skip voice playback entirely for now (no error shown to the user — just don't attempt it).
+
+2. Playback: use the standard HTML5 Audio API (`new Audio(url)`) to play the returned WAV file. This should work the same on web and inside the Capacitor Android WebView.
+
+3. Add a visible "speaking" state in the chat UI while audio is playing — e.g. a pulsing/animated icon near Adwoa's message bubble, so there's clear feedback that she's talking.
+
+4. Add a simple manual "tap to interrupt" button/icon shown only while audio is playing — tapping it immediately stops playback. (Do not build amplitude-based auto-interruption yet — manual only, for now.)
+
+5. Handle the voice_unavailable error from the backend gracefully: if synthesis fails, just show the text reply normally with no playback and no visible error — don't break the chat flow.
+
+6. Keep this additive — do not alter the existing text chat flow, message history rendering, or any other UI.
+
+MANDATORY VERIFICATION before reporting success:
+- Run npm run build
+- Run npx wrangler dev --config .output/server/wrangler.json, load the site locally, confirm no crash
+- Send a chat message with language set to Twi, confirm: (a) text reply appears, (b) audio plays automatically, (c) speaking indicator shows while playing, (d) tap-to-interrupt stops it
+
+Paste actual confirmation of each of these 4 checks — not a summary claiming it works.
+Add a tool-calling loop to /api/chat with write-action confirmation cards. Rebuild from scratch — a previous attempt crashed the site by triggering the 'ai' SDK's Gateway feature, which imports 'node:fs' (unsupported in Cloudflare Workers).
+
+CRITICAL CONSTRAINT: If using the 'ai' package for tool-calling, import ONLY specific named exports actually needed (e.g. `import { generateText, tool } from 'ai'`). Do NOT let any code path reach '@ai-sdk/gateway'. Configure the model to call NVIDIA NIM directly via the existing openai-compatible provider setup — never through Vercel's AI Gateway auto-detection. If unsure whether an import triggers gateway mode, avoid the top-level 'ai' package convenience functions and use the most direct/explicit API available.
+
+1. Define these write tools as function schemas:
+   - logVitalReading(type, value, unit)
+   - logMeal(food, quantity)
+   - bookAppointment(provider, date, time)
+   - addMedication(name, dosage, schedule)
+
+2. When the model calls one of these, do NOT execute it. Return { type: "pending_action", tool: <name>, details: <human-readable summary>, requires_confirmation: true } to the frontend.
+
+3. Frontend: show this as a confirm card with the action summary and two buttons — Confirm and Cancel/Decline.
+
+4. Add /api/confirm-action (POST, accepts the pending action + confirmed: true/false):
+   - If confirmed: execute the real Supabase write, return success
+   - If declined: do nothing, return a "cancelled" status so the AI can acknowledge it in the next message
+
+5. Log every proposed action and outcome (confirmed/declined) with user id, tool, args, timestamp.
+
+MANDATORY VERIFICATION — do not report success without this:
+- Run npm run build
+- Run npx wrangler dev --config .output/server/wrangler.json, load the site locally
+- Confirm NO node:fs error, NO h3 swallowed error — site must load normally
+- Ask the AI to log a blood pressure reading of 130/85 — confirm a confirm/decline card appears, confirm nothing is written to Supabase until you click Confirm, and confirm it IS written after confirming
+
+Paste the actual wrangler dev terminal output showing a clean load, plus the actual confirm-card behavior test result.
+
+Do NOT touch the voice synthesis code, WhatsApp removal, or Cloudflare deploy config.
+Redesign the Dashboard to show real information cards instead of just navigation buttons.
+
+1. Keep existing action buttons (log reading, book appointment, add medication) but make them secondary/compact.
+
+2. Add data cards showing:
+   - Latest vitals reading(s) with date — from Health Vault
+   - Next upcoming appointment — from Appointments table
+   - Today's medication schedule with taken/not-taken status — from Medications table
+   - Simple trend indicator if enough data exists (e.g. "BP trending down this week")
+
+3. Handle empty states gracefully (e.g. "No readings yet — tap to add your first one").
+
+4. This is a straightforward data-display change — plain Supabase queries, no 'ai' package involvement at all, so it carries none of the crash risk from Prompt A. Keep it that way.
+
+MANDATORY VERIFICATION:
+- Run npm run build
+- Run npx wrangler dev --config .output/server/wrangler.json, confirm the site loads with no crash
+- Confirm the dashboard actually shows real data for a test user with logged vitals/appointments/meds
+
+Paste actual confirmation, not a summary.
+
+Do NOT touch the chat interface, voice code, or tool-call loop logic.
+Add multi-day AI-generated workout and meal plans, using the existing tool-call loop and write-confirmation flow in /api/chat (from the agentic foundation — confirm this is already working before running this).
+
+CRITICAL CONSTRAINT: Do not import the 'ai' package broadly or trigger '@ai-sdk/gateway' — this crashed the site previously via a 'node:fs' import error in Cloudflare Workers. Reuse the exact same safe pattern already used for the existing tool-call loop (direct NVIDIA NIM calls via the openai-compatible provider, specific named imports only).
+
+PART A — Database (Supabase migrations)
+1. Create these tables with RLS policies matching the existing pattern (check scripts/verify-rls-policies.sql):
+   - workout_plans: id, user_id, title, goal, duration_days, start_date, status ('active'|'completed'|'abandoned'), created_at
+   - workout_plan_days: id, plan_id, day_number, exercises (jsonb — array of { name, sets, reps, rest_seconds, notes })
+   - meal_plans: id, user_id, title, goal, duration_days, start_date, status ('active'|'completed'|'abandoned'), created_at
+   - meal_plan_days: id, plan_id, day_number, meals (jsonb — { breakfast, lunch, dinner, snacks }, using Ghanaian food context consistent with the existing AI Nutrition feature)
+   - plan_day_completions: id, plan_id, plan_type ('workout'|'meal'), day_number, completed_at, user_id
+
+PART B — New agentic tools (add to the existing tool-call loop, following the same read/write pattern already established)
+2. generateWorkoutPlan(goal, fitnessLevel) — WRITE tool, requires confirmation:
+   - The AI itself determines an appropriate duration_days based on the goal (e.g. weight loss might suggest 14-30 days, a quick fitness kickstart might suggest 7) — no fixed options, no user input for duration
+   - Generates the full day-by-day exercise plan content itself
+   - Returns a pending_action with a summary (goal, duration, first day's preview) for the confirm card — does NOT write to Supabase until confirmed
+
+3. generateMealPlan(goal, dietaryRestrictions) — WRITE tool, requires confirmation, same pattern:
+   - AI determines duration based on goal
+   - Generates full day-by-day meal content (Ghanaian food context)
+   - Returns pending_action for confirmation, same as above
+
+4. logPlanDayComplete(planId, dayNumber, planType) — WRITE tool but LOW FRICTION: this can execute immediately without the full confirm-card flow (it's just marking a day done, not creating data) — but still log it.
+
+5. getActivePlanStatus(userId) — READ tool, executes immediately: lets the AI say things like "you're on day 3 of your 7-day plan" in normal conversation.
+
+6. On confirmation of generateWorkoutPlan/generateMealPlan via /api/confirm-action, actually insert the plan and all its day rows into Supabase, set status 'active'.
+
+PART C — UI
+7. Add a "My Plans" section (under Fitness/Nutrition or as its own area) showing:
+   - Active plan(s) with progress ("Day 3 of 7")
+   - Today's workout/meal for the active plan
+   - A "Mark done" button calling logPlanDayComplete
+8. Add this to the Dashboard as a card too (if the dashboard info-cards work from before is already in place): "Day 3 of 7 — Today: Upper body workout" with a one-tap complete button.
+
+MANDATORY VERIFICATION — do not report success without this:
+- Run npm run build
+- Run npx wrangler dev --config .output/server/wrangler.json, load the site locally
+- Confirm NO node:fs error, NO h3 swallowed error — site loads normally
+- Ask the AI to "start a workout plan for weight loss" — confirm a confirm card appears showing an AI-chosen duration, confirm nothing is written until you confirm, confirm the plan appears correctly after confirming
+- Tap "Mark done" on today's plan day — confirm it updates without requiring a confirm card
+
+Paste the actual wrangler dev terminal output showing a clean load, plus the actual test results for plan creation and day completion — not a summary claiming it works.
+
+Do NOT touch voice code, WhatsApp removal, or Cloudflare deploy config.
+
+
+
+https://translation-api.ghananlp.org/v2/languages
+Response: 200 OK
+Map of ISO 639-3 language codes to display names.
+
+
+application/json
+LanguageListing
+
+
+Name
+Required
+Type
+Description
+languages.eng
+false
+string
+languages.twi
+false
+string
+languages.ewe
+false
+string
+languages.gaa
+false
+string
+languages.fat
+false
+string
+languages.yor
+false
+string
+languages.dag
+false
+string
+languages.kik
+false
+string
+languages.gur
+false
+string
+languages.luo
+false
+string
+languages.mer
+false
+string
+languages.kus
+false
+string
+default
+default - json
+ Copy
+{
+    "languages": {
+        "eng": "English",
+        "twi": "Twi",
+        "ewe": "Ewe",
+        "gaa": "Ga",
+        "fat": "Fante",
+        "yor": "Yoruba",
+        "dag": "Dagbani",
+        "kik": "Kikuyu",
+        "gur": "Gurene",
+        "luo": "Luo",
+        "mer": "Kimeru",
+        "kus": "Kusaal"
+    }
+}
+Response: 500 Internal Server Error
+An unexpected error occurred while processing the request.
+
+
+application/json
+ErrorResponse
+
+
+Name
+Required
+Type
+Description
+error
+true
+ErrorBody
+default
+default - json
+ Copy
+{
+    "error": {
+        "code": "SYSTEM_ERROR",
+        "message": "An unexpected error occurred while processing the request.",
+        "details": []
+    }
+}
+Definitions
+Name
+Description
+LanguageListing
+ErrorDetail
+ErrorBody
+ErrorResponse
+LanguageListing
+
+
+Name
+Required
+Type
+Description
+languages.eng
+false
+string
+languages.twi
+false
+string
+languages.ewe
+false
+string
+languages.gaa
+false
+string
+languages.fat
+false
+string
+languages.yor
+false
+string
+languages.dag
+false
+string
+languages.kik
+false
+string
+languages.gur
+false
+string
+languages.luo
+false
+string
+languages.mer
+false
+string
+languages.kus
+false
+string
+ErrorDetail
+
+
+Name
+Required
+Type
+Description
+code
+true
+string
+Machine-readable validation issue code, e.g. UNSUPPORTED_LANGUAGE_CODE, UNSUPPORTED_LANGUAGE_PAIR, MISSING_TEXT, MISSING_LANGUAGE_PAIR.
+
+target
+false
+string
+Field that failed validation, e.g. source_language, target_language, text, language_pair.
+
+message
+true
+string
+Human-readable description of this specific validation failure.
+
+ErrorBody
+
+
+Name
+Required
+Type
+Description
+code
+true
+string
+VALIDATION_FAILED for 400 responses, SYSTEM_ERROR for 500 responses.
+
+message
+true
+string
+Human-readable summary of the error.
+
+details
+true
+ErrorDetail[]
+One entry per invalid field. Empty for 500 responses.
+
+ErrorResponse
+
+
+Name
+Required
+Type
+Description
+error
+true
+ErrorBody
+
+
+Request
+https://translation-api.ghananlp.org/tts/v2/speakers
+Response: 200 OK
+A listing of available speakers
+
+
+application/json
+Speakers listing
+
+
+Name
+Required
+Type
+Description
+speakers.Multilingual
+false
+string[]
+Speaker IDs available for use with any supported language. Pass one of these as speaker_id in POST /synthesize.
+
+default
+default - json
+ Copy
+{
+    "speakers": {
+        "Multilingual": ["male_low", "male_high", "female"]
+    }
+}
+Definitions
+Name
+Description
+Speakers listing
+Speakers listing
+
+
+Name
+Required
+Type
+Description
+speakers.Multilingual
+false
+string[]
+Speaker IDs available for use with any supported language. Pass one of these as speaker_id in POST /synthesize.
+
+
+
+
+Request
+https://translation-api.ghananlp.org/asr/v3/languages
+Response: 200 OK
+Successful Response
+
+
+application/json
+LanguagesResponse
+
+
+Name
+Required
+Type
+Description
+languages
+true
+LanguageDefinition[]
+default
+default - json
+ Copy
+{
+    "languages": [{
+        "code": "ewe",
+        "name": "Ewe"
+    }]
+}
+Response: 500 Internal Server Error
+An unexpected error occurred while processing the request.
+
+
+application/json
+ErrorResponse
+
+
+Name
+Required
+Type
+Description
+error
+true
+ErrorBody
+system_error
+system_error - json
+ Copy
+{
+    "error": {
+        "code": "SYSTEM_ERROR",
+        "message": "An unexpected error occurred while processing the request.",
+        "details": []
+    }
+}
+Definitions
+Name
+Description
+LanguageDefinition
+LanguagesResponse
+ErrorDetail
+ErrorBody
+ErrorResponse
+LanguageDefinition
+
+
+Name
+Required
+Type
+Description
+code
+true
+string
+ISO 639-3 language code.
+
+name
+true
+string
+Human-readable language name.
+
+LanguagesResponse
+
+
+Name
+Required
+Type
+Description
+languages
+true
+LanguageDefinition[]
+ErrorDetail
+
+
+Name
+Required
+Type
+Description
+code
+true
+string
+Machine-readable code identifying the specific validation failure, e.g. EMPTY_AUDIO, UNSUPPORTED_LANGUAGE, INVALID_AUDIO_FORMAT, INVALID_TIMESTAMPS, UNSUPPORTED_TIMESTAMPS.
+
+target
+false
+string
+Name of the request field this error relates to, e.g. audio, language, timestamps.
+
+message
+true
+string
+Human-readable description of this specific validation failure.
+
+ErrorBody
+
+
+Name
+Required
+Type
+Description
+code
+true
+string
+VALIDATION_FAILED for 400 responses, SYSTEM_ERROR for 500 responses.
+
+message
+true
+string
+Human-readable summary of the error.
+
+details
+true
+ErrorDetail[]
+One entry per invalid field. Empty for 500 responses.
+
+ErrorResponse
+
+
+Name
+Required
+Type
+Description
+error
+true
+ErrorBody

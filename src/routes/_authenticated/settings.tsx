@@ -32,6 +32,7 @@ import {
   Accessibility,
   Save,
   Globe,
+  Volume2,
 } from "lucide-react";
 import {
   applyTheme as applyStoreTheme,
@@ -68,6 +69,7 @@ function SettingsPage() {
   // User preferences state
   const [preferences, setPreferences] = useState({
     language: "en",
+    voiceAutoPlay: true,
     theme: "system",
     preset: "soma-indigo",
     darkModeBackground: "material", // material, pure-black, custom
@@ -415,6 +417,40 @@ function SettingsPage() {
                   <SelectItem value="ga">Ga (GA) — Coming Soon</SelectItem>
                 </SelectContent>
               </Select>
+            </CardContent>
+          </Card>
+
+          {/* AI Voice Playback */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Volume2 className="h-4 w-4" />
+                {t("settings.voicePlayback", "AI Voice Playback")}
+              </CardTitle>
+              <CardDescription>
+                {t(
+                  "settings.voicePlaybackDescription",
+                  "Control when Adwoa speaks her replies out loud.",
+                )}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="voice-autoplay">
+                  {t("settings.voiceAutoPlay", "Speak replies automatically")}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {t(
+                    "settings.voiceAutoPlayDescription",
+                    "Play Adwoa's voice as soon as she finishes writing a reply.",
+                  )}
+                </p>
+              </div>
+              <Switch
+                id="voice-autoplay"
+                checked={preferences.voiceAutoPlay !== false}
+                onCheckedChange={(v) => updateField("voiceAutoPlay", v)}
+              />
             </CardContent>
           </Card>
 

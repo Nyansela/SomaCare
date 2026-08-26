@@ -25,6 +25,14 @@ import {
   Activity,
   ShieldCheck,
   RotateCcw,
+  Volume2,
+  Square,
+  ClipboardList,
+  CheckCircle2,
+  XCircle,
+  Mic,
+  PhoneOff,
+  AudioLines,
 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -136,6 +144,110 @@ const SUGGESTIONS = [
     tint: "from-sky-500/15 to-sky-500/5",
   },
 ];
+
+/** Languages with Ghana NLP (Khaya) TTS voices — all female Ghanaian speakers */
+const VOICE_LANGUAGES = ["en", "tw", "ee", "ga"] as const;
+const VOICE_LANGUAGE_LABELS: Record<string, string> = {
+  en: "English",
+  tw: "Twi",
+  ee: "Ewe",
+  ga: "Ga",
+};
+
+/** App language codes → BCP-47 locales for browser speech recognition (STT) */
+const STT_LANGUAGE_MAP: Record<string, string> = {
+  en: "en-US",
+  tw: "ak-GH",
+  ee: "ee-GH",
+  ga: "gaa-GH",
+};
+
+// ── Minimal Web Speech API types (not in all TS DOM libs) ──────────
+type SRAlternative = { transcript: string };
+type SRResult = { isFinal: boolean; length: number; [index: number]: SRAlternative };
+type SRResultList = { length: number; [index: number]: SRResult };
+type SREvent = { resultIndex: number; results: SRResultList };
+type SRRecognition = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives: number;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onstart: (() => void) | null;
+  onend: (() => void) | null;
+  onresult: ((e: SREvent) => void) | null;
+  onerror: ((e: { error: string }) => void) | null;
+};
+type SRCtor = new () => SRRecognition;
+
+function getSpeechRecognition(): SRCtor | null {
+  const w = window as unknown as {
+    SpeechRecognition?: SRCtor;
+    webkitSpeechRecognition?: SRCtor;
+  };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
+}
+
+/** Tools that require explicit user confirmation before any Supabase write */
+const WRITE_TOOLS = [
+  "logVitalReading",
+  "logMeal",
+  "bookAppointment",
+  "addMedication",
+  "generateWorkoutPlan",
+  "generateMealPlan",
+];
+
+type AnyToolPart = {
+  type: string;
+  toolCallId?: string;
+  state?: string;
+  input?: Record<string, unknown>;
+};
+
+function humanSummary(toolName: string, input: Record<string, unknown>): string {
+  const s = (v: unknown) => (typeof v === "string" ? v : "");
+  switch (toolName) {
+    case "logVitalReading": {
+      const unit = s(input.unit) ? ` ${s(input.unit)}` : "";
+      return `Log vital reading: ${s(input.type)} = ${String(input.value)}${unit}`;
+    }
+    case "logMeal":
+      return `Log meal: ${s(input.food)}${s(input.quantity) ? ` (${s(input.quantity)})` : ""}`;
+    case "bookAppointment":
+      return `Book appointment with ${s(input.provider)} on ${s(input.date)} at ${s(input.time)}`;
+    case "addMedication":
+      return `Add medication: ${s(input.name)}${s(input.dosage) ? ` · ${s(input.dosage)}` : ""}${
+        s(input.schedule) ? ` · ${s(input.schedule)}` : ""
+      }`;
+    case "generateWorkoutPlan": {
+      const days = Array.isArray(input.days)
+        ? (input.days as { day_number: number; exercises?: { name: string }[] }[])
+        : [];
+      const preview = days
+        .find((d) => d.day_number === 1)
+        ?.exercises?.slice(0, 3)
+        .map((e) => e.name)
+        .join(", ");
+      return `${s(input.title) || "Workout plan"} — ${String(input.duration_days)}-day plan (goal: ${s(
+        input.goal,
+      )}, level: ${s(input.fitnessLevel)}). Day 1: ${preview || "workout"}`;
+    }
+    case "generateMealPlan": {
+      const days = Array.isArray(input.days)
+        ? (input.days as { day_number: number; meals?: { breakfast?: string } }[])
+        : [];
+      const preview = days.find((d) => d.day_number === 1)?.meals?.breakfast;
+      return `${s(input.title) || "Meal plan"} — ${String(input.duration_days)}-day plan (goal: ${s(
+        input.goal,
+      )}). Day 1 breakfast: ${preview || "Ghanaian meal"}`;
+    }
+    default:
+      return `Proposed action: ${toolName}`;
+  }
+}
 
 function AssistantPage() {
   const { t } = useTranslation();
@@ -441,6 +553,141 @@ function ChatWindow({
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const qc = useQueryClient();
+
+  // ── Voice playback (Twi TTS) ─────────────────────────────────────
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const urlRef = useRef<string | null>(null);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const playedRef = useRef<Set<string>>(new Set());
+  const prevStatusRef = useRef<string>("ready");
+
+  // User's preferred language — voice available in English, Twi, Ewe and Ga
+  const [voiceLang, setVoiceLang] = useState<string>("en");
+  const [voiceAutoPlay, setVoiceAutoPlay] = useState(true);
+  const [liveOpen, setLiveOpen] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("preferences")
+        .eq("id", u.user.id)
+        .maybeSingle();
+      if (!cancelled) {
+        const prefs = (data?.preferences ?? {}) as Record<string, unknown>;
+        setVoiceLang((prefs.language as string) || "en");
+        setVoiceAutoPlay(prefs.voiceAutoPlay !== false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Stop any current playback so a new message can start cleanly
+  const replayMessage = (messageId: string, text: string) => {
+    if (!text.trim()) return;
+    stopSpeaking();
+    void speak(text, messageId);
+  };
+
+  const stopSpeaking = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if (urlRef.current) {
+      URL.revokeObjectURL(urlRef.current);
+      urlRef.current = null;
+    }
+    setSpeakingId(null);
+  };
+
+  const speak = async (text: string, messageId: string, onDone?: () => void) => {
+    if (!(VOICE_LANGUAGES as readonly string[]).includes(voiceLang)) return; // unsupported language → skip silently
+    try {
+      const res = await fetch("/api/voice/synthesize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, language: voiceLang }),
+      });
+      const contentType = res.headers.get("content-type") || "";
+      if (!res.ok || !contentType.includes("audio")) return; // voice_unavailable → stay silent
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      urlRef.current = url;
+      setSpeakingId(messageId);
+      const finish = () => {
+        stopSpeaking();
+        onDone?.();
+      };
+      audio.onended = finish;
+      audio.onerror = finish;
+      await audio.play();
+    } catch {
+      stopSpeaking(); // never break the chat flow over voice
+      onDone?.();
+    }
+  };
+
+  useEffect(() => () => stopSpeaking(), []);
+
+  // ── Write-action confirmations ────────────────────────────────────
+  const [resolvedActions, setResolvedActions] = useState<Record<string, "confirmed" | "declined">>(
+    () => {
+      try {
+        return JSON.parse(localStorage.getItem("adwoa_resolved_actions") || "{}");
+      } catch {
+        return {};
+      }
+    },
+  );
+
+  const confirmAction = async (
+    messageId: string,
+    toolCallId: string,
+    toolName: string,
+    input: Record<string, unknown>,
+    confirmed: boolean,
+  ) => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (sessionData.session?.access_token) {
+        headers.Authorization = `Bearer ${sessionData.session.access_token}`;
+      }
+      const res = await fetch("/api/confirm-action", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ tool: toolName, args: input, confirmed }),
+      });
+      if (!res.ok && confirmed) {
+        toast.error("Couldn't complete that action — please try again.");
+      }
+    } catch {
+      toast.error("Couldn't complete that action — please try again.");
+    } finally {
+      setResolvedActions((prev) => {
+        const next = {
+          ...prev,
+          [`${messageId}:${toolCallId}`]: confirmed ? "confirmed" : "declined",
+        } as Record<string, "confirmed" | "declined">;
+        try {
+          localStorage.setItem("adwoa_resolved_actions", JSON.stringify(next));
+        } catch {
+          // ignore storage errors
+        }
+        return next;
+      });
+      // Refresh any data a confirmed action may have changed
+      void qc.invalidateQueries({ refetchType: "all" });
+    }
+  };
 
   const transport = useMemo(
     () =>
@@ -475,6 +722,26 @@ function ChatWindow({
   }, [threadId, status]);
 
   const busy = status === "submitted" || status === "streaming";
+
+  // Auto-play Adwoa's reply once streaming finishes (supported languages only)
+  useEffect(() => {
+    const wasBusy =
+      prevStatusRef.current === "submitted" || prevStatusRef.current === "streaming";
+    prevStatusRef.current = status;
+    if (!wasBusy || status !== "ready") return;
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== "assistant") return;
+    if (playedRef.current.has(last.id)) return;
+    playedRef.current.add(last.id);
+    const replyText = last.parts.map((p) => (p.type === "text" ? p.text : "")).join("").trim();
+    if (!replyText) return;
+    // Respect the user's "speak replies automatically" setting
+    if (!voiceAutoPlay) return;
+    // Don't narrate messages containing a pending confirmation card
+    if (last.parts.some((p) => typeof p.type === "string" && p.type.startsWith("tool-"))) return;
+    void speak(replyText, last.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, messages]);
 
   const send = async (text: string) => {
     const trimmed = text.trim();
@@ -536,7 +803,17 @@ function ChatWindow({
         <div className="mx-auto flex max-w-4xl flex-col gap-6">
           <AnimatePresence initial={false}>
             {messages.map((m) => (
-              <MessageBubble key={m.id} message={m} />
+              <MessageBubble
+                key={m.id}
+                message={m}
+                isSpeaking={speakingId === m.id}
+                onInterrupt={stopSpeaking}
+                canSpeak={(VOICE_LANGUAGES as readonly string[]).includes(voiceLang)}
+                languageLabel={VOICE_LANGUAGE_LABELS[voiceLang] ?? voiceLang}
+                onSpeak={replayMessage}
+                resolvedActions={resolvedActions}
+                onConfirmAction={confirmAction}
+              />
             ))}
           </AnimatePresence>
           {status === "submitted" && <ThinkingIndicator />}
@@ -562,6 +839,18 @@ function ChatWindow({
         <div className="mx-auto max-w-4xl">
           <div className="group relative rounded-3xl border border-border bg-background p-2 shadow-sm transition focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10">
             <div className="flex items-end gap-2 px-2">
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                onClick={() => setLiveOpen(true)}
+                disabled={busy}
+                className="h-10 w-10 shrink-0 rounded-2xl"
+                aria-label="Start live voice conversation"
+                title="Live conversation"
+              >
+                <Mic className="h-4 w-4 text-primary" />
+              </Button>
               <Textarea
                 ref={inputRef}
                 value={input}
@@ -652,10 +941,37 @@ function ThinkingIndicator() {
   );
 }
 
-function MessageBubble({ message }: { message: UIMessage }) {
+function MessageBubble({
+  message,
+  isSpeaking,
+  onInterrupt,
+  canSpeak,
+  languageLabel,
+  onSpeak,
+  resolvedActions,
+  onConfirmAction,
+}: {
+  message: UIMessage;
+  isSpeaking: boolean;
+  onInterrupt: () => void;
+  canSpeak: boolean;
+  languageLabel: string;
+  onSpeak: (messageId: string, text: string) => void;
+  resolvedActions: Record<string, "confirmed" | "declined">;
+  onConfirmAction: (
+    messageId: string,
+    toolCallId: string,
+    toolName: string,
+    input: Record<string, unknown>,
+    confirmed: boolean,
+  ) => void;
+}) {
   const isUser = message.role === "user";
   const text = message.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
   const [copied, setCopied] = useState(false);
+  const toolParts = message.parts.filter(
+    (p) => typeof p.type === "string" && p.type.startsWith("tool-"),
+  ) as unknown as AnyToolPart[];
 
   const copy = async () => {
     await navigator.clipboard.writeText(text);
@@ -695,15 +1011,143 @@ function MessageBubble({ message }: { message: UIMessage }) {
             </div>
           )}
         </div>
-        {!isUser && text && (
-          <button
-            onClick={copy}
-            className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] text-muted-foreground transition hover:text-foreground"
-          >
-            {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
-            {copied ? "Copied" : "Copy"}
-          </button>
+        {!isUser && (
+          <div className="flex flex-wrap items-center gap-2">
+            {text && (
+              <button
+                onClick={copy}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] text-muted-foreground transition hover:text-foreground"
+              >
+                {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                {copied ? "Copied" : "Copy"}
+              </button>
+            )}
+            {text && canSpeak && !isSpeaking && (
+              <button
+                type="button"
+                onClick={() => onSpeak(message.id, text)}
+                aria-label={`Listen to this reply in ${languageLabel}`}
+                title={`Listen (${languageLabel} voice)`}
+                className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary transition hover:bg-primary/20"
+              >
+                <Volume2 className="h-3 w-3" /> Listen
+              </button>
+            )}
+            {isSpeaking && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                <motion.span
+                  animate={{ scale: [1, 1.35, 1], opacity: [1, 0.55, 1] }}
+                  transition={{ duration: 1.1, repeat: Infinity }}
+                >
+                  <Volume2 className="h-3 w-3" />
+                </motion.span>
+                Speaking…
+              </span>
+            )}
+            {isSpeaking && (
+              <button
+                type="button"
+                onClick={onInterrupt}
+                aria-label="Stop voice playback"
+                className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive transition hover:bg-destructive/20"
+              >
+                <Square className="h-3 w-3" /> Tap to interrupt
+              </button>
+            )}
+          </div>
         )}
+
+        {/* Pending write-action confirmation cards */}
+        {!isUser &&
+          toolParts.some((part) => WRITE_TOOLS.includes(part.type.slice(5))) && (
+            <div className="mt-1 flex w-full flex-col gap-2">
+              {toolParts
+                .filter((part) => WRITE_TOOLS.includes(part.type.slice(5)))
+                .map((part) => {
+                  const toolName = part.type.slice(5);
+                  const key = `${message.id}:${part.toolCallId}`;
+                  const resolved = resolvedActions[key];
+                  const input = part.input ?? {};
+                  if (resolved) {
+                    return (
+                      <div
+                        key={part.toolCallId}
+                        className={cn(
+                          "flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs",
+                          resolved === "confirmed"
+                            ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                            : "border-border bg-muted/50 text-muted-foreground",
+                        )}
+                      >
+                        {resolved === "confirmed" ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                        ) : (
+                          <XCircle className="h-3.5 w-3.5 shrink-0" />
+                        )}
+                        {resolved === "confirmed"
+                          ? "Confirmed ✓"
+                          : "Declined — Adwoa won't make this change"}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div
+                      key={part.toolCallId}
+                      className="rounded-2xl border border-primary/30 bg-primary/5 p-3 shadow-sm"
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
+                          <ClipboardList className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-semibold uppercase tracking-wide text-primary">
+                            Confirm action
+                          </div>
+                          <p className="mt-0.5 break-words text-sm text-foreground">
+                            {humanSummary(toolName, input)}
+                          </p>
+                          <div className="mt-2 flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              disabled={part.state === "input-streaming"}
+                              onClick={() =>
+                                onConfirmAction(
+                                  message.id,
+                                  String(part.toolCallId),
+                                  toolName,
+                                  input,
+                                  true,
+                                )
+                              }
+                              className="h-8 soma-gradient border-0 px-3 text-xs text-white"
+                            >
+                              Confirm
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={part.state === "input-streaming"}
+                              onClick={() =>
+                                onConfirmAction(
+                                  message.id,
+                                  String(part.toolCallId),
+                                  toolName,
+                                  input,
+                                  false,
+                                )
+                              }
+                              className="h-8 px-3 text-xs"
+                            >
+                              Decline
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
       </div>
     </motion.div>
   );

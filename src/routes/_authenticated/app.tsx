@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarPlus,
   Pill,
@@ -10,6 +10,13 @@ import {
   HeartPulse,
   Clock,
   ArrowRight,
+  TrendingDown,
+  TrendingUp,
+  Minus,
+  CheckCircle2,
+  Circle,
+  ClipboardList,
+  Loader2,
 } from "lucide-react";
 import { format, isToday, isTomorrow } from "date-fns";
 import {
@@ -25,6 +32,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell, EmptyState } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({
@@ -39,6 +47,7 @@ export const Route = createFileRoute("/_authenticated/app")({
 
 function Dashboard() {
   const { t } = useTranslation();
+  const qc = useQueryClient();
   const appointments = useQuery({
     queryKey: ["appointments", "upcoming"],
     queryFn: async () => {
@@ -84,6 +93,131 @@ function Dashboard() {
     },
   });
 
+  // Latest readings across ALL vital kinds (latest-per-kind card + trend)
+  const latestVitals = useQuery({
+    queryKey: ["vitals", "latest"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vitals")
+        .select("kind,value,unit,taken_at")
+        .order("taken_at", { ascending: false })
+        .limit(60);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Today's medication taken-status
+  const todayKey = format(new Date(), "yyyy-MM-dd");
+  const doseLogs = useQuery({
+    queryKey: ["medication_dose_logs", todayKey],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("medication_dose_logs")
+        .select("medication_id")
+        .eq("taken_on", todayKey);
+      if (error) throw error;
+      return new Set((data ?? []).map((d) => d.medication_id));
+    },
+  });
+
+  const toggleDose = useMutation({
+    mutationFn: async ({ medId, taken }: { medId: string; taken: boolean }) => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Not authenticated");
+      if (taken) {
+        const { error } = await supabase
+          .from("medication_dose_logs")
+          .delete()
+          .eq("medication_id", medId)
+          .eq("taken_on", todayKey);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("medication_dose_logs").insert({
+          medication_id: medId,
+          taken_on: todayKey,
+          user_id: u.user.id,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["medication_dose_logs"] }),
+  });
+
+  // Active plan (workout preferred) for the dashboard plan card
+  const activePlans = useQuery({
+    queryKey: ["plans", "dashboard"],
+    queryFn: async () => {
+      const [w, m] = await Promise.all([
+        supabase
+          .from("workout_plans")
+          .select("id,title,duration_days,start_date")
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(1),
+        supabase
+          .from("meal_plans")
+          .select("id,title,duration_days,start_date")
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(1),
+      ]);
+      if (w.error) throw w.error;
+      if (m.error) throw m.error;
+      const plan = (w.data ?? [])[0] ?? (m.data ?? [])[0];
+      if (!plan) return null;
+      const start = new Date(`${plan.start_date}T00:00:00`);
+      const dayNumber = Math.min(
+        Math.max(Math.floor((Date.now() - start.getTime()) / 86400000) + 1, 1),
+        plan.duration_days,
+      );
+      const [{ data: done }, daysTable] = await Promise.all([
+        supabase
+          .from("plan_day_completions")
+          .select("day_number")
+          .eq("plan_id", plan.id),
+        "duration_days" in plan && w.data?.length ? supabase.from("workout_plan_days") : null,
+      ]);
+      let todaySummary = "";
+      if (daysTable) {
+        const { data: dayRows } = await daysTable
+          .select("exercises")
+          .eq("plan_id", plan.id)
+          .eq("day_number", dayNumber)
+          .maybeSingle();
+        const exercises = ((dayRows?.exercises as Array<{ name: string }> | null) ?? []).slice(0, 3);
+        todaySummary = exercises.map((e) => e.name).join(", ");
+      }
+      const doneSet = new Set((done ?? []).map((d) => d.day_number));
+      return {
+        id: plan.id,
+        title: plan.title,
+        durationDays: plan.duration_days,
+        dayNumber,
+        doneToday: doneSet.has(dayNumber),
+        doneCount: doneSet.size,
+        todaySummary,
+      };
+    },
+  });
+
+  const markPlanDone = useMutation({
+    mutationFn: async () => {
+      const plan = activePlans.data;
+      if (!plan) return;
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Not authenticated");
+      const { error } = await supabase.from("plan_day_completions").upsert({
+        plan_id: plan.id,
+        plan_type: "workout",
+        day_number: plan.dayNumber,
+        user_id: u.user.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["plans"] }),
+  });
+
   const notifications = useQuery({
     queryKey: ["notifications", "recent"],
     queryFn: async () => {
@@ -110,7 +244,229 @@ function Dashboard() {
         </Link>
       }
     >
+      {/* Compact quick actions */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="mr-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Quick actions
+        </span>
+        <Link to="/trackers/vitals">
+          <Button size="sm" variant="outline" className="h-8 text-xs">
+            <Activity className="mr-1 h-3.5 w-3.5" /> Log reading
+          </Button>
+        </Link>
+        <Link to="/appointments">
+          <Button size="sm" variant="outline" className="h-8 text-xs">
+            <CalendarPlus className="mr-1 h-3.5 w-3.5" /> Book appointment
+          </Button>
+        </Link>
+        <Link to="/medications">
+          <Button size="sm" variant="outline" className="h-8 text-xs">
+            <Pill className="mr-1 h-3.5 w-3.5" /> Add medication
+          </Button>
+        </Link>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-12">
+        {/* Latest vitals + trend */}
+        <section className="soma-card p-4 sm:p-6 lg:col-span-4">
+          <div className="flex items-center justify-between">
+            <div className="min-w-0">
+              <h2 className="truncate font-display text-base font-semibold sm:text-lg">Latest readings</h2>
+              <p className="text-xs text-muted-foreground">From your Health Vault</p>
+            </div>
+            <Link to="/trackers/vitals" className="shrink-0 text-xs text-primary hover:underline">
+              All vitals
+            </Link>
+          </div>
+          <div className="mt-4 space-y-3">
+            {latestVitals.isLoading ? (
+              <Skeleton className="h-20 w-full" />
+            ) : latestVitals.data && latestVitals.data.length > 0 ? (
+              (() => {
+                const byKind = new Map<
+                  string,
+                  { unit: string | null; takenAt: string; history: number[] }
+                >();
+                for (const v of latestVitals.data) {
+                  const entry = byKind.get(v.kind);
+                  if (entry) {
+                    entry.history.push(Number(v.value));
+                  } else {
+                    byKind.set(v.kind, {
+                      unit: v.unit,
+                      takenAt: v.taken_at,
+                      history: [Number(v.value)],
+                    });
+                  }
+                }
+                return [...byKind.entries()].slice(0, 5).map(([kind, info]) => {
+                  const trend = vitalTrend(info.history);
+                  return (
+                    <div key={kind} className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium capitalize">
+                          {kind.replace(/_/g, " ")}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {format(new Date(info.takenAt), "MMM d, p")}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span className="text-sm font-semibold">
+                          {info.history[0]}
+                          {info.unit ? ` ${info.unit}` : ""}
+                        </span>
+                        {trend === "down" ? (
+                          <TrendingDown className="h-4 w-4 text-emerald-500" aria-label="trending down" />
+                        ) : trend === "up" ? (
+                          <TrendingUp className="h-4 w-4 text-destructive" aria-label="trending up" />
+                        ) : trend === "flat" ? (
+                          <Minus className="h-4 w-4 text-muted-foreground" aria-label="stable" />
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                });
+              })()
+            ) : (
+              <EmptyState
+                icon={HeartPulse}
+                title={t("dashboard.noReadings", "No readings yet")}
+                body={t(
+                  "dashboard.noReadingsBody",
+                  "Tap to add your first reading and start spotting trends.",
+                )}
+                action={
+                  <Link to="/trackers/vitals">
+                    <Button size="sm" variant="outline">
+                      {t("dashboard.logReading", "Log a reading")}
+                    </Button>
+                  </Link>
+                }
+              />
+            )}
+          </div>
+        </section>
+
+        {/* Today's medication schedule with taken/not-taken status */}
+        <section className="soma-card p-4 sm:p-6 lg:col-span-4">
+          <div className="flex items-center justify-between">
+            <div className="min-w-0">
+              <h2 className="truncate font-display text-base font-semibold sm:text-lg">Today's medications</h2>
+              <p className="text-xs text-muted-foreground">Tap to mark as taken</p>
+            </div>
+            <Link to="/medications" className="shrink-0 text-xs text-primary hover:underline">
+              Manage
+            </Link>
+          </div>
+          <div className="mt-4 space-y-2">
+            {medications.isLoading || doseLogs.isLoading ? (
+              <Skeleton className="h-16 w-full" />
+            ) : medications.data && medications.data.length > 0 ? (
+              medications.data.map((m) => {
+                const taken = doseLogs.data?.has(m.id) ?? false;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => toggleDose.mutate({ medId: m.id, taken })}
+                    className="flex w-full items-center gap-3 rounded-xl border border-border/70 bg-background/50 px-3 py-2 text-left transition hover:border-primary/40"
+                  >
+                    {taken ? (
+                      <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" />
+                    ) : (
+                      <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className={`truncate text-sm ${taken ? "text-muted-foreground line-through" : "font-medium"}`}>
+                        {m.name}
+                      </div>
+                      <div className="truncate text-xs text-muted-foreground">
+                        {[m.dose, m.scheduled_time?.slice(0, 5), m.frequency].filter(Boolean).join(" · ") || "No schedule"}
+                      </div>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${taken ? "bg-emerald-500/15 text-emerald-600" : "bg-muted text-muted-foreground"}`}>
+                      {taken ? "Taken" : "Not taken"}
+                    </span>
+                  </button>
+                );
+              })
+            ) : (
+              <EmptyState
+                icon={Pill}
+                title={t("dashboard.noMedications", "No medications yet")}
+                body={t(
+                  "dashboard.noMedicationsBody",
+                  "Add your prescriptions to get reminders and interaction checks.",
+                )}
+                action={
+                  <Link to="/medications">
+                    <Button size="sm" variant="outline">
+                      {t("dashboard.addMedication", "Add medication")}
+                    </Button>
+                  </Link>
+                }
+              />
+            )}
+          </div>
+        </section>
+
+        {/* Active plan progress */}
+        {activePlans.data && (
+          <section className="soma-card p-4 sm:p-6 lg:col-span-4">
+            <div className="flex items-center justify-between">
+              <div className="min-w-0">
+                <h2 className="truncate font-display text-base font-semibold sm:text-lg">
+                  {activePlans.data.title}
+                </h2>
+                <p className="text-xs text-muted-foreground">AI-generated plan in progress</p>
+              </div>
+              <Link to="/plans" className="shrink-0 text-xs text-primary hover:underline">
+                My Plans
+              </Link>
+            </div>
+            <div className="mt-4 rounded-2xl border border-border/70 bg-muted/30 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4 text-primary" />
+                  <span className="font-semibold text-sm">
+                    Day {activePlans.data.dayNumber} of {activePlans.data.durationDays}
+                  </span>
+                </div>
+                <Button
+                  size="sm"
+                  variant={activePlans.data.doneToday ? "outline" : "default"}
+                  disabled={activePlans.data.doneToday || markPlanDone.isPending}
+                  onClick={() => markPlanDone.mutate()}
+                  className={cn(activePlans.data.doneToday ? "" : "soma-gradient soma-glow border-0 text-white", "gap-1.5")}
+                >
+                  {markPlanDone.isPending && !activePlans.data.doneToday ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : activePlans.data.doneToday ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4" />
+                  )}
+                  {activePlans.data.doneToday ? "Done today" : "Complete"}
+                </Button>
+              </div>
+              {activePlans.data.todaySummary && (
+                <p className="mt-2 truncate text-xs text-muted-foreground">
+                  Today: {activePlans.data.todaySummary}
+                </p>
+              )}
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-background">
+                <div
+                  className="h-full rounded-full soma-gradient"
+                  style={{
+                    width: `${Math.round((activePlans.data.doneCount / activePlans.data.durationDays) * 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Upcoming appointments */}
         <section className="soma-card p-4 sm:col-span-2 sm:p-6 lg:col-span-5">
           <div className="flex items-center justify-between">
@@ -358,6 +714,19 @@ function Dashboard() {
       </div>
     </AppShell>
   );
+}
+
+/** Compare newest-first readings: returns trend of recent half vs older half */
+function vitalTrend(historyNewestFirst: number[]): "up" | "down" | "flat" | null {
+  if (historyNewestFirst.length < 4) return null;
+  const half = Math.floor(historyNewestFirst.length / 2);
+  const newer = historyNewestFirst.slice(0, half);
+  const older = historyNewestFirst.slice(half);
+  const avg = (a: number[]) => a.reduce((s, v) => s + v, 0) / a.length;
+  const diff = avg(newer) - avg(older);
+  const base = avg(older);
+  if (base === 0 || Math.abs(diff) < 0.05 * base) return "flat";
+  return diff < 0 ? "down" : "up";
 }
 
 function AppointmentRow({

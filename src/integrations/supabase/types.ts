@@ -805,6 +805,246 @@ export type Database = {
           },
         ];
       };
+      voice_cache: {
+        Row: {
+          id: string;
+          text_hash: string;
+          language: string;
+          audio_url: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          text_hash: string;
+          language: string;
+          audio_url: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          text_hash?: string;
+          language?: string;
+          audio_url?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      action_logs: {
+        Row: {
+          id: string;
+          user_id: string;
+          tool: string;
+          args: Json;
+          outcome: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          tool: string;
+          args?: Json;
+          outcome: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          tool?: string;
+          args?: Json;
+          outcome?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      workout_plans: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          goal: string;
+          duration_days: number;
+          start_date: string;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          goal: string;
+          duration_days: number;
+          start_date?: string;
+          status?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          goal?: string;
+          duration_days?: number;
+          start_date?: string;
+          status?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      workout_plan_days: {
+        Row: {
+          id: string;
+          plan_id: string;
+          day_number: number;
+          exercises: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          plan_id: string;
+          day_number: number;
+          exercises?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          plan_id?: string;
+          day_number?: number;
+          exercises?: Json;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "workout_plan_days_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "workout_plans";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      meal_plans: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          goal: string;
+          duration_days: number;
+          start_date: string;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          goal: string;
+          duration_days: number;
+          start_date?: string;
+          status?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          goal?: string;
+          duration_days?: number;
+          start_date?: string;
+          status?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      meal_plan_days: {
+        Row: {
+          id: string;
+          plan_id: string;
+          day_number: number;
+          meals: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          plan_id: string;
+          day_number: number;
+          meals?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          plan_id?: string;
+          day_number?: number;
+          meals?: Json;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "meal_plan_days_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "meal_plans";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      medication_dose_logs: {
+        Row: {
+          id: string;
+          user_id: string;
+          medication_id: string;
+          taken_on: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          medication_id: string;
+          taken_on?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          medication_id?: string;
+          taken_on?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "medication_dose_logs_medication_id_fkey";
+            columns: ["medication_id"];
+            isOneToOne: false;
+            referencedRelation: "medications";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      plan_day_completions: {
+        Row: {
+          id: string;
+          plan_id: string;
+          plan_type: string;
+          day_number: number;
+          completed_at: string;
+          user_id: string;
+        };
+        Insert: {
+          id?: string;
+          plan_id: string;
+          plan_type: string;
+          day_number: number;
+          completed_at?: string;
+          user_id: string;
+        };
+        Update: {
+          id?: string;
+          plan_id?: string;
+          plan_type?: string;
+          day_number?: number;
+          completed_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
