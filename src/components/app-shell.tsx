@@ -10,9 +10,8 @@ import {
   Activity,
   MapPin,
   Siren,
-  Settings,
   LogOut,
-  Bell,
+  User,
   Menu,
   Stethoscope,
   Plus,
@@ -31,7 +30,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ThemeCustomizer } from "@/components/theme-customizer";
+
 
 const navGroups = [
   {
@@ -230,10 +229,10 @@ export function AppShell({
           </nav>
           <div className="border-t pt-3 mt-auto space-y-1 px-3 pb-4">
             <Link
-              to="/settings"
+              to="/profile"
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
             >
-              <Settings className="h-4 w-4" /> {t("nav.settings", "Settings")}
+              <User className="h-4 w-4" /> {t("nav.profile", "Profile")}
             </Link>
             <button
               onClick={signOut}
@@ -261,26 +260,20 @@ export function AppShell({
               {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
             </div>
             {action}
-            <HeaderClock />
-            <ThemeCustomizer />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative"
-              aria-label={t("nav.notifications", "Notifications")}
+            <Link
+              to="/profile"
+              className="group relative"
+              aria-label={t("nav.profile", "Profile")}
             >
-              <Bell className="h-5 w-5" />
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive" />
-            </Button>
-            <Avatar className="h-9 w-9">
-              <AvatarImage src={profile?.avatar || undefined} />
-              <AvatarFallback
-                className="soma-gradient text-white text-xs font-semibold"
-                aria-label={t("nav.profile", "Profile")}
-              >
-                {profile?.name?.slice(0, 2).toUpperCase() || t("nav.you", "You")}
-              </AvatarFallback>
-            </Avatar>
+              <Avatar className="h-9 w-9 transition ring-2 ring-transparent group-hover:ring-primary/50">
+                <AvatarImage src={profile?.avatar || undefined} />
+                <AvatarFallback
+                  className="soma-gradient text-white text-xs font-semibold"
+                >
+                  {profile?.name?.slice(0, 2).toUpperCase() || t("nav.you", "You")}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
           </header>
 
           <motion.main
@@ -304,25 +297,6 @@ export function AppShell({
   );
 }
 
-function HeaderClock() {
-  const { t } = useTranslation();
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return (
-    <Link
-      to="/clock"
-      className="hidden items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium tabular-nums text-muted-foreground transition hover:border-primary/40 hover:text-foreground md:inline-flex"
-      aria-label={t("nav.openClock", "Open clock and reminders")}
-    >
-      <Clock className="h-3.5 w-3.5 text-primary" />
-      {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-    </Link>
-  );
-}
-
 export function EmptyState({
   icon: Icon = Plus,
   title,
@@ -335,7 +309,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border p-8 text-center">
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border p-5 text-center sm:p-8">
       <div className="grid h-12 w-12 place-items-center rounded-full bg-accent text-primary">
         <Icon className="h-5 w-5" />
       </div>

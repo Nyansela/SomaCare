@@ -266,9 +266,9 @@ function Dashboard() {
         </Link>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-12 lg:gap-6">
         {/* Latest vitals + trend */}
-        <section className="soma-card p-4 sm:p-6 lg:col-span-4">
+        <section className="soma-card p-3.5 sm:p-5 lg:col-span-4">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <h2 className="truncate font-display text-base font-semibold sm:text-lg">Latest readings</h2>
@@ -278,7 +278,7 @@ function Dashboard() {
               All vitals
             </Link>
           </div>
-          <div className="mt-4 space-y-3">
+          <div className="mt-3 space-y-2.5 sm:mt-4">
             {latestVitals.isLoading ? (
               <Skeleton className="h-20 w-full" />
             ) : latestVitals.data && latestVitals.data.length > 0 ? (
@@ -349,7 +349,7 @@ function Dashboard() {
         </section>
 
         {/* Today's medication schedule with taken/not-taken status */}
-        <section className="soma-card p-4 sm:p-6 lg:col-span-4">
+        <section className="soma-card p-3.5 sm:p-5 lg:col-span-4">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <h2 className="truncate font-display text-base font-semibold sm:text-lg">Today's medications</h2>
@@ -413,7 +413,7 @@ function Dashboard() {
 
         {/* Active plan progress */}
         {activePlans.data && (
-          <section className="soma-card p-4 sm:p-6 lg:col-span-4">
+          <section className="soma-card p-3.5 sm:p-5 lg:col-span-4">
             <div className="flex items-center justify-between">
               <div className="min-w-0">
                 <h2 className="truncate font-display text-base font-semibold sm:text-lg">
@@ -468,7 +468,7 @@ function Dashboard() {
         )}
 
         {/* Upcoming appointments */}
-        <section className="soma-card p-4 sm:col-span-2 sm:p-6 lg:col-span-5">
+        <section className="soma-card p-3.5 sm:col-span-2 sm:p-5 lg:col-span-5">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <h2 className="truncate font-display text-base font-semibold sm:text-lg">
@@ -482,7 +482,7 @@ function Dashboard() {
               {t("dashboard.viewAll", "View all")}
             </Link>
           </div>
-          <div className="mt-4 space-y-3 sm:mt-6 sm:space-y-4">
+          <div className="mt-3 space-y-3 sm:mt-6 sm:space-y-4">
             {appointments.isLoading ? (
               <>
                 <Skeleton className="h-16 w-full" />
@@ -512,7 +512,7 @@ function Dashboard() {
         </section>
 
         {/* Glucose chart */}
-        <section className="soma-card p-4 sm:col-span-2 sm:p-6 lg:col-span-7">
+        <section className="soma-card p-3.5 sm:col-span-2 sm:p-5 lg:col-span-7">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <h2 className="truncate font-display text-base font-semibold sm:text-lg">
@@ -529,7 +529,7 @@ function Dashboard() {
               {t("dashboard.allVitals", "All vitals")}
             </Link>
           </div>
-          <div className="mt-4 h-44 sm:mt-6 sm:h-64">
+          <div className="mt-3 h-40 sm:mt-6 sm:h-64">
             {vitals.isLoading ? (
               <Skeleton className="h-full w-full" />
             ) : vitals.data && vitals.data.length > 0 ? (
@@ -596,13 +596,13 @@ function Dashboard() {
         </section>
 
         {/* AI shortcut */}
-        <section className="soma-card relative overflow-hidden p-4 sm:col-span-2 sm:p-6 lg:col-span-5">
+        <section className="soma-card relative overflow-hidden p-3.5 sm:col-span-2 sm:p-5 lg:col-span-5">
           <div className="absolute inset-0 -z-10 soma-gradient opacity-95" />
           <div className="text-white">
             <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-white/80 sm:text-xs">
               <Bot className="h-4 w-4" /> {t("assistant.brandName", "Adwoa AI")}
             </div>
-            <h2 className="mt-2 font-display text-xl font-bold sm:mt-3 sm:text-2xl">
+            <h2 className="mt-1.5 font-display text-lg font-bold sm:mt-3 sm:text-2xl">
               {t("dashboard.aiShortcutTitle", "Ask about your health — grounded in your data.")}
             </h2>
             <p className="mt-1 text-xs text-white/85 sm:mt-2 sm:text-sm">
@@ -612,7 +612,7 @@ function Dashboard() {
               )}
             </p>
             <Link to="/assistant">
-              <Button className="mt-4 bg-white text-primary hover:bg-white/90 sm:mt-6">
+              <Button className="mt-3 bg-white text-primary hover:bg-white/90 sm:mt-6" size="sm">
                 {t("dashboard.openAssistant", "Open assistant")}{" "}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -621,7 +621,7 @@ function Dashboard() {
         </section>
 
         {/* Current prescription */}
-        <section className="soma-card p-4 sm:p-6 lg:col-span-4">
+        <section className="soma-card p-3.5 sm:p-5 lg:col-span-4">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <h2 className="truncate font-display text-base font-semibold sm:text-lg">
@@ -635,7 +635,7 @@ function Dashboard() {
               {t("dashboard.manage", "Manage")}
             </Link>
           </div>
-          <div className="mt-4 space-y-3 sm:mt-6 sm:space-y-4">
+          <div className="mt-3 space-y-3 sm:mt-6 sm:space-y-4">
             {medications.isLoading ? (
               <Skeleton className="h-20 w-full" />
             ) : medications.data && medications.data.length > 0 ? (
@@ -671,13 +671,13 @@ function Dashboard() {
         </section>
 
         {/* Notifications */}
-        <section className="soma-card p-4 sm:p-6 lg:col-span-3">
+        <section className="soma-card p-3.5 sm:p-5 lg:col-span-3">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-base font-semibold sm:text-lg">
               {t("dashboard.notifications", "Notifications")}
             </h2>
           </div>
-          <div className="mt-4 space-y-3 sm:mt-6 sm:space-y-4">
+          <div className="mt-3 space-y-2.5 sm:mt-6 sm:space-y-4">
             {notifications.isLoading ? (
               <Skeleton className="h-16 w-full" />
             ) : notifications.data && notifications.data.length > 0 ? (

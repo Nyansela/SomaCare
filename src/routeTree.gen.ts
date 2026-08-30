@@ -22,7 +22,6 @@ import { Route as ApiConfirmActionRouteImport } from './routes/api/confirm-actio
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AuthenticatedStoreRouteImport } from './routes/_authenticated/store'
 import { Route as AuthenticatedSleepRouteImport } from './routes/_authenticated/sleep'
-import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedScheduleRouteImport } from './routes/_authenticated/schedule'
 import { Route as AuthenticatedRecordsRouteImport } from './routes/_authenticated/records'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -38,6 +37,7 @@ import { Route as AuthenticatedAssistantRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAppointmentsRouteImport } from './routes/_authenticated/appointments'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as ApiVoiceSynthesizeRouteImport } from './routes/api/voice/synthesize'
+import { Route as ApiMedicationsSearchRouteImport } from './routes/api/medications/search'
 import { Route as ApiHealthShareTokenRouteImport } from './routes/api/health-share/$token'
 import { Route as AuthenticatedTrackersVitalsRouteImport } from './routes/_authenticated/trackers.vitals'
 import { Route as AuthenticatedFindHospitalsRouteImport } from './routes/_authenticated/find.hospitals'
@@ -104,11 +104,6 @@ const AuthenticatedStoreRoute = AuthenticatedStoreRouteImport.update({
 const AuthenticatedSleepRoute = AuthenticatedSleepRouteImport.update({
   id: '/sleep',
   path: '/sleep',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedScheduleRoute = AuthenticatedScheduleRouteImport.update({
@@ -189,6 +184,11 @@ const ApiVoiceSynthesizeRoute = ApiVoiceSynthesizeRouteImport.update({
   path: '/api/voice/synthesize',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMedicationsSearchRoute = ApiMedicationsSearchRouteImport.update({
+  id: '/api/medications/search',
+  path: '/api/medications/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHealthShareTokenRoute = ApiHealthShareTokenRouteImport.update({
   id: '/api/health-share/$token',
   path: '/api/health-share/$token',
@@ -225,7 +225,6 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/records': typeof AuthenticatedRecordsRoute
   '/schedule': typeof AuthenticatedScheduleRoute
-  '/settings': typeof AuthenticatedSettingsRoute
   '/sleep': typeof AuthenticatedSleepRoute
   '/store': typeof AuthenticatedStoreRoute
   '/api/chat': typeof ApiChatRoute
@@ -238,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/find/hospitals': typeof AuthenticatedFindHospitalsRoute
   '/trackers/vitals': typeof AuthenticatedTrackersVitalsRoute
   '/api/health-share/$token': typeof ApiHealthShareTokenRoute
+  '/api/medications/search': typeof ApiMedicationsSearchRoute
   '/api/voice/synthesize': typeof ApiVoiceSynthesizeRoute
 }
 export interface FileRoutesByTo {
@@ -258,7 +258,6 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/records': typeof AuthenticatedRecordsRoute
   '/schedule': typeof AuthenticatedScheduleRoute
-  '/settings': typeof AuthenticatedSettingsRoute
   '/sleep': typeof AuthenticatedSleepRoute
   '/store': typeof AuthenticatedStoreRoute
   '/api/chat': typeof ApiChatRoute
@@ -271,6 +270,7 @@ export interface FileRoutesByTo {
   '/find/hospitals': typeof AuthenticatedFindHospitalsRoute
   '/trackers/vitals': typeof AuthenticatedTrackersVitalsRoute
   '/api/health-share/$token': typeof ApiHealthShareTokenRoute
+  '/api/medications/search': typeof ApiMedicationsSearchRoute
   '/api/voice/synthesize': typeof ApiVoiceSynthesizeRoute
 }
 export interface FileRoutesById {
@@ -293,7 +293,6 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/records': typeof AuthenticatedRecordsRoute
   '/_authenticated/schedule': typeof AuthenticatedScheduleRoute
-  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/sleep': typeof AuthenticatedSleepRoute
   '/_authenticated/store': typeof AuthenticatedStoreRoute
   '/api/chat': typeof ApiChatRoute
@@ -306,6 +305,7 @@ export interface FileRoutesById {
   '/_authenticated/find/hospitals': typeof AuthenticatedFindHospitalsRoute
   '/_authenticated/trackers/vitals': typeof AuthenticatedTrackersVitalsRoute
   '/api/health-share/$token': typeof ApiHealthShareTokenRoute
+  '/api/medications/search': typeof ApiMedicationsSearchRoute
   '/api/voice/synthesize': typeof ApiVoiceSynthesizeRoute
 }
 export interface FileRouteTypes {
@@ -328,7 +328,6 @@ export interface FileRouteTypes {
     | '/profile'
     | '/records'
     | '/schedule'
-    | '/settings'
     | '/sleep'
     | '/store'
     | '/api/chat'
@@ -341,6 +340,7 @@ export interface FileRouteTypes {
     | '/find/hospitals'
     | '/trackers/vitals'
     | '/api/health-share/$token'
+    | '/api/medications/search'
     | '/api/voice/synthesize'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -361,7 +361,6 @@ export interface FileRouteTypes {
     | '/profile'
     | '/records'
     | '/schedule'
-    | '/settings'
     | '/sleep'
     | '/store'
     | '/api/chat'
@@ -374,6 +373,7 @@ export interface FileRouteTypes {
     | '/find/hospitals'
     | '/trackers/vitals'
     | '/api/health-share/$token'
+    | '/api/medications/search'
     | '/api/voice/synthesize'
   id:
     | '__root__'
@@ -395,7 +395,6 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/_authenticated/records'
     | '/_authenticated/schedule'
-    | '/_authenticated/settings'
     | '/_authenticated/sleep'
     | '/_authenticated/store'
     | '/api/chat'
@@ -408,6 +407,7 @@ export interface FileRouteTypes {
     | '/_authenticated/find/hospitals'
     | '/_authenticated/trackers/vitals'
     | '/api/health-share/$token'
+    | '/api/medications/search'
     | '/api/voice/synthesize'
   fileRoutesById: FileRoutesById
 }
@@ -424,6 +424,7 @@ export interface RootRouteChildren {
   ApiSleepRoute: typeof ApiSleepRoute
   HealthShareTokenRoute: typeof HealthShareTokenRoute
   ApiHealthShareTokenRoute: typeof ApiHealthShareTokenRoute
+  ApiMedicationsSearchRoute: typeof ApiMedicationsSearchRoute
   ApiVoiceSynthesizeRoute: typeof ApiVoiceSynthesizeRoute
 }
 
@@ -518,13 +519,6 @@ declare module '@tanstack/react-router' {
       path: '/sleep'
       fullPath: '/sleep'
       preLoaderRoute: typeof AuthenticatedSleepRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/settings': {
-      id: '/_authenticated/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/schedule': {
@@ -632,6 +626,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiVoiceSynthesizeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/medications/search': {
+      id: '/api/medications/search'
+      path: '/api/medications/search'
+      fullPath: '/api/medications/search'
+      preLoaderRoute: typeof ApiMedicationsSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/health-share/$token': {
       id: '/api/health-share/$token'
       path: '/api/health-share/$token'
@@ -671,7 +672,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedRecordsRoute: typeof AuthenticatedRecordsRoute
   AuthenticatedScheduleRoute: typeof AuthenticatedScheduleRoute
-  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSleepRoute: typeof AuthenticatedSleepRoute
   AuthenticatedStoreRoute: typeof AuthenticatedStoreRoute
   AuthenticatedFindHospitalsRoute: typeof AuthenticatedFindHospitalsRoute
@@ -693,7 +693,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedRecordsRoute: AuthenticatedRecordsRoute,
   AuthenticatedScheduleRoute: AuthenticatedScheduleRoute,
-  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSleepRoute: AuthenticatedSleepRoute,
   AuthenticatedStoreRoute: AuthenticatedStoreRoute,
   AuthenticatedFindHospitalsRoute: AuthenticatedFindHospitalsRoute,
@@ -716,6 +715,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSleepRoute: ApiSleepRoute,
   HealthShareTokenRoute: HealthShareTokenRoute,
   ApiHealthShareTokenRoute: ApiHealthShareTokenRoute,
+  ApiMedicationsSearchRoute: ApiMedicationsSearchRoute,
   ApiVoiceSynthesizeRoute: ApiVoiceSynthesizeRoute,
 }
 export const routeTree = rootRouteImport

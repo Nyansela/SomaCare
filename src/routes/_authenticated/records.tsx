@@ -6,6 +6,7 @@ import { AppShell, EmptyState } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
+import { safeOpenUrl } from "@/lib/capacitor-web";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
@@ -83,7 +84,7 @@ function RecordsPage() {
   const download = async (r: Record) => {
     const { data, error } = await supabase.storage.from("records").createSignedUrl(r.file_path, 60);
     if (error || !data) return toast.error("Could not open file");
-    window.open(data.signedUrl, "_blank");
+    safeOpenUrl(data.signedUrl);
   };
 
   const remove = async (r: Record) => {

@@ -25,6 +25,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { LocalNotifications } from "@capacitor/local-notifications";
+import { Capacitor } from "@capacitor/core";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/clock")({
@@ -103,7 +105,16 @@ function ClockPage() {
         toast(`⏰ ${r.label}`, {
           description: `Scheduled for ${r.time}`,
         });
-        if ("Notification" in window && Notification.permission === "granted") {
+        if (Capacitor.isNativePlatform()) {
+          LocalNotifications.schedule({
+            notifications: [{
+              title: "Adwoa Reminder",
+              body: r.label,
+              id: Math.abs(r.id.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0)) % 100000 + 2000,
+              schedule: { at: new Date(Date.now() + 1000) },
+            }],
+          }).catch(() => {});
+        } else if ("Notification" in window && Notification.permission === "granted") {
           new Notification("Adwoa reminder", { body: r.label });
         }
       }
@@ -119,7 +130,13 @@ function ClockPage() {
     const nr: Reminder = { ...r, id: crypto.randomUUID(), enabled: true };
     update([nr, ...reminders]);
     toast.success("Reminder added");
-    if ("Notification" in window && Notification.permission === "default") {
+    if (Capacitor.isNativePlatform()) {
+      LocalNotifications.checkPermissions()
+        .then((perm) => {
+          if (perm.display !== "granted") return LocalNotifications.requestPermissions();
+        })
+        .catch(() => {});
+    } else if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
   };

@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { generateText } from "ai";
 import { createClient } from "@supabase/supabase-js";
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { Database } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/api/fitness-suggestion")({
@@ -14,14 +13,9 @@ export const Route = createFileRoute("/api/fitness-suggestion")({
         }
         const token = auth.slice(7);
 
-        // Check for NVIDIA API key
-        const nvidiaApiKey = process.env.NVIDIA_API_KEY;
-        if (!nvidiaApiKey) {
-          return new Response(
-            "AI provider not configured. Please set NVIDIA_API_KEY environment variable.",
-            { status: 500 },
-          );
-        }
+        // Create AI model via the multi-provider gateway
+        const { createAiModel } = await import("@/lib/ai-gateway.server");
+        const model = createAiModel();
 
         const supabase = createClient<Database>(
           process.env.SUPABASE_URL!,
@@ -96,13 +90,6 @@ export const Route = createFileRoute("/api/fitness-suggestion")({
         const age = healthVault?.age || "";
         const weight = healthVault?.body_weight_kg || "";
 
-        // Create NVIDIA provider
-        const nvidia = createOpenAICompatible({
-          name: "nvidia-nim",
-          baseURL: "https://integrate.api.nvidia.com/v1",
-          headers: { Authorization: `Bearer ${nvidiaApiKey}` },
-        });
-
         const prompt = `You are a friendly, encouraging fitness coach in Ghana. Give a single daily workout suggestion suitable for a Ghanaian context (e.g. morning/evening neighborhood walks, home bodyweight exercises, local fitness routines) that's realistic and low-pressure.
 
 USER PROFILE:
@@ -136,7 +123,7 @@ IMPORTANT:
 - Return valid JSON only`;
 
         const result = await generateText({
-          model: nvidia("meta/llama-3.1-70b-instruct"),
+          model,
           messages: [{ role: "user", content: prompt }],
         });
 

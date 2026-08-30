@@ -23,7 +23,7 @@ const CATEGORIES = [
   { key: "imaging", fallback: "Imaging", query: "radiology imaging" },
 ];
 
-const BROWSER_KEY = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY as
+const BROWSER_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as
   string | undefined;
 
 // Minimal typings for the Google Maps JS API surface we use.

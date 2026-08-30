@@ -46,7 +46,7 @@ Notifications only work through Capacitor native local notifications. There is n
 ## 🟠 High — should ship with v1
 
 ### H1. AI endpoints: single point of failure + no rate limiting
-All 5 AI routes (`/api/chat`, `/api/fitness-suggestion`, `/api/nutrition`, `/api/sleep`, `/api/medverify`) call the same `process.env.NVIDIA_API_KEY` against `meta/llama-3.1-70b-instruct`. Gaps:
+All 5 AI routes (`/api/chat`, `/api/fitness-suggestion`, `/api/nutrition`, `/api/sleep`, `/api/medverify`) call the same `process.env.NVIDIA_API_KEY` against `nvidia/nemotron-3.5-lightning-30b-a3b`. Gaps:
 - One key = one outage; no fallback to the second key already in `.env` (`GEMINI_API_KEY`).
 - **No rate limiting** on AI or auth endpoints (plan promised Cloudflare/edge counters) — token costs are unbounded and abuse-prone.
 - Worker secrets must be set in Cloudflare (`wrangler secret put NVIDIA_API_KEY ...`) separately from the local `.env`.

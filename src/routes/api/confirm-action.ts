@@ -75,6 +75,43 @@ const argSchemas = {
       )
       .min(1),
   }),
+  updatePlan: z.object({
+    planId: z.string().uuid(),
+    planType: z.enum(["workout", "meal"]),
+    title: z.string().min(1).optional(),
+    goal: z.string().min(1).optional(),
+    duration_days: z.number().int().min(3).max(30).optional(),
+    days: z
+      .array(
+        z.object({
+          day_number: z.number().int().min(1),
+          exercises: z
+            .array(
+              z.object({
+                name: z.string().min(1),
+                sets: z.number().int().min(1),
+                reps: z.string().min(1),
+                rest_seconds: z.number().int().min(0),
+                notes: z.string().optional(),
+              }),
+            )
+            .optional(),
+          meals: z
+            .object({
+              breakfast: z.string().min(1),
+              lunch: z.string().min(1),
+              dinner: z.string().min(1),
+              snacks: z.string().optional(),
+            })
+            .optional(),
+        }),
+      )
+      .min(1),
+  }),
+  completePlan: z.object({
+    planId: z.string().uuid(),
+    planType: z.enum(["workout", "meal"]),
+  }),
 } as const;
 
 type ToolName = keyof typeof argSchemas;
@@ -272,6 +309,66 @@ export const Route = createFileRoute("/api/confirm-action")({
               );
               if (daysErr) throw daysErr;
               result = { planId: plan.id, days: validArgs.days.length };
+              break;
+            }
+            case "updatePlan": {
+              const table = validArgs.planType === "workout" ? "workout_plans" : "meal_plans";
+              const { data: owned } = await supabase
+                .from(table)
+                .select("id")
+                .eq("id", validArgs.planId)
+                .eq("user_id", userId)
+                .maybeSingle();
+              if (!owned) {
+                return Response.json({ error: "plan_not_found" }, { status: 404 });
+              }
+
+              // Optional plan-level changes (rename / re-goal / extend)
+              const planUpdate: Record<string, unknown> = {};
+              if (validArgs.title) planUpdate.title = validArgs.title;
+              if (validArgs.goal) planUpdate.goal = validArgs.goal;
+              if (validArgs.duration_days) planUpdate.duration_days = validArgs.duration_days;
+              if (Object.keys(planUpdate).length > 0) {
+                const { error: updErr } = await supabase
+                  .from(table)
+                  .update(planUpdate as never)
+                  .eq("id", validArgs.planId);
+                if (updErr) throw updErr;
+              }
+
+              const daysTable =
+                validArgs.planType === "workout" ? "workout_plan_days" : "meal_plan_days";
+              // Replace only the requested days, leave every other day untouched
+              for (const d of validArgs.days as Array<{ day_number: number }>) {
+                await supabase
+                  .from(daysTable)
+                  .delete()
+                  .eq("plan_id", validArgs.planId)
+                  .eq("day_number", d.day_number);
+              }
+              const rows = (validArgs.days as Array<Record<string, unknown>>).map((d) => ({
+                plan_id: validArgs.planId as string,
+                day_number: d.day_number,
+                ...(d.exercises ? { exercises: d.exercises } : {}),
+                ...(d.meals ? { meals: d.meals } : {}),
+              }));
+              const { error: insertErr } = await supabase.from(daysTable).insert(rows as never);
+              if (insertErr) throw insertErr;
+              result = {
+                planId: validArgs.planId,
+                updatedDays: (validArgs.days as unknown[]).length,
+              };
+              break;
+            }
+            case "completePlan": {
+              const table = validArgs.planType === "workout" ? "workout_plans" : "meal_plans";
+              const { error } = await supabase
+                .from(table)
+                .update({ status: "completed" })
+                .eq("id", validArgs.planId)
+                .eq("user_id", userId);
+              if (error) throw error;
+              result = { planId: validArgs.planId };
               break;
             }
             default:

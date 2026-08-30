@@ -7,10 +7,10 @@ import {
   type UIMessage,
 } from "ai";
 import { createClient } from "@supabase/supabase-js";
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { getHealthContext, formatHealthContextForAI } from "@/lib/health-context";
+import { getDrugLabel } from "@/lib/openfda.server";
 
 type ChatBody = { messages?: UIMessage[]; threadId?: string };
 
@@ -126,34 +126,85 @@ const generateMealPlanTool = tool({
   }),
 });
 
+/**
+ * Confirmed-write: adapt an existing ACTIVE plan — rename, change goal,
+ * extend duration and/or rewrite specific days (swap exercises/meals).
+ */
+const updatePlanTool = tool({
+  description:
+    "Modify one of the user's ACTIVE workout or meal plans: rename it, change its goal, extend its duration, and/or rewrite specific days (easier/harder exercises, different Ghanaian meals). Call getPlanDetails first to see the current content. Requires user confirmation before anything is saved.",
+  inputSchema: z.object({
+    planId: z
+      .string()
+      .uuid()
+      .describe("ID of the plan being changed (from getActivePlanStatus or getPlanDetails)"),
+    planType: z.enum(["workout", "meal"]),
+    title: z.string().optional().describe("New plan title"),
+    goal: z.string().optional().describe("New goal, e.g. 'build endurance'"),
+    duration_days: z.number().int().min(3).max(30).optional(),
+    days: z
+      .array(
+        z.object({
+          day_number: z.number().int().min(1),
+          exercises: z
+            .array(
+              z.object({
+                name: z.string(),
+                sets: z.number().int().min(1),
+                reps: z.string(),
+                rest_seconds: z.number().int().min(0),
+                notes: z.string().optional(),
+              }),
+            )
+            .optional()
+            .describe("The replacement exercises — required for workout plans"),
+          meals: z
+            .object({
+              breakfast: z.string(),
+              lunch: z.string(),
+              dinner: z.string(),
+              snacks: z.string().optional(),
+            })
+            .optional()
+            .describe("The replacement meals — required for meal plans"),
+        }),
+      )
+      .min(1)
+      .describe("Only the days listed here are rewritten; all other days stay untouched."),
+  }),
+});
+
+/** Confirmed-write: mark a whole plan as completed when the user finishes it. */
+const completePlanTool = tool({
+  description:
+    "Mark one of the user's ACTIVE workout or meal plans as completed. Use it when the user says they finished their plan — celebrate their consistency first, then propose this. Requires user confirmation.",
+  inputSchema: z.object({
+    planId: z.string().uuid().describe("ID of the completed plan"),
+    planType: z.enum(["workout", "meal"]),
+  }),
+});
+
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        try {
         const auth = request.headers.get("Authorization") ?? "";
         if (!auth.startsWith("Bearer ")) {
           return new Response("Unauthorized", { status: 401 });
         }
         const token = auth.slice(7);
 
-        // Check for NVIDIA API key
-        const nvidiaApiKey = process.env.NVIDIA_API_KEY;
-
-        if (!nvidiaApiKey) {
-          return new Response(
-            "AI provider not configured. Please set NVIDIA_API_KEY environment variable. Get an API key from https://build.nvidia.com",
-            { status: 500 },
-          );
+        // Create AI model via the multi-provider gateway (NVIDIA → Gemini → Lovable fallback)
+        const { createAiModel, AI_NOT_CONFIGURED_MESSAGE } = await import("@/lib/ai-gateway.server");
+        let aiModel;
+        try {
+          aiModel = createAiModel();
+        } catch {
+          console.error("[chat]", AI_NOT_CONFIGURED_MESSAGE);
+          return new Response(AI_NOT_CONFIGURED_MESSAGE, { status: 500 });
         }
-
-        // Create NVIDIA NIM provider using OpenAI-compatible endpoint
-        const nvidia = createOpenAICompatible({
-          name: "nvidia-nim",
-          baseURL: "https://integrate.api.nvidia.com/v1",
-          headers: {
-            Authorization: `Bearer ${nvidiaApiKey}`,
-          },
-        });
+        console.log("[chat] using model:", aiModel.modelId, "provider:", aiModel.provider);
 
         const supabase = createClient<Database>(
           process.env.SUPABASE_URL!,
@@ -229,12 +280,16 @@ Your instructions:
 - Provide clear, evidence-informed guidance
 
 ACTIONS & TOOLS:
-You can take actions on the user's behalf using tools. Write actions (logVitalReading, logMeal, bookAppointment, addMedication, generateWorkoutPlan, generateMealPlan) are NOT executed immediately — the app shows the user a confirmation card first.
+You can take actions on the user's behalf using tools. Write actions (logVitalReading, logMeal, bookAppointment, addMedication, generateWorkoutPlan, generateMealPlan, updatePlan, completePlan) are NOT executed immediately — the app shows the user a confirmation card first.
 - When you intend a write action, call the matching tool once with complete, correct arguments, then briefly tell the user what you've prepared and that they can confirm or decline it.
 - For a blood pressure reading like "130/85", call logVitalReading twice (once for bp_systolic, once for bp_diastolic) with unit mmHg.
 - generateWorkoutPlan / generateMealPlan: YOU choose duration_days based on the user's goal (a quick kickstart might be 7 days; weight loss or habit building often suits 14-30 days) and generate ALL days (day_number 1..duration_days) with real content. Use authentic Ghanaian meals for meal plans and simple, minimal-equipment exercises for workout plans. Respect allergies and dietary restrictions from the user context.
+- getActivePlanStatus tells you every active plan's progress (current day, completed days, done-today flags, recently completed days) so you can proactively reference streaks like "you're on day 3 of your 7-day plan — 2 days done".
+- getPlanDetails returns one active plan's full detail for any day (default today) including its exercises or meals — ALWAYS call it before changing a plan, and use it to walk the user through today's workout or meals when they ask.
+- updatePlan rewrites specific days of an active plan WITHOUT touching other days (swap exercises, make a day easier/harder, change meals, rename the plan, extend its duration). When the user struggles — "too hard", "no equipment", "knee pain", "bored of these meals", "travelling this week" — fetch the details, design better replacement days yourself, and propose the change with ONE updatePlan call.
+- completePlan marks an entire plan as completed when the user finishes it. Celebrate their consistency FIRST, then propose completing it.
 - logPlanDayComplete marks a plan day as done immediately (no confirmation needed) — use it when the user says they finished today's workout/meals.
-- getActivePlanStatus tells you the user's active plan progress so you can say things like "you're on day 3 of your 7-day plan".
+- Be proactive about plans in normal conversation: mention today's workout or meals when relevant, congratulate streaks, and offer to adapt the plan when the user mentions soreness, missed days, travel, or schedule changes.
 - If the user declines or cancels an action, acknowledge it gracefully and do not re-propose it unless asked.
 
 Style: warm, concise, structured with short paragraphs and bullet lists where helpful. Use markdown.`;
@@ -311,13 +366,22 @@ Style: warm, concise, structured with short paragraphs and bullet lists where he
                   .eq("plan_type", planType)
                   .eq("day_number", dayNumber)
                   .maybeSingle();
+                const { data: recent } = await supabase
+                  .from("plan_day_completions")
+                  .select("day_number")
+                  .eq("plan_id", plan.id)
+                  .eq("plan_type", planType)
+                  .order("day_number", { ascending: false })
+                  .limit(14);
                 return {
                   plan_type: planType,
+                  id: plan.id,
                   title: plan.title,
                   duration_days: plan.duration_days,
                   current_day: dayNumber,
                   completed_days: count ?? 0,
                   done_today: !!doneToday,
+                  recent_completed_days: (recent ?? []).map((r) => r.day_number),
                 };
               };
 
@@ -378,11 +442,121 @@ Style: warm, concise, structured with short paragraphs and bullet lists where he
           },
         });
 
-        // Use NVIDIA NIM provider with the agentic tool-calling loop.
-        // NOTE: only specific named exports from 'ai' are used anywhere in this file;
-        // nothing here touches '@ai-sdk/gateway'.
+        const getPlanDetailsExec = tool({
+          description:
+            "Get the user's most recent ACTIVE workout or meal plan, including the exercises or meals for a specific day (defaults to today) and whether that day is completed. Always call it before proposing updatePlan changes, and use it to coach the user through a day.",
+          inputSchema: z.object({
+            planType: z.enum(["workout", "meal"]),
+            dayNumber: z.number().int().min(1).max(30).optional(),
+          }),
+          execute: async ({ planType, dayNumber }) => {
+            try {
+              const table = planType === "workout" ? "workout_plans" : "meal_plans";
+              const daysTable = planType === "workout" ? "workout_plan_days" : "meal_plan_days";
+              const { data: plans } = await supabase
+                .from(table)
+                .select("id,title,goal,duration_days,start_date")
+                .eq("user_id", userId)
+                .eq("status", "active")
+                .order("created_at", { ascending: false })
+                .limit(1);
+              const plan = plans?.[0] as
+                | { id: string; title: string; goal: string; duration_days: number; start_date: string }
+                | undefined;
+              if (!plan) return { found: false, reason: "no_active_plan" };
+
+              const start = new Date(plan.start_date + "T00:00:00");
+              const today = Math.min(
+                Math.max(Math.floor((Date.now() - start.getTime()) / 86400000) + 1, 1),
+                plan.duration_days,
+              );
+              const day = Math.min(dayNumber ?? today, plan.duration_days);
+
+              const [dayRes, countRes, doneRes] = await Promise.all([
+                supabase
+                  .from(daysTable)
+                  .select("*")
+                  .eq("plan_id", plan.id)
+                  .eq("day_number", day)
+                  .maybeSingle(),
+                supabase
+                  .from("plan_day_completions")
+                  .select("*", { count: "exact", head: true })
+                  .eq("plan_id", plan.id)
+                  .eq("plan_type", planType),
+                supabase
+                  .from("plan_day_completions")
+                  .select("id")
+                  .eq("plan_id", plan.id)
+                  .eq("plan_type", planType)
+                  .eq("day_number", day)
+                  .maybeSingle(),
+              ]);
+
+              const dayData = (dayRes.data ?? null) as {
+                exercises?: unknown;
+                meals?: unknown;
+              } | null;
+
+              return {
+                found: true,
+                plan_type: planType,
+                id: plan.id,
+                title: plan.title,
+                goal: plan.goal,
+                duration_days: plan.duration_days,
+                current_day: today,
+                requested_day: day,
+                completed_days: countRes.count ?? 0,
+                requested_day_completed: !!doneRes.data,
+                exercises:
+                  planType === "workout"
+                    ? ((dayData?.exercises as Array<Record<string, unknown>> | null) ?? [])
+                    : undefined,
+                meals:
+                  planType === "meal"
+                    ? ((dayData?.meals as Record<string, string> | null) ?? {})
+                    : undefined,
+              };
+            } catch (err) {
+              console.error("[Chat Tool] getPlanDetails failed:", err);
+              return { found: false, reason: "lookup_failed" };
+            }
+          },
+        });
+
+        const checkDrugInteractionWarningsExec = tool({
+          description:
+            "Check openFDA drug labels and interaction warnings for a list of medications the user is taking. Executes immediately (read-only).",
+          inputSchema: z.object({
+            medicationNames: z.array(z.string()).describe("List of medication names to check"),
+          }),
+          execute: async ({ medicationNames }) => {
+            if (!medicationNames || medicationNames.length === 0) {
+              return { status: "no_medications_provided" };
+            }
+            try {
+              const results = await Promise.all(
+                medicationNames.map((name) => getDrugLabel(name)),
+              );
+              return {
+                results: results.map((r) => ({
+                  medication: r.drugName,
+                  warnings: r.warnings?.slice(0, 2) || [],
+                  interactions: r.drugInteractions?.slice(0, 2) || [],
+                  status: r.error || "success",
+                })),
+                disclaimer: "Information sourced from openFDA. Consult a qualified clinician or pharmacist for medical advice.",
+              };
+            } catch (err) {
+              return { status: "interaction_check_unavailable", details: String(err) };
+            }
+          },
+        });
+
+        // Use the AI gateway model with the agentic tool-calling loop.
         const result = streamText({
-          model: nvidia("meta/llama-3.1-70b-instruct"),
+          model: aiModel,
           system: systemPrompt,
           messages: await convertToModelMessages(messages),
           stopWhen: stepCountIs(8),
@@ -394,7 +568,11 @@ Style: warm, concise, structured with short paragraphs and bullet lists where he
             generateWorkoutPlan: generateWorkoutPlanTool,
             generateMealPlan: generateMealPlanTool,
             getActivePlanStatus: getActivePlanStatusExec,
+            getPlanDetails: getPlanDetailsExec,
             logPlanDayComplete: logPlanDayCompleteExec,
+            updatePlan: updatePlanTool,
+            completePlan: completePlanTool,
+            checkDrugInteractionWarnings: checkDrugInteractionWarningsExec,
           },
         });
 
@@ -420,6 +598,8 @@ Style: warm, concise, structured with short paragraphs and bullet lists where he
                       "addMedication",
                       "generateWorkoutPlan",
                       "generateMealPlan",
+                      "updatePlan",
+                      "completePlan",
                     ];
                     if (WRITE_TOOLS.includes(toolName)) {
                       const input =
@@ -460,10 +640,18 @@ Style: warm, concise, structured with short paragraphs and bullet lists where he
             }
           },
           onError: (error) => {
-            console.error("chat stream error", error);
+            console.error("[chat] stream error:", error);
+            console.error("[chat] error name:", (error as Error).name);
+            console.error("[chat] error message:", (error as Error).message);
+            if ((error as any).cause) console.error("[chat] error cause:", (error as any).cause);
             return "The assistant is unavailable right now. Please try again in a moment.";
           },
         });
+        } catch (err) {
+          console.error("[chat] FATAL handler error:", err);
+          console.error("[chat] stack:", (err as Error).stack);
+          return new Response(`Internal error: ${(err as Error).message}`, { status: 500 });
+        }
       },
     },
   },

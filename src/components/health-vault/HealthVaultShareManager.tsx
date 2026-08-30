@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Share2, Plus, Copy, Trash2, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { safeCopyToClipboard } from "@/lib/capacitor-web";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -78,7 +79,7 @@ export function HealthVaultShareManager() {
       setShowCreateModal(false);
       toast.success(t("healthVault.shareCreated", "Share link created successfully!"));
       const shareUrl = `${window.location.origin}/health-share/${token}`;
-      navigator.clipboard.writeText(shareUrl);
+      safeCopyToClipboard(shareUrl);
       toast.info(t("healthVault.linkCopied", "Link copied to clipboard!"));
     },
     onError: (err) => {
@@ -110,7 +111,7 @@ export function HealthVaultShareManager() {
 
   const handleCopy = (token: string) => {
     const shareUrl = `${window.location.origin}/health-share/${token}`;
-    navigator.clipboard.writeText(shareUrl);
+    safeCopyToClipboard(shareUrl);
     toast.success(t("healthVault.shareLinkCopied", "Share link copied to clipboard!"));
   };
 

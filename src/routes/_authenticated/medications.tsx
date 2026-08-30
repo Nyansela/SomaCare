@@ -62,7 +62,10 @@ function Medications() {
     frequency: "",
     scheduled_time: "",
     notes: "",
+    rxcui: "",
   });
+  const [drugSuggestions, setDrugSuggestions] = useState<Array<{ name: string; rxcui?: string }>>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Fetch medications
   const list = useQuery({
@@ -91,6 +94,25 @@ function Medications() {
     },
   });
 
+  const handleNameChange = async (val: string) => {
+    setForm((f) => ({ ...f, name: val, rxcui: "" }));
+    if (val.trim().length < 2) {
+      setDrugSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/medications/search?q=${encodeURIComponent(val)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setDrugSuggestions(data.results || []);
+        setShowSuggestions(true);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   const create = useMutation({
     mutationFn: async () => {
       const { data: u } = await supabase.auth.getUser();
@@ -102,13 +124,14 @@ function Medications() {
         frequency: form.frequency || null,
         scheduled_time: form.scheduled_time || null,
         notes: form.notes || null,
+        rxcui: form.rxcui || null,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["medications"] });
       setOpen(false);
-      setForm({ name: "", dose: "", frequency: "", scheduled_time: "", notes: "" });
+      setForm({ name: "", dose: "", frequency: "", scheduled_time: "", notes: "", rxcui: "" });
       toast.success("Medication added");
     },
     onError: (e) => toast.error(e.message),
@@ -308,13 +331,31 @@ function Medications() {
                 }}
                 className="space-y-4"
               >
-                <div>
+                <div className="relative">
                   <Label>Name</Label>
                   <Input
                     required
                     value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    onChange={(e) => handleNameChange(e.target.value)}
+                    placeholder="Start typing medication name..."
                   />
+                  {showSuggestions && drugSuggestions.length > 0 && (
+                    <div className="absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md">
+                      {drugSuggestions.map((s, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          className="w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                          onClick={() => {
+                            setForm({ ...form, name: s.name, rxcui: s.rxcui || "" });
+                            setShowSuggestions(false);
+                          }}
+                        >
+                          {s.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <Label>Dose</Label>

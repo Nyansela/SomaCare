@@ -1,4 +1,7 @@
 import "./lib/error-capture";
+import { loadDevVars } from "./lib/env-loader.server";
+
+loadDevVars();
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";

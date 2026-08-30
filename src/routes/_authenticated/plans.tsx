@@ -9,6 +9,7 @@ import {
   Salad,
   Trophy,
   Loader2,
+  Bot,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, EmptyState } from "@/components/app-shell";
@@ -118,7 +119,17 @@ function PlansPage() {
     (workoutPlans.data?.length ?? 0) > 0 || (mealPlans.data?.length ?? 0) > 0;
 
   return (
-    <AppShell title="My Plans" subtitle="AI-generated workout & meal plans">
+    <AppShell
+      title="My Plans"
+      subtitle="AI-generated workout & meal plans"
+      action={
+        <a href="/assistant">
+          <Button size="sm" className="soma-gradient soma-glow border-0 text-white">
+            <Bot className="mr-1.5 h-4 w-4" /> Ask Adwoa
+          </Button>
+        </a>
+      }
+    >
       <div className="grid gap-4 sm:gap-6">
         {loading ? (
           <>
@@ -215,6 +226,31 @@ function PlanCard({
   const doneToday = completed?.has(`${plan.id}:${today}`) ?? false;
   const todayPlan = days?.find((d) => d.day_number === today);
 
+  // Context-rich questions handed to Adwoa via /assistant?ask=...
+  const askChips = [
+    ...(planType === "workout"
+      ? [
+          {
+            label: "Make today easier",
+            ask: `I'm on day ${today} of my "${plan.title}" workout plan and finding it tough. Please look at today's exercises and make the day easier for me.`,
+          },
+          {
+            label: "Swap an exercise",
+            ask: `In my "${plan.title}" workout plan, suggest alternative exercises for day ${today} and update the plan for me.`,
+          },
+        ]
+      : [
+          {
+            label: "Swap today's meals",
+            ask: `Please rewrite day ${today} of my "${plan.title}" meal plan with different Ghanaian dishes I'll enjoy, and update the plan for me.`,
+          },
+        ]),
+    {
+      label: "How am I doing?",
+      ask: `How am I doing on my "${plan.title}" plan so far? Check my progress and give me feedback and tips to stay on track.`,
+    },
+  ];
+
   return (
     <section className="soma-card p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -302,6 +338,25 @@ function PlanCard({
               ) : null,
             )}
           </div>
+        )}
+      </div>
+
+      {/* Agentic quick-actions: hand context straight into a chat with Adwoa */}
+      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/50 pt-3">
+        <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <Bot className="h-3.5 w-3.5 text-primary" /> Ask Adwoa
+        </span>
+        {askChips.map((chip) => (
+          <a key={chip.label} href={`/assistant?ask=${encodeURIComponent(chip.ask)}`}>
+            <Button size="sm" variant="outline" className="h-7 rounded-full px-3 text-[11px]">
+              {chip.label}
+            </Button>
+          </a>
+        ))}
+        {!doneToday && (
+          <span className="text-[11px] text-muted-foreground">
+            Not done yet? Mark it done, or let Adwoa adapt today for you.
+          </span>
         )}
       </div>
 

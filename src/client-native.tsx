@@ -3,6 +3,12 @@ import { createRoot } from "react-dom/client";
 import { RouterProvider } from "@tanstack/react-router";
 import { getRouter } from "./router";
 
+// Register Capacitor plugins early so they are available throughout the app.
+// These are tree-shaken out of the web build by the native vite config.
+import "@capacitor/browser";
+import "@capacitor/app";
+import "@capacitor/local-notifications";
+
 const router = getRouter();
 
 const rootElement = document.getElementById("root")!;
