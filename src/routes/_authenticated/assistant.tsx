@@ -1,10 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, type UIMessage } from "ai";
+import { useChat, type UIMessage } from "@/lib/use-chat";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown, { type Components } from "react-markdown";
 import {
@@ -773,26 +772,9 @@ function ChatWindow({
     }
   };
 
-  const transport = useMemo(
-    () =>
-      new DefaultChatTransport({
-        api: "/api/chat",
-        prepareSendMessagesRequest: async ({ messages }) => {
-          const { data } = await supabase.auth.getSession();
-          const headers: Record<string, string> = {};
-          if (data.session?.access_token) {
-            headers.Authorization = `Bearer ${data.session.access_token}`;
-          }
-          return { body: { messages, threadId }, headers };
-        },
-      }),
-    [threadId],
-  );
-
   const { messages, sendMessage, status, error, stop, regenerate } = useChat({
     id: threadId,
     messages: initialMessages,
-    transport,
     onError: (e) => toast.error(e.message || "Assistant error"),
     onFinish: () => onTitleMaybeChanged(),
   });

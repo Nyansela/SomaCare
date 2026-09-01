@@ -6,8 +6,23 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import type { NitroConfig } from "nitro/types";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  vite: {
+    resolve: {
+      alias: {
+        // The `ai` package transitively imports `@ai-sdk/gateway`, which eagerly
+        // requires `node:fs` at module load time — crashing on Cloudflare Workers.
+        // This app never uses the gateway (Gemini is accessed via
+        // @ai-sdk/openai-compatible), so we stub the entire module out.
+        "@ai-sdk/gateway": path.resolve(__dirname, "src/lib/gateway-stub.ts"),
+      },
+    },
+  },
   nitro: {
     preset: "cloudflare-module",
     // Disable nitro's auto-detected `index.html` renderer template. When a template

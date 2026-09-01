@@ -1,0 +1,13 @@
+﻿{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nyansela-somacare",
+  "main": ".output/server/index.mjs",
+  "compatibility_date": "2025-08-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "no_bundle": false,
+  "minify": true,
+  "assets": {
+    "directory": ".output/public",
+    "binding": "ASSETS"
+  }
+}
