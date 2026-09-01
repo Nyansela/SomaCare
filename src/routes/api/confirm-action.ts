@@ -108,6 +108,13 @@ const argSchemas = {
       )
       .min(1),
   }),
+  logSymptom: z.object({
+    symptom: z.string().min(1),
+    severity: z.enum(["mild", "moderate", "severe"]),
+    duration: z.string().optional(),
+    bodyArea: z.string().optional(),
+    notes: z.string().optional(),
+  }),
   completePlan: z.object({
     planId: z.string().uuid(),
     planType: z.enum(["workout", "meal"]),
@@ -358,6 +365,29 @@ export const Route = createFileRoute("/api/confirm-action")({
                 planId: validArgs.planId,
                 updatedDays: (validArgs.days as unknown[]).length,
               };
+              break;
+            }
+            case "logSymptom": {
+              const parts = [`Symptom: ${validArgs.symptom}`];
+              parts.push(`Severity: ${validArgs.severity}`);
+              if (validArgs.duration) parts.push(`Duration: ${validArgs.duration}`);
+              if (validArgs.bodyArea) parts.push(`Area: ${validArgs.bodyArea}`);
+              const desc = parts.join(" | ");
+              const notes = validArgs.notes ? `\n${validArgs.notes}` : "";
+              const { data, error } = await supabase
+                .from("schedule_items")
+                .insert({
+                  user_id: userId,
+                  title: `Symptom: ${validArgs.symptom}`,
+                  description: `${desc}${notes}`,
+                  item_type: "symptom",
+                  scheduled_at: new Date().toISOString(),
+                  completed: false,
+                })
+                .select("id")
+                .single();
+              if (error) throw error;
+              result = { id: data.id };
               break;
             }
             case "completePlan": {

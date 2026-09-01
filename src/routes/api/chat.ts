@@ -184,6 +184,32 @@ const completePlanTool = tool({
   }),
 });
 
+/** Confirmed-write: log a symptom the user is experiencing. */
+const logSymptomTool = tool({
+  description:
+    "Log a symptom the user is experiencing (e.g. headache, chest pain, nausea, fatigue). Requires user confirmation before it is saved. Always ask clarifying questions first if the symptom seems serious.",
+  inputSchema: z.object({
+    symptom: z.string().describe("The symptom, e.g. 'headache', 'chest tightness', 'stomach pain'"),
+    severity: z.enum(["mild", "moderate", "severe"]).describe("How severe the symptom is"),
+    duration: z.string().optional().describe("How long they've had it, e.g. '2 days', 'since morning', '3 hours'"),
+    bodyArea: z.string().optional().describe("Body area affected, e.g. 'head', 'chest', 'abdomen', 'left knee'"),
+    notes: z.string().optional().describe("Any additional context — what they were doing, what makes it better/worse, etc."),
+  }),
+});
+
+/** Read-only: search the user's health history by type and date range. */
+const searchHealthHistoryTool = tool({
+  description:
+    "Search the user's health records — vitals, medications, appointments, or symptoms — by type and optional date range. Use it when the user asks about their past health data (e.g. 'what was my BP last week?', 'show my glucose readings from March'). Executes immediately (read-only).",
+  inputSchema: z.object({
+    queryType: z.enum(["vitals", "medications", "appointments", "symptoms"]).describe("What type of health data to search"),
+    vitalKind: z.string().optional().describe("For vitals: filter by kind, e.g. 'bp_systolic', 'glucose', 'weight'"),
+    dateFrom: z.string().optional().describe("Start date (YYYY-MM-DD). Defaults to 30 days ago."),
+    dateTo: z.string().optional().describe("End date (YYYY-MM-DD). Defaults to today."),
+    limit: z.number().int().min(1).max(50).optional().describe("Max results to return (default 20)"),
+  }),
+});
+
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
@@ -279,14 +305,28 @@ Your instructions:
 - If you're uncertain about something, say so honestly
 - Provide clear, evidence-informed guidance
 
+AGENTIC BEHAVIOR — BE PROACTIVE:
+- When a user logs a vital reading, check it against their normal range and medications. If abnormal, suggest next steps (e.g. "Your BP is higher than usual — would you like me to check your medication interactions or book a doctor visit?").
+- When the user mentions symptoms, ask clarifying questions (severity, duration, what makes it better/worse) BEFORE logging. For severe symptoms (chest pain, difficulty breathing, severe bleeding, high fever >39°C), immediately advise seeking emergency care.
+- Use searchHealthHistory to pull relevant past data when answering health questions — don't guess when you can look it up.
+- Chain tools intelligently: if a user logs a high BP reading, you can (1) log it, (2) check drug interactions with their current meds, (3) suggest booking a follow-up — all in one response.
+- Reference plan progress naturally: "You're on day 5 of your 7-day plan — just 2 more days!" Don't wait to be asked.
+- If a user hasn't logged vitals in a while, gently remind them: "I noticed you haven't logged your BP this week — want to log it now?"
+
 ACTIONS & TOOLS:
-You can take actions on the user's behalf using tools. Write actions (logVitalReading, logMeal, bookAppointment, addMedication, generateWorkoutPlan, generateMealPlan, updatePlan, completePlan) are NOT executed immediately — the app shows the user a confirmation card first.
+Write actions (logVitalReading, logMeal, logSymptom, bookAppointment, addMedication, generateWorkoutPlan, generateMealPlan, updatePlan, completePlan) require user confirmation — the app shows a confirmation card first.
+Read-only tools (getActivePlanStatus, getPlanDetails, checkDrugInteractionWarnings, searchHealthHistory) execute immediately.
+Low-friction writes (logPlanDayComplete, logWaterIntake) execute immediately without confirmation.
+
 - When you intend a write action, call the matching tool once with complete, correct arguments, then briefly tell the user what you've prepared and that they can confirm or decline it.
 - For a blood pressure reading like "130/85", call logVitalReading twice (once for bp_systolic, once for bp_diastolic) with unit mmHg.
+- logSymptom: When the user describes a symptom, ask about severity and duration first, then propose logging it. This helps track health patterns over time.
+- logWaterIntake: Use this when the user mentions drinking water ("I just drank a glass of water", "had 500ml"). Log it immediately without asking for confirmation.
+- searchHealthHistory: Use this when the user asks about past health data ("what was my BP last week?", "show my glucose readings", "when is my next appointment?"). Don't guess — look it up.
 - generateWorkoutPlan / generateMealPlan: YOU choose duration_days based on the user's goal (a quick kickstart might be 7 days; weight loss or habit building often suits 14-30 days) and generate ALL days (day_number 1..duration_days) with real content. Use authentic Ghanaian meals for meal plans and simple, minimal-equipment exercises for workout plans. Respect allergies and dietary restrictions from the user context.
-- getActivePlanStatus tells you every active plan's progress (current day, completed days, done-today flags, recently completed days) so you can proactively reference streaks like "you're on day 3 of your 7-day plan — 2 days done".
+- getActivePlanStatus tells you every active plan's progress (current day, completed days, done-today flags, recently completed days) so you can proactively reference streaks.
 - getPlanDetails returns one active plan's full detail for any day (default today) including its exercises or meals — ALWAYS call it before changing a plan, and use it to walk the user through today's workout or meals when they ask.
-- updatePlan rewrites specific days of an active plan WITHOUT touching other days (swap exercises, make a day easier/harder, change meals, rename the plan, extend its duration). When the user struggles — "too hard", "no equipment", "knee pain", "bored of these meals", "travelling this week" — fetch the details, design better replacement days yourself, and propose the change with ONE updatePlan call.
+- updatePlan rewrites specific days of an active plan WITHOUT touching other days. When the user struggles — "too hard", "no equipment", "knee pain", "bored of these meals", "travelling this week" — fetch the details, design better replacement days yourself, and propose the change with ONE updatePlan call.
 - completePlan marks an entire plan as completed when the user finishes it. Celebrate their consistency FIRST, then propose completing it.
 - logPlanDayComplete marks a plan day as done immediately (no confirmation needed) — use it when the user says they finished today's workout/meals.
 - Be proactive about plans in normal conversation: mention today's workout or meals when relevant, congratulate streaks, and offer to adapt the plan when the user mentions soreness, missed days, travel, or schedule changes.
@@ -554,17 +594,127 @@ Style: warm, concise, structured with short paragraphs and bullet lists where he
           },
         });
 
+        // ── Water intake logging (low-friction, instant) ───────────
+        const logWaterIntakeExec = tool({
+          description:
+            "Log water intake for the user. Executes immediately without confirmation — it's low-friction like logPlanDayComplete.",
+          inputSchema: z.object({
+            amountMl: z.number().int().min(50).max(5000).describe("Amount of water in milliliters"),
+          }),
+          execute: async ({ amountMl }) => {
+            try {
+              const { error } = await supabase.from("hydration_logs").insert({
+                user_id: userId,
+                amount_ml: amountMl,
+                logged_at: new Date().toISOString(),
+              });
+              if (error) throw error;
+              await supabase.from("action_logs").insert({
+                user_id: userId,
+                tool: "logWaterIntake",
+                args: { amountMl },
+                outcome: "executed",
+              });
+              return { success: true, amountMl };
+            } catch (err) {
+              console.error("[Chat Tool] logWaterIntake failed:", err);
+              return { success: false, reason: "write_failed" };
+            }
+          },
+        });
+
+        // ── Symptom logging (confirmed-write) ──────────────────────
+        const logSymptomExec = tool({
+          description: logSymptomTool.description,
+          inputSchema: logSymptomTool.inputSchema,
+        });
+
+        // ── Health history search (read-only, instant) ──────────────
+        const searchHealthHistoryExec = tool({
+          description: searchHealthHistoryTool.description,
+          inputSchema: searchHealthHistoryTool.inputSchema,
+          execute: async ({ queryType, vitalKind, dateFrom, dateTo, limit }) => {
+            try {
+              const maxResults = limit ?? 20;
+              const to = dateTo ?? new Date().toISOString().split("T")[0];
+              const from = dateFrom ?? (() => {
+                const d = new Date();
+                d.setDate(d.getDate() - 30);
+                return d.toISOString().split("T")[0];
+              })();
+
+              switch (queryType) {
+                case "vitals": {
+                  let query = supabase
+                    .from("vitals")
+                    .select("kind, value, unit, taken_at")
+                    .eq("user_id", userId)
+                    .gte("taken_at", `${from}T00:00:00`)
+                    .lte("taken_at", `${to}T23:59:59`)
+                    .order("taken_at", { ascending: false })
+                    .limit(maxResults);
+                  if (vitalKind) query = query.eq("kind", vitalKind);
+                  const { data, error } = await query;
+                  if (error) throw error;
+                  return { queryType, results: data ?? [], count: data?.length ?? 0 };
+                }
+                case "medications": {
+                  const { data, error } = await supabase
+                    .from("medications")
+                    .select("name, dose, frequency, active, created_at")
+                    .eq("user_id", userId)
+                    .order("created_at", { ascending: false })
+                    .limit(maxResults);
+                  if (error) throw error;
+                  return { queryType, results: data ?? [], count: data?.length ?? 0 };
+                }
+                case "appointments": {
+                  const { data, error } = await supabase
+                    .from("appointments")
+                    .select("provider_name, specialty, starts_at, status")
+                    .eq("user_id", userId)
+                    .gte("starts_at", `${from}T00:00:00`)
+                    .lte("starts_at", `${to}T23:59:59`)
+                    .order("starts_at", { ascending: false })
+                    .limit(maxResults);
+                  if (error) throw error;
+                  return { queryType, results: data ?? [], count: data?.length ?? 0 };
+                }
+                case "symptoms": {
+                  const { data, error } = await supabase
+                    .from("schedule_items")
+                    .select("title, description, scheduled_at, completed")
+                    .eq("user_id", userId)
+                    .eq("item_type", "symptom")
+                    .gte("scheduled_at", `${from}T00:00:00`)
+                    .lte("scheduled_at", `${to}T23:59:59`)
+                    .order("scheduled_at", { ascending: false })
+                    .limit(maxResults);
+                  if (error) throw error;
+                  return { queryType, results: data ?? [], count: data?.length ?? 0 };
+                }
+                default:
+                  return { queryType, results: [], count: 0, error: "unknown_query_type" };
+              }
+            } catch (err) {
+              console.error("[Chat Tool] searchHealthHistory failed:", err);
+              return { queryType, results: [], count: 0, error: "search_failed" };
+            }
+          },
+        });
+
         // Use the AI gateway model with the agentic tool-calling loop.
         const result = streamText({
           model: aiModel,
           system: systemPrompt,
           messages: await convertToModelMessages(messages),
-          stopWhen: stepCountIs(8),
+          stopWhen: stepCountIs(12),
           tools: {
             logVitalReading: logVitalReadingTool,
             logMeal: logMealTool,
             bookAppointment: bookAppointmentTool,
             addMedication: addMedicationTool,
+            logSymptom: logSymptomExec,
             generateWorkoutPlan: generateWorkoutPlanTool,
             generateMealPlan: generateMealPlanTool,
             getActivePlanStatus: getActivePlanStatusExec,
@@ -572,7 +722,9 @@ Style: warm, concise, structured with short paragraphs and bullet lists where he
             logPlanDayComplete: logPlanDayCompleteExec,
             updatePlan: updatePlanTool,
             completePlan: completePlanTool,
+            logWaterIntake: logWaterIntakeExec,
             checkDrugInteractionWarnings: checkDrugInteractionWarningsExec,
+            searchHealthHistory: searchHealthHistoryExec,
           },
         });
 
@@ -596,6 +748,7 @@ Style: warm, concise, structured with short paragraphs and bullet lists where he
                       "logMeal",
                       "bookAppointment",
                       "addMedication",
+                      "logSymptom",
                       "generateWorkoutPlan",
                       "generateMealPlan",
                       "updatePlan",

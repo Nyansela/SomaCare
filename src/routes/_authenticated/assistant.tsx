@@ -22,7 +22,6 @@ import {
   Copy,
   Check,
   PanelLeft,
-  Activity,
   ShieldCheck,
   RotateCcw,
   Volume2,
@@ -37,8 +36,7 @@ import {
 } from "lucide-react";
 import { AdwoaBlob } from "@/components/adwoa-blob";
 import { AppShell } from "@/components/app-shell";
-import { AssistantDashboard } from "@/components/assistant-dashboard";
-import { LiquidGlassCard } from "@/components/ui/liquid-glass";
+
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -89,7 +87,7 @@ const mdComponents: Components = {
   ),
   img: ({ src, alt }) => <img src={src} alt={alt} className="my-2 max-w-full rounded-lg" />,
   pre: ({ children }) => (
-    <pre className="my-2 max-w-full overflow-x-auto rounded-xl border border-border/60 bg-muted/60 p-3 text-[13px] leading-relaxed">
+    <pre className="my-2 max-w-full overflow-x-auto rounded-xl bg-muted/60 p-3 text-[13px] leading-relaxed">
       {children}
     </pre>
   ),
@@ -107,7 +105,7 @@ const mdComponents: Components = {
     );
   },
   table: ({ children }) => (
-    <div className="my-2 max-w-full overflow-x-auto rounded-xl border border-border/60">
+    <div className="my-2 max-w-full overflow-x-auto rounded-xl">
       <table className="w-full border-collapse text-sm">{children}</table>
     </div>
   ),
@@ -206,6 +204,7 @@ const WRITE_TOOLS = [
   "logMeal",
   "bookAppointment",
   "addMedication",
+  "logSymptom",
   "generateWorkoutPlan",
   "generateMealPlan",
   "updatePlan",
@@ -234,6 +233,8 @@ function humanSummary(toolName: string, input: Record<string, unknown>): string 
       return `Add medication: ${s(input.name)}${s(input.dosage) ? ` · ${s(input.dosage)}` : ""}${
         s(input.schedule) ? ` · ${s(input.schedule)}` : ""
       }`;
+    case "logSymptom":
+      return `Log symptom: ${s(input.symptom)} (${s(input.severity)})${s(input.duration) ? ` — ${s(input.duration)}` : ""}`;
     case "generateWorkoutPlan": {
       const days = Array.isArray(input.days)
         ? (input.days as { day_number: number; exercises?: { name: string }[] }[])
@@ -282,10 +283,7 @@ function AssistantPage() {
   const { ask } = Route.useSearch();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(
-    () => typeof window === "undefined" || window.innerWidth >= 1024,
-  );
-  const [dashboardOpen, setDashboardOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const autoSelected = useRef(false);
 
   // Thread list
@@ -381,37 +379,20 @@ function AssistantPage() {
 
   return (
     <AppShell title="Adwoa AI" subtitle="Your personal health assistant">
-      <div className="relative flex h-[calc(100dvh-var(--layout-header)-var(--layout-pad)*2)] w-full overflow-hidden rounded-none border-0 bg-card/30 lg:bg-transparent">
-        {/* Decorative background orbs for liquid glass effect */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-primary/8 blur-3xl" />
-          <div className="absolute -right-24 top-1/4 h-80 w-80 rounded-full bg-emerald-500/6 blur-3xl" />
-          <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-violet-500/5 blur-3xl" />
-        </div>
-        {/* Mobile nav toggle */}
+      <div className="relative flex h-[calc(100dvh-var(--layout-header)-var(--layout-pad)*2)] w-full overflow-hidden rounded-2xl bg-card/30 shadow-sm lg:bg-transparent">
+        {/* ── Sidebar toggle ──────────────────────────────────── */}
         <button
           type="button"
           onClick={() => setSidebarOpen((o) => !o)}
-          className="absolute left-3 top-3 z-50 grid h-10 w-10 place-items-center rounded-xl border border-border bg-card/90 shadow-md backdrop-blur lg:hidden"
+          className="absolute left-3 top-3 z-50 grid h-10 w-10 place-items-center rounded-xl border border-border bg-card/90 shadow-md backdrop-blur"
           aria-label="Toggle sidebar"
         >
           <PanelLeft className="h-5 w-5 text-foreground" />
         </button>
 
-        {/* Dashboard toggle (mobile only — desktop shows panel inline) */}
-        <button
-          type="button"
-          onClick={() => setDashboardOpen((o) => !o)}
-          className={cn(
-            "absolute top-3 z-50 grid h-10 w-10 place-items-center rounded-xl border border-border bg-card/90 shadow-md backdrop-blur transition lg:hidden",
-            sidebarOpen ? "left-[19.5rem]" : "left-3",
-          )}
-          aria-label="Toggle health dashboard"
-        >
-          <Activity className="h-5 w-5 text-foreground" />
-        </button>
-
-        {/* Thread History Sidebar */}
+        {/* ═══════════════════════════════════════════════════════════
+            Thread History Sidebar
+           ═══════════════════════════════════════════════════════════ */}
         {sidebarOpen && (
           <>
             {/* Mobile drawer backdrop */}
@@ -422,128 +403,100 @@ function AssistantPage() {
             />
             <aside
               className={cn(
-                "absolute inset-y-0 left-0 z-30 flex w-72 max-w-[85vw] flex-col border-r border-border bg-background shadow-xl",
-                "lg:static lg:z-auto lg:w-80 lg:max-w-none lg:shrink-0 lg:bg-muted/20 lg:shadow-none",
+                "absolute inset-y-0 left-0 z-30 flex w-72 max-w-[85vw] flex-col rounded-r-2xl bg-background/80 shadow-xl backdrop-blur-xl",
+                "lg:static lg:z-auto lg:w-80 lg:max-w-none lg:shrink-0 lg:rounded-r-none lg:bg-muted/20 lg:shadow-none lg:backdrop-blur-none",
               )}
             >
-            <div className="border-b border-border/40 p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <LiquidGlassCard draggable={false} blurIntensity="md" glowIntensity="sm" shadowIntensity="xs" borderRadius="14px" className="!bg-primary/10">
-                    <div className="relative z-30 grid h-9 w-9 place-items-center rounded-[14px] soma-gradient soma-glow">
+              {/* ── Sidebar header ──────────────────────────────── */}
+              <div className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="grid h-9 w-9 place-items-center rounded-[14px] soma-gradient soma-glow">
                       <Sparkles className="h-4 w-4 text-white" />
                     </div>
-                  </LiquidGlassCard>
-                  <div>
-                    <div className="font-display text-sm font-bold">Adwoa AI</div>
-                    <div className="flex items-center gap-1 text-[11px] text-primary">
-                      <ShieldCheck className="h-3 w-3" /> Health Vault Connected
+                    <div>
+                      <div className="font-display text-sm font-bold">Adwoa AI</div>
+                      <div className="flex items-center gap-1 text-[11px] text-primary">
+                        <ShieldCheck className="h-3 w-3" /> Health Vault Connected
+                      </div>
                     </div>
                   </div>
                 </div>
+                <div className="mt-3">
+                  <Button
+                    size="sm"
+                    onClick={newThread}
+                    className="relative w-full soma-gradient text-white"
+                  >
+                    <Plus className="mr-1.5 h-3.5 w-3.5" /> {t("assistant.newChat")}
+                  </Button>
+                </div>
               </div>
-              <LiquidGlassCard draggable={false} blurIntensity="md" glowIntensity="xs" shadowIntensity="xs" borderRadius="14px" className="mt-3 !bg-primary/5">
-                <Button
-                  size="sm"
-                  onClick={newThread}
-                  className="relative z-30 w-full soma-gradient border-0 text-white"
-                >
-                  <Plus className="mr-1.5 h-3.5 w-3.5" /> {t("assistant.newChat")}
-                </Button>
-              </LiquidGlassCard>
-            </div>
-            <div className="flex items-center justify-between px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/40 bg-muted/30">
-              <span className="flex items-center gap-1.5">
-                <MessageSquare className="h-3.5 w-3.5" /> Recent Conversations
-              </span>
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
-                {threads.length}
-              </span>
-            </div>
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
-              {loadingThreads ? (
-                <div className="flex justify-center p-6">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                </div>
-              ) : threads.length === 0 ? (
-                <div className="p-6 text-center text-xs text-muted-foreground">
-                  No previous conversations found. Click "Start New Chat" above!
-                </div>
-              ) : (
-                <ul className="space-y-1">
-                  <AnimatePresence initial={false}>
-                    {threads.map((t) => (
-                      <motion.li
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        key={t.id}
-                        className="group flex items-center gap-1"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => setActiveId(t.id)}
-                          className={cn(
-                            "flex-1 truncate rounded-xl px-3 py-2.5 text-left text-xs transition",
-                            activeId === t.id
-                              ? "bg-primary/15 font-semibold text-primary border border-primary/20 shadow-sm"
-                              : "text-muted-foreground hover:bg-secondary hover:text-foreground",
-                          )}
+
+              {/* ── Conversations list ──────────────────────────── */}
+              <div className="flex items-center justify-between px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/30">
+                <span className="flex items-center gap-1.5">
+                  <MessageSquare className="h-3.5 w-3.5" /> Recent Conversations
+                </span>
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
+                  {threads.length}
+                </span>
+              </div>
+              <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                {loadingThreads ? (
+                  <div className="flex justify-center p-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  </div>
+                ) : threads.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-muted-foreground">
+                    No previous conversations found. Click "Start New Chat" above!
+                  </div>
+                ) : (
+                  <ul className="space-y-1">
+                    <AnimatePresence initial={false}>
+                      {threads.map((t) => (
+                        <motion.li
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          key={t.id}
+                          className="group flex items-center gap-1"
                         >
-                          {t.title || "Untitled Chat"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setPendingDelete(t.id)}
-                          className="rounded-lg p-1.5 text-muted-foreground opacity-60 transition hover:bg-destructive/10 hover:text-destructive lg:opacity-0 lg:group-hover:opacity-100"
-                          aria-label="Delete conversation"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </motion.li>
-                    ))}
-                  </AnimatePresence>
-                </ul>
-              )}
-            </div>
+                          <button
+                            type="button"
+                            onClick={() => setActiveId(t.id)}
+                            className={cn(
+                              "flex-1 truncate rounded-xl px-3 py-2.5 text-left text-xs transition",
+                              activeId === t.id
+                                ? "bg-primary/10 font-semibold text-primary border border-primary/20 shadow-sm"
+                                : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+                            )}
+                          >
+                            {t.title || "Untitled Chat"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPendingDelete(t.id)}
+                            className="rounded-xl p-1.5 text-muted-foreground opacity-60 transition hover:bg-destructive/10 hover:text-destructive lg:opacity-0 lg:group-hover:opacity-100"
+                            aria-label="Delete conversation"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </motion.li>
+                      ))}
+                    </AnimatePresence>
+                  </ul>
+                )}
+              </div>
             </aside>
           </>
         )}
 
-        {/* Health Dashboard Panel */}
-        <div
-          className={cn(
-            "border-r border-border bg-background",
-            // Mobile: overlay when toggled
-            dashboardOpen
-              ? "absolute inset-y-0 left-0 z-10 w-72 shadow-xl"
-              : "hidden",
-            // Desktop: always visible, inline
-            "lg:relative lg:z-auto lg:block lg:w-80 lg:shrink-0 lg:shadow-none",
-          )}
-        >
-          <AssistantDashboard />
-        </div>
+        {/* ═══════════════════════════════════════════════════════════
+            Main Conversation Canvas
+           ═══════════════════════════════════════════════════════════ */}
+        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl bg-background/50 lg:rounded-none">
 
-        {/* Main Conversation Canvas (90%+ width) */}
-        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background/50">
-          {/* Top Context Status Bar */}
-          <LiquidGlassCard draggable={false} blurIntensity="md" glowIntensity="none" shadowIntensity="xs" borderRadius="0px" className="!rounded-none !bg-white/30 dark:!bg-white/5">
-          <div className="relative z-30 flex items-center justify-between border-b border-border/60 px-3 py-2 text-xs sm:px-4 sm:py-2.5">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="font-medium text-foreground">Adwoa AI Active</span>
-              <span className="text-muted-foreground hidden sm:inline">
-                • Context: Ghana Healthcare Baseline
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="hidden md:inline-flex items-center gap-1 text-muted-foreground text-[11px]">
-                <Activity className="h-3 w-3 text-primary" /> Vitals & Meds Synced
-              </span>
-            </div>
-          </div>
-          </LiquidGlassCard>
 
           {activeId ? (
             <ChatWindow
@@ -560,7 +513,7 @@ function AssistantPage() {
         </main>
       </div>
 
-      {/* Confirmation Dialog for Deleting Thread */}
+      {/* ── Confirmation Dialog for Deleting Thread ─────────────── */}
       <AlertDialog open={pendingDelete !== null} onOpenChange={(o) => !o && setPendingDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -581,45 +534,52 @@ function AssistantPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-  </AppShell>
+    </AppShell>
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   Empty State
+   ═══════════════════════════════════════════════════════════════════ */
 function EmptyChat({ onStart }: { onStart: () => void }) {
   return (
     <div className="relative flex flex-1 flex-col items-center justify-center p-8 text-center">
       {/* Decorative background orbs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute left-1/4 top-1/3 h-64 w-64 rounded-full bg-primary/10 blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 h-48 w-48 rounded-full bg-emerald-500/8 blur-3xl" style={{ animationDelay: '1s' }} />
+        <div
+          className="absolute bottom-1/4 right-1/4 h-48 w-48 rounded-full bg-emerald-500/8 blur-3xl"
+          style={{ animationDelay: "1s" }}
+        />
       </div>
-      <LiquidGlassCard draggable={false} expandable={false} blurIntensity="xl" glowIntensity="md" shadowIntensity="lg" borderRadius="32px" className="relative z-10 !bg-white/10 dark:!bg-white/5">
-        <div className="relative z-30 flex flex-col items-center p-8 text-center sm:p-10">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="grid h-20 w-20 place-items-center rounded-3xl soma-gradient soma-glow shadow-lg"
-          >
-            <Stethoscope className="h-10 w-10 text-white" />
-          </motion.div>
-          <h2 className="mt-5 font-display text-3xl font-bold">Meet Adwoa AI</h2>
-          <p className="mt-2 max-w-md text-sm text-muted-foreground">
-            Your personal AI health companion — tailored for Ghana with your vitals, medications, and
-            medical history.
-          </p>
-          <Button
-            onClick={onStart}
-            size="lg"
-            className="mt-6 soma-gradient border-0 text-white shadow-md"
-          >
-            <Plus className="mr-2 h-4 w-4" /> Start a Conversation
-          </Button>
-        </div>
-      </LiquidGlassCard>
+      <div className="relative z-10 max-w-lg rounded-3xl border border-border bg-card p-10 text-center shadow-lg">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="mx-auto grid h-20 w-20 place-items-center rounded-3xl soma-gradient soma-glow shadow-lg"
+        >
+          <Stethoscope className="h-10 w-10 text-white" />
+        </motion.div>
+        <h2 className="mt-5 font-display text-3xl font-bold">Meet Adwoa AI</h2>
+        <p className="mt-2 max-w-md text-sm text-muted-foreground">
+          Your personal AI health companion — tailored for Ghana with your vitals, medications, and
+          medical history.
+        </p>
+        <Button
+          onClick={onStart}
+          size="lg"
+          className="mt-6 soma-gradient text-white shadow-md hover:scale-105 active:scale-95 transition-transform"
+        >
+          <Plus className="mr-2 h-4 w-4" /> Start a Conversation
+        </Button>
+      </div>
     </div>
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   Chat Window
+   ═══════════════════════════════════════════════════════════════════ */
 function ChatWindow({
   threadId,
   initialMessages,
@@ -670,7 +630,6 @@ function ChatWindow({
     };
   }, []);
 
-  // Stop any current playback so a new message can start cleanly
   const replayMessage = (messageId: string, text: string) => {
     if (!text.trim()) return;
     stopSpeaking();
@@ -690,7 +649,7 @@ function ChatWindow({
   };
 
   const speak = async (text: string, messageId: string, onDone?: () => void) => {
-    if (!(VOICE_LANGUAGES as readonly string[]).includes(voiceLang)) return; // unsupported language → skip silently
+    if (!(VOICE_LANGUAGES as readonly string[]).includes(voiceLang)) return;
     try {
       const res = await fetch("/api/voice/synthesize", {
         method: "POST",
@@ -698,7 +657,7 @@ function ChatWindow({
         body: JSON.stringify({ text, language: voiceLang }),
       });
       const contentType = res.headers.get("content-type") || "";
-      if (!res.ok || !contentType.includes("audio")) return; // voice_unavailable → stay silent
+      if (!res.ok || !contentType.includes("audio")) return;
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
@@ -713,7 +672,7 @@ function ChatWindow({
       audio.onerror = finish;
       await audio.play();
     } catch {
-      stopSpeaking(); // never break the chat flow over voice
+      stopSpeaking();
       onDone?.();
     }
   };
@@ -767,7 +726,6 @@ function ChatWindow({
         }
         return next;
       });
-      // Refresh any data a confirmed action may have changed
       void qc.invalidateQueries({ refetchType: "all" });
     }
   };
@@ -789,7 +747,7 @@ function ChatWindow({
 
   const busy = status === "submitted" || status === "streaming";
 
-  // Auto-play Adwoa's reply once streaming finishes (supported languages only)
+  // Auto-play Adwoa's reply once streaming finishes
   useEffect(() => {
     const wasBusy =
       prevStatusRef.current === "submitted" || prevStatusRef.current === "streaming";
@@ -801,11 +759,8 @@ function ChatWindow({
     playedRef.current.add(last.id);
     const replyText = last.parts.map((p) => (p.type === "text" ? p.text : "")).join("").trim();
     if (!replyText) return;
-    // Respect the user's "speak replies automatically" setting
     if (!voiceAutoPlay) return;
-    // Live conversation mode handles its own narration
     if (liveOpen) return;
-    // Don't narrate messages containing a pending confirmation card
     if (last.parts.some((p) => typeof p.type === "string" && p.type.startsWith("tool-"))) return;
     void speak(replyText, last.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -820,14 +775,12 @@ function ChatWindow({
     await sendMessage({ text: trimmed });
   };
 
-  // Auto-send a question handed off from another page (e.g. "Ask Adwoa" chips
-  // on the My Plans page arrive via /assistant?ask=...)
+  // Auto-send a question handed off from another page
   const autoAskSentRef = useRef(false);
   useEffect(() => {
     if (!autoAsk || autoAskSentRef.current || loading || busy) return;
     autoAskSentRef.current = true;
     void send(autoAsk);
-    // Clear the param so a refresh doesn't re-send it
     void navigate({ to: "/assistant", search: {}, replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoAsk, loading, busy]);
@@ -872,14 +825,14 @@ function ChatWindow({
                   onClick={() => send(s.fallback)}
                   className="group relative"
                 >
-                  <LiquidGlassCard draggable={false} blurIntensity="md" glowIntensity="xs" shadowIntensity="sm" borderRadius="20px" className="!bg-white/5 dark:!bg-white/3">
-                    <div className={cn("relative z-30 flex items-center gap-3 p-3 text-left text-xs transition hover:border-primary/50", "bg-gradient-to-br", s.tint)}>
-                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-card text-primary shadow-sm">
-                        <s.icon className="h-4 w-4" />
+                  <div className={cn("rounded-2xl border border-border bg-card p-3 text-left transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98]", "bg-gradient-to-br", s.tint)}>
+                    <div className="flex items-center gap-3">
+                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-card shadow-sm">
+                        <s.icon className="h-4 w-4 text-primary" />
                       </div>
-                      <span className="font-medium text-foreground/90">{s.fallback}</span>
+                      <span className="font-medium text-foreground/90 text-xs">{s.fallback}</span>
+                      </div>
                     </div>
-                  </LiquidGlassCard>
                 </motion.button>
               ))}
             </div>
@@ -908,40 +861,42 @@ function ChatWindow({
               initial={{ opacity: 0, y: 8, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
             >
-              <LiquidGlassCard draggable={false} blurIntensity="md" glowIntensity="sm" shadowIntensity="md" borderRadius="20px" className="!bg-destructive/5">
-              <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-destructive/10 blur-2xl" />
-              <div className="relative flex items-center gap-3">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-destructive/15">
-                  <motion.div animate={{ rotate: [0, -8, 8, -4, 0] }} transition={{ duration: 0.5, delay: 0.1 }}>
-                    <XCircle className="h-5 w-5 text-destructive" />
-                  </motion.div>
+              <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-destructive/15">
+                    <motion.div animate={{ rotate: [0, -8, 8, -4, 0] }} transition={{ duration: 0.5, delay: 0.1 }}>
+                      <XCircle className="h-5 w-5 text-destructive" />
+                    </motion.div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-destructive/80">Something went wrong</p>
+                    <p className="mt-0.5 text-sm text-foreground/80">{error.message}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => regenerate()}
+                    className="shrink-0 gap-1.5 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" /> Retry
+                  </Button>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-destructive/80">Something went wrong</p>
-                  <p className="mt-0.5 text-sm text-foreground/80">{error.message}</p>
-                </div>
-                <Button size="sm" onClick={() => regenerate()} className="shrink-0 gap-1.5 rounded-xl border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive">
-                  <RotateCcw className="h-3.5 w-3.5" /> Retry
-                </Button>
               </div>
-              </LiquidGlassCard>
             </motion.div>
           )}
         </div>
       </div>
 
-      {/* Input Box */}
+      {/* ── Input Box ─────────────────────────────────────────────── */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
           send(input);
         }}
-        className="border-t border-border/60 bg-card/80 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur md:p-4 md:pb-4"
+        className="bg-card/80 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur md:p-4 md:pb-4"
       >
         <div className="mx-auto max-w-4xl">
-          <LiquidGlassCard draggable={false} blurIntensity="lg" glowIntensity="sm" shadowIntensity="md" borderRadius="28px" className="!bg-white/10 dark:!bg-white/5">
-          <div className="group relative z-30 rounded-3xl p-2 transition">
-            <div className="flex items-end gap-2 px-2">
+          <div className="rounded-3xl border border-border bg-card shadow-md">
+            <div className="flex items-end gap-2 px-2 py-2">
               <Button
                 type="button"
                 size="icon"
@@ -959,7 +914,6 @@ function ChatWindow({
                 value={input}
                 onChange={(e) => {
                   setInput(e.target.value);
-                  // Auto-grow the textarea up to a cap as the user types
                   const el = e.target;
                   el.style.height = "auto";
                   el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
@@ -990,7 +944,7 @@ function ChatWindow({
                   type="submit"
                   size="icon"
                   disabled={!input.trim()}
-                  className="h-9 w-9 shrink-0 rounded-xl soma-gradient soma-glow border-0 text-white sm:h-10 sm:w-10 sm:rounded-2xl"
+                  className="h-9 w-9 shrink-0 rounded-xl soma-gradient text-white sm:h-10 sm:w-10 sm:rounded-2xl hover:scale-105 active:scale-95 transition-transform"
                   aria-label="Send"
                 >
                   <Send className="h-4 w-4" />
@@ -998,7 +952,6 @@ function ChatWindow({
               )}
             </div>
           </div>
-          </LiquidGlassCard>
           <p className="mt-1.5 text-center text-[10px] leading-snug text-muted-foreground sm:text-[11px]">
             Adwoa AI provides general guidance for informational purposes, not formal diagnosis. In
             emergencies contact local health services.
@@ -1006,7 +959,7 @@ function ChatWindow({
         </div>
       </form>
 
-      {/* Live voice conversation (ChatGPT-style hands-free mode) */}
+      {/* ── Live voice conversation overlay ────────────────────────── */}
       <AnimatePresence>
         {liveOpen && (
           <LiveConversationOverlay
@@ -1026,6 +979,9 @@ function ChatWindow({
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   Thinking Indicator
+   ═══════════════════════════════════════════════════════════════════ */
 function ThinkingIndicator() {
   const { t } = useTranslation();
   const [step, setStep] = useState(0);
@@ -1050,9 +1006,8 @@ function ThinkingIndicator() {
     >
       <div className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl soma-gradient soma-glow">
         <Sparkles className="h-4 w-4 text-white" />
-      </div>
-      <LiquidGlassCard draggable={false} blurIntensity="md" glowIntensity="xs" shadowIntensity="sm" borderRadius="20px" className="!bg-white/5 dark:!bg-white/3">
-        <div className="relative z-30 flex items-center gap-3 px-4 py-3">
+      </div>              <div className="rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-3">
           <span className="text-xs text-muted-foreground font-medium">{steps[step]}</span>
           <div className="flex items-center gap-1">
             {[0, 1, 2].map((i) => (
@@ -1065,11 +1020,14 @@ function ThinkingIndicator() {
             ))}
           </div>
         </div>
-      </LiquidGlassCard>
+      </div>
     </motion.div>
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   Message Bubble
+   ═══════════════════════════════════════════════════════════════════ */
 function MessageBubble({
   message,
   isSpeaking,
@@ -1136,11 +1094,9 @@ function MessageBubble({
           {isUser ? (
             <p className="whitespace-pre-wrap">{text}</p>
           ) : (
-            <LiquidGlassCard draggable={false} blurIntensity="lg" glowIntensity="xs" shadowIntensity="sm" borderRadius="24px" className="!bg-white/5 dark:!bg-white/3">
-              <div className="relative z-30 min-w-0 rounded-tl-md px-3.5 py-3 sm:px-4 sm:py-3.5">
-                <ReactMarkdown components={mdComponents}>{text}</ReactMarkdown>
-              </div>
-            </LiquidGlassCard>
+            <div className="min-w-0">
+              <ReactMarkdown components={mdComponents}>{text}</ReactMarkdown>
+            </div>
           )}
         </div>
         {!isUser && (
@@ -1189,7 +1145,7 @@ function MessageBubble({
           </div>
         )}
 
-        {/* Pending write-action confirmation cards */}
+        {/* ── Pending write-action confirmation cards ────────────── */}
         {!isUser &&
           toolParts.some((part) => WRITE_TOOLS.includes(part.type.slice(5))) && (
             <div className="mt-1 flex w-full flex-col gap-2">
@@ -1207,36 +1163,41 @@ function MessageBubble({
                         initial={{ opacity: 0, scale: 0.95, y: 4 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         className={cn(
-                          "relative overflow-hidden rounded-2xl border px-4 py-3 text-xs",
+                          "relative overflow-hidden rounded-2xl border border-border px-4 py-3 text-xs",
                           resolved === "confirmed"
-                            ? "border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-background shadow-lg shadow-emerald-500/5"
-                            : "border-border/60 bg-gradient-to-r from-muted/40 via-muted/20 to-background",
+                            ? "bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-background shadow-lg shadow-emerald-500/5"
+                            : "bg-gradient-to-r from-muted/40 via-muted/20 to-background",
                         )}
                       >
-                        <div className="pointer-events-none absolute -right-4 -top-4 h-16 w-16 rounded-full blur-xl"
-                          style={{ background: resolved === "confirmed" ? "rgba(34,197,94,0.12)" : "rgba(113,113,122,0.08)" }}
-                        />
-                        <div className="relative flex items-center gap-2.5">
-                          <div className={cn(
-                            "grid h-8 w-8 shrink-0 place-items-center rounded-xl",
-                            resolved === "confirmed"
-                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                              : "bg-muted text-muted-foreground",
-                          )}>
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className={cn(
+                              "grid h-8 w-8 shrink-0 place-items-center rounded-xl",
+                              resolved === "confirmed"
+                                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                                : "bg-muted text-muted-foreground",
+                            )}
+                          >
                             {resolved === "confirmed" ? (
-                              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 15 }}>
+                              <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                              >
                                 <CheckCircle2 className="h-4 w-4" />
                               </motion.div>
                             ) : (
                               <XCircle className="h-4 w-4" />
                             )}
                           </div>
-                          <span className={cn(
-                            "font-medium",
-                            resolved === "confirmed"
-                              ? "text-emerald-700 dark:text-emerald-300"
-                              : "text-muted-foreground",
-                          )}>
+                          <span
+                            className={cn(
+                              "font-medium",
+                              resolved === "confirmed"
+                                ? "text-emerald-700 dark:text-emerald-300"
+                                : "text-muted-foreground",
+                            )}
+                          >
                             {resolved === "confirmed"
                               ? "Action completed successfully"
                               : "Declined — Adwoa won't make this change"}
@@ -1252,65 +1213,69 @@ function MessageBubble({
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       transition={{ type: "spring", stiffness: 300, damping: 25 }}
                     >
-                      <LiquidGlassCard draggable={false} blurIntensity="lg" glowIntensity="md" shadowIntensity="lg" borderRadius="20px" className="!bg-primary/5">
-                      {/* Decorative glow */}
-                      <div className="pointer-events-none absolute -left-8 -top-8 h-28 w-28 rounded-full bg-primary/10 blur-3xl transition-opacity group-hover:opacity-100 opacity-60" />
-
-                      <div className="relative z-30 p-4">
-                        {/* Header row */}
-                        <div className="flex items-center gap-3">
-                          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/15 shadow-inner">
-                            <motion.div animate={{ rotate: [0, 5, -5, 0] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}>
-                              <ClipboardList className="h-5 w-5 text-primary" />
-                            </motion.div>
+                      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-sm">
+                        <div>
+                          {/* Header row */}
+                          <div className="flex items-center gap-3">
+                            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/15 shadow-inner">
+                              <motion.div
+                                animate={{ rotate: [0, 5, -5, 0] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                              >
+                                <ClipboardList className="h-5 w-5 text-primary" />
+                              </motion.div>
+                            </div>
+                            <div>
+                              <div className="text-[11px] font-bold uppercase tracking-widest text-primary/70">
+                                Action Required
+                              </div>
+                              <p className="mt-0.5 text-sm font-medium text-foreground">
+                                {humanSummary(toolName, input)}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <div className="text-[11px] font-bold uppercase tracking-widest text-primary/70">Action Required</div>
-                            <p className="mt-0.5 text-sm font-medium text-foreground">{humanSummary(toolName, input)}</p>
+
+                          {/* Divider */}
+                          <div className="my-3 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+
+                          {/* Buttons */}
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              disabled={part.state === "input-streaming"}
+                              onClick={() =>
+                                onConfirmAction(
+                                  message.id,
+                                  String(part.toolCallId),
+                                  toolName,
+                                  input,
+                                  true,
+                                )
+                              }
+                              className="h-9 flex-1 soma-gradient px-4 text-xs font-semibold text-white shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98]"
+                            >
+                              <Check className="mr-1.5 h-3.5 w-3.5" /> Confirm
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={part.state === "input-streaming"}
+                              onClick={() =>
+                                onConfirmAction(
+                                  message.id,
+                                  String(part.toolCallId),
+                                  toolName,
+                                  input,
+                                  false,
+                                )
+                              }
+                              className="h-9 flex-1 px-4 text-xs font-medium text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
+                            >
+                              <XCircle className="mr-1.5 h-3.5 w-3.5" /> Decline
+                            </Button>
                           </div>
-                        </div>
-
-                        {/* Divider */}
-                        <div className="my-3 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-
-                        {/* Buttons */}
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            disabled={part.state === "input-streaming"}
-                            onClick={() =>
-                              onConfirmAction(
-                                message.id,
-                                String(part.toolCallId),
-                                toolName,
-                                input,
-                                true,
-                              )
-                            }
-                            className="h-9 flex-1 rounded-xl soma-gradient border-0 px-4 text-xs font-semibold text-white shadow-md shadow-primary/20 transition hover:shadow-lg hover:shadow-primary/30"
-                          >
-                            <Check className="mr-1.5 h-3.5 w-3.5" /> Confirm
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={part.state === "input-streaming"}
-                            onClick={() =>
-                              onConfirmAction(
-                                message.id,
-                                String(part.toolCallId),
-                                toolName,
-                                input,
-                                false,
-                              )
-                            }
-                            className="h-9 flex-1 rounded-xl border-border/60 px-4 text-xs font-medium text-muted-foreground transition hover:bg-muted/50 hover:text-foreground"
-                          >
-                            <XCircle className="mr-1.5 h-3.5 w-3.5" /> Decline
-                          </Button>
                         </div>
                       </div>
-                      </LiquidGlassCard>
                     </motion.div>
                   );
                 })}
@@ -1321,8 +1286,9 @@ function MessageBubble({
   );
 }
 
-// ── Live voice conversation (ChatGPT-style hands-free mode) ────────────
-
+/* ═══════════════════════════════════════════════════════════════════
+   Live Voice Conversation (ChatGPT-style hands-free mode)
+   ═══════════════════════════════════════════════════════════════════ */
 type LivePhase = "idle" | "listening" | "thinking" | "speaking";
 
 function LiveConversationOverlay({
@@ -1401,16 +1367,14 @@ function LiveConversationOverlay({
           setMicDenied(true);
           setPhase("idle");
         } else if (e.error === "language-not-supported" && lang !== "en-US") {
-          // Ghanaian STT locales aren't available in every browser — fall back to English
           setNotice("Voice input isn't available in your language yet — listening in English.");
           startListening("en-US");
         } else if (e.error !== "no-speech" && e.error !== "aborted") {
           setPhase("idle");
         }
-        // "no-speech" / "aborted" are handled in onend (session stays alive)
       };
       rec.onend = () => {
-        if (recogRef.current !== rec) return; // replaced or aborted
+        if (recogRef.current !== rec) return;
         recogRef.current = null;
         const said = finalText.trim();
         if (manualStopRef.current) return;
@@ -1420,7 +1384,7 @@ function LiveConversationOverlay({
           awaitingReplyRef.current = true;
           void sendMessage({ text: said });
         } else {
-          startListening(locale ?? sttLanguage); // silence — keep listening
+          startListening(locale ?? sttLanguage);
         }
       };
       recogRef.current = rec;
@@ -1433,7 +1397,6 @@ function LiveConversationOverlay({
     [sendMessage, sttLanguage, stopRecognition],
   );
 
-  // Start listening when the session opens; tear everything down on close
   useEffect(() => {
     manualStopRef.current = false;
     const timer = setTimeout(() => startListening(), 350);
@@ -1445,7 +1408,6 @@ function LiveConversationOverlay({
 
   useEffect(() => () => stopSpeaking(), [stopSpeaking]);
 
-  // When Adwoa's reply finishes streaming, speak it — then resume listening.
   useEffect(() => {
     if (!awaitingReplyRef.current || status !== "ready") return;
     const last = messages[messages.length - 1];
@@ -1467,7 +1429,6 @@ function LiveConversationOverlay({
     });
   }, [messages, status, canSpeak, speak, startListening]);
 
-  // Keep the recent-history panel pinned to the latest message
   useEffect(() => {
     historyRef.current?.scrollTo({ top: historyRef.current.scrollHeight });
   }, [messages]);
@@ -1570,7 +1531,7 @@ function LiveConversationOverlay({
               animate={{ opacity: 1, y: 0 }}
               className="mt-1 max-w-md text-sm italic text-muted-foreground"
             >
-              “{transcript}”
+              "{transcript}"
             </motion.p>
           )}
           {!transcript && notice && (
@@ -1587,7 +1548,7 @@ function LiveConversationOverlay({
             aria-label={phase === "listening" ? "Pause microphone" : "Start talking"}
             title={phase === "listening" ? "Pause microphone" : "Start talking"}
             className={cn(
-              "h-14 w-14 rounded-full border-0 shadow-lg",
+              "h-14 w-14 rounded-full shadow-lg",
               phase === "listening"
                 ? "bg-emerald-500 text-white hover:bg-emerald-600"
                 : "bg-secondary text-foreground hover:bg-secondary/80",
@@ -1600,7 +1561,7 @@ function LiveConversationOverlay({
             onClick={endSession}
             aria-label="End live conversation"
             title="End conversation"
-            className="h-16 w-16 rounded-full border-0 bg-destructive text-white shadow-lg hover:bg-destructive/90"
+            className="h-16 w-16 rounded-full bg-destructive text-white shadow-lg hover:bg-destructive/90"
           >
             <PhoneOff className="h-7 w-7" />
           </Button>
