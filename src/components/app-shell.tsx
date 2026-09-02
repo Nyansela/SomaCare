@@ -170,11 +170,7 @@ export function AppShell({
         >
           <div className="flex h-16 items-center gap-2 px-6">
             <Link to="/app" className="flex items-center gap-2">
-              <img
-                src="/images/branding/logo.svg"
-                alt={t("nav.logoAlt", "SomaCare Logo")}
-                className="h-9 w-auto"
-              />
+              <span className="font-display text-lg font-bold">SomaCare</span>
             </Link>
           </div>
           <nav className="mt-2 px-3 overflow-y-auto flex-1 pb-4">

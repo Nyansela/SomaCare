@@ -18,5 +18,12 @@
     "lib": "@/lib",
     "hooks": "@/hooks"
   },
-  "registries": {}
+  "registries": {
+    "@reui": {
+      "url": "https://reui.io/r/base-nova/{name}.json",
+      "headers": {
+        "Authorization": "Bearer ${REUI_LICENSE_KEY}"
+      }
+    }
+  }
 }

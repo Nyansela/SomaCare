@@ -189,7 +189,7 @@ const LEGACY_KEY = "soma.theme.v1";
 
 export const DEFAULT_THEME: ThemeSettings = {
   preset: "soma-indigo",
-  appearance: "system",
+  appearance: "light",
   radius: "soft",
   font: "modern",
   layout: "sidebar",

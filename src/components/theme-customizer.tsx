@@ -31,6 +31,12 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export function ThemeInit() {
   useEffect(() => {
+    // Auth page always shows the default light theme — skip stored preference.
+    if (window.location.pathname === "/auth") {
+      document.documentElement.classList.remove("dark");
+      return;
+    }
+
     let disposed = false;
 
     (async () => {

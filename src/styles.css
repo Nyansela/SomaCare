@@ -397,116 +397,22 @@ html[data-reduced-motion="true"] *::after {
 }
 
 /* ------------------------------------------------------------------
- * Sonner toast — theme-aware borders, glow shadows, lively animations
+ * Sonner toast — theme-aware styling via Shadcn conventions
  * ------------------------------------------------------------------ */
 
-/* Per-type left accent + themed shadow (applied on the <li> element) */
+/* Per-type left accent */
 [data-sonner-toast][data-type="success"] {
   border-left: 4px solid var(--color-success);
-  box-shadow:
-    0 8px 30px -8px oklch(0.65 0.18 145 / 0.35),
-    inset 0 0 0 0 oklch(0 0 0 / 0);
 }
 
 [data-sonner-toast][data-type="error"] {
   border-left: 4px solid var(--color-destructive);
-  box-shadow:
-    0 8px 30px -8px oklch(0.6 0.22 0 / 0.35),
-    inset 0 0 0 0 oklch(0 0 0 / 0);
 }
 
 [data-sonner-toast][data-type="warning"] {
   border-left: 4px solid var(--color-warning);
-  box-shadow:
-    0 8px 30px -8px oklch(0.75 0.15 75 / 0.3),
-    inset 0 0 0 0 oklch(0 0 0 / 0);
 }
 
 [data-sonner-toast][data-type="info"] {
   border-left: 4px solid var(--color-info);
-  box-shadow:
-    0 8px 30px -8px oklch(0.6 0.12 200 / 0.3),
-    inset 0 0 0 0 oklch(0 0 0 / 0);
-}
-
-/* Entrance: slide from right + fade + deblur */
-@keyframes toast-in {
-  0% {
-    opacity: 0;
-    transform: translateX(calc(100% + 1.5rem)) scale(0.92);
-    filter: blur(4px);
-  }
-  50% {
-    filter: blur(0);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-    filter: blur(0);
-  }
-}
-
-/* Exit: slide right + blur out */
-@keyframes toast-out {
-  0% {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-    filter: blur(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(calc(100% + 1.5rem)) scale(0.92);
-    filter: blur(4px);
-  }
-}
-
-/* Error/warning wiggle */
-@keyframes toast-wiggle {
-  0%, 100% { transform: rotate(0deg); }
-  15% { transform: rotate(-2deg); }
-  30% { transform: rotate(1.5deg); }
-  45% { transform: rotate(-1deg); }
-  60% { transform: rotate(0.5deg); }
-  75% { transform: rotate(-0.25deg); }
-}
-
-/* Success pulse: the green glow breathes once after landing */
-@keyframes success-pulse {
-  0% { box-shadow: 0 8px 30px -8px oklch(0.65 0.18 145 / 0.35); }
-  50% { box-shadow: 0 8px 40px -4px oklch(0.65 0.18 145 / 0.55); }
-  100% { box-shadow: 0 8px 30px -8px oklch(0.65 0.18 145 / 0.35); }
-}
-
-/* Apply entrance to all toasts */
-[data-sonner-toast] {
-  animation: toast-in 0.4s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
-}
-
-/* Success: slide in + glow pulse */
-[data-sonner-toast][data-type="success"] {
-  animation:
-    toast-in 0.4s cubic-bezier(0.21, 1.02, 0.73, 1) forwards,
-    success-pulse 0.6s ease-out 0.4s;
-}
-
-/* Error: slide in + wiggle */
-[data-sonner-toast][data-type="error"] {
-  animation:
-    toast-in 0.4s cubic-bezier(0.21, 1.02, 0.73, 1) forwards,
-    toast-wiggle 0.4s ease-in-out 0.4s;
-}
-
-/* Warning: slide in + gentle wiggle */
-[data-sonner-toast][data-type="warning"] {
-  animation:
-    toast-in 0.4s cubic-bezier(0.21, 1.02, 0.73, 1) forwards,
-    toast-wiggle 0.3s ease-in-out 0.45s;
-}
-
-/* Respect reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  [data-sonner-toast] {
-    animation-duration: 0.01ms !important;
-    animation-delay: 0ms !important;
-  }
 }

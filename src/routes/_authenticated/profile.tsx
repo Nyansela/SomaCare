@@ -1,7 +1,7 @@
 "use client";
 
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -194,6 +194,8 @@ function ProfilePage() {
   // ── Account state ──────────────────────────────────────────────────
   const [email, setEmail] = useState("");
   const [userId, setUserId] = useState("");
+  const avatarFileRef = useRef<HTMLInputElement>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // ── Fetch profile ──────────────────────────────────────────────────
   const { data: profileData, isLoading } = useQuery({
@@ -247,6 +249,8 @@ function ProfilePage() {
     setPreferences((prev) => ({
       ...prev,
       ...prefs,
+      // Sync: if preferences.language was never set, fall back to profiles.locale
+      language: (prefs.language as string) || profileData.locale || "en",
       vitalsThresholds: { ...prev.vitalsThresholds, ...(prefs.vitalsThresholds as object) },
       emailNotifications: { ...prev.emailNotifications, ...(prefs.emailNotifications as object) },
       pushNotifications: { ...prev.pushNotifications, ...(prefs.pushNotifications as object) },
@@ -304,6 +308,38 @@ function ProfilePage() {
     setHasChanges(true);
   };
 
+  const handleAvatarUpload = useCallback(async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5 MB");
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Not authenticated");
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${u.user.id}/avatar.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
+      const publicUrl = urlData?.publicUrl;
+      if (!publicUrl) throw new Error("Could not get image URL");
+      setIdentity((prev) => ({ ...prev, avatar_url: publicUrl }));
+      setHasChanges(true);
+      toast.success("Photo updated");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }, []);
+
   const updateClinical = (field: string, value: string) => {
     setClinical((prev) => ({ ...prev, [field]: value }));
     setHasChanges(true);
@@ -356,7 +392,10 @@ function ProfilePage() {
   // ── Save mutation ──────────────────────────────────────────────────
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!userId) throw new Error("No user ID");
+      // Fetch user ID directly — don't rely on state that may not have loaded yet.
+      const { data: u } = await supabase.auth.getUser();
+      const uid = u?.user?.id;
+      if (!uid) throw new Error("Not authenticated");
 
       const emergencyContacts = clinical.emergency_name
         ? [{ name: clinical.emergency_name, phone: clinical.emergency_phone, relation: clinical.emergency_relation }]
@@ -388,7 +427,7 @@ function ProfilePage() {
           preferences: allPrefs,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", userId);
+        .eq("id", uid);
 
       if (error) throw error;
 
@@ -467,11 +506,24 @@ function ProfilePage() {
               </div>
               <button
                 type="button"
-                className="absolute bottom-0 right-0 grid h-8 w-8 place-items-center rounded-full bg-primary text-white shadow-md transition hover:bg-primary-strong"
+                className="absolute bottom-0 right-0 grid h-8 w-8 place-items-center rounded-full bg-primary text-white shadow-md transition hover:bg-primary-strong disabled:opacity-50"
                 aria-label="Change photo"
+                disabled={uploadingAvatar}
+                onClick={() => avatarFileRef.current?.click()}
               >
-                <Camera className="h-4 w-4" />
+                {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
               </button>
+              <input
+                ref={avatarFileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleAvatarUpload(file);
+                  e.target.value = "";
+                }}
+              />
             </div>
             <div className="flex-1 text-center md:text-left">
               <h2 className="font-display text-2xl font-bold">
@@ -534,14 +586,31 @@ function ProfilePage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="avatar_url">Photo URL</Label>
-                  <Input
-                    id="avatar_url"
-                    value={identity.avatar_url}
-                    onChange={(e) => updateIdentity("avatar_url", e.target.value)}
-                    placeholder="https://..."
-                    className="mt-1.5"
-                  />
+                  <Label>Profile Photo</Label>
+                  <div className="mt-1.5 flex items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={uploadingAvatar}
+                      onClick={() => avatarFileRef.current?.click()}
+                    >
+                      {uploadingAvatar ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading…</>
+                      ) : (
+                        <><Camera className="mr-2 h-4 w-4" /> Choose photo</>
+                      )}
+                    </Button>
+                    {identity.avatar_url && (
+                      <button
+                        type="button"
+                        className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                        onClick={() => updateIdentity("avatar_url", "")}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="date_of_birth">Date of Birth</Label>
@@ -568,7 +637,15 @@ function ProfilePage() {
                 </div>
                 <div>
                   <Label htmlFor="language">Language Preference</Label>
-                  <Select value={identity.locale} onValueChange={(v) => updateIdentity("locale", v)}>
+                  <Select
+                    value={identity.locale}
+                    onValueChange={(v) => {
+                      // Sync both identity.locale AND preferences.language
+                      // so AI chat + voice synthesis use the persisted value
+                      updateIdentity("locale", v);
+                      updatePreference("language", v);
+                    }}
+                  >
                     <SelectTrigger id="language" className="mt-1.5">
                       <SelectValue placeholder="Select language" />
                     </SelectTrigger>

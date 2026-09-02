@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MapPin, Search, Navigation, Loader2, ExternalLink } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -154,6 +154,45 @@ function FindHospitals() {
     );
   };
 
+  const runSearch = useCallback(
+    (q: string) => {
+      if (!coords || !mapRef.current) return;
+      const google = getGoogle();
+      if (!google) return;
+      const service = new google.maps.places.PlacesService(mapRef.current);
+      service.nearbySearch(
+        {
+          location: coords,
+          radius: 5000,
+          keyword: q,
+        },
+        (results: GooglePlace[] | null, status: string) => {
+          if (status !== google.maps.places.PlacesServiceStatus.OK || !results) return;
+          markersRef.current.forEach((m) => m.setMap(null));
+          markersRef.current = [];
+          results.slice(0, 20).forEach((place) => {
+            const marker = new google.maps.Marker({
+              map: mapRef.current,
+              position: place.geometry.location,
+              title: place.name,
+            });
+            marker.addListener("click", () => {
+              setSelected({
+                name: place.name,
+                address: place.vicinity,
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng(),
+                placeId: place.place_id,
+              });
+            });
+            markersRef.current.push(marker);
+          });
+        },
+      );
+    },
+    [coords],
+  );
+
   // Initialize the discovery map once coords + google are ready
   useEffect(() => {
     if (!coords || !mapDivRef.current) return;
@@ -199,43 +238,7 @@ function FindHospitals() {
   useEffect(() => {
     if (mapRef.current && coords) runSearch(activeQuery);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeQuery]);
-
-  const runSearch = (q: string) => {
-    if (!coords || !mapRef.current) return;
-    const google = getGoogle();
-    if (!google) return;
-    const service = new google.maps.places.PlacesService(mapRef.current);
-    service.nearbySearch(
-      {
-        location: coords,
-        radius: 5000,
-        keyword: q,
-      },
-      (results: GooglePlace[] | null, status: string) => {
-        if (status !== google.maps.places.PlacesServiceStatus.OK || !results) return;
-        markersRef.current.forEach((m) => m.setMap(null));
-        markersRef.current = [];
-        results.slice(0, 20).forEach((place) => {
-          const marker = new google.maps.Marker({
-            map: mapRef.current,
-            position: place.geometry.location,
-            title: place.name,
-          });
-          marker.addListener("click", () => {
-            setSelected({
-              name: place.name,
-              address: place.vicinity,
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng(),
-              placeId: place.place_id,
-            });
-          });
-          markersRef.current.push(marker);
-        });
-      },
-    );
-  };
+  }, [activeQuery, runSearch, coords]);
 
   // Route map: renders directions from coords → selected
   useEffect(() => {
@@ -313,6 +316,7 @@ function FindHospitals() {
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((c) => (
               <button
+                type="button"
                 key={c.key}
                 onClick={() => setActiveQuery(c.query)}
                 className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
