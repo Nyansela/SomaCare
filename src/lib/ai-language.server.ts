@@ -26,10 +26,7 @@ export function aiLanguageName(code: string): string {
 
 /** True if `code` is one of the app's UI language codes. */
 export function isSupportedAiLanguage(code: unknown): code is string {
-  return (
-    typeof code === "string" &&
-    (AI_SUPPORTED_LANGUAGES as readonly string[]).includes(code)
-  );
+  return typeof code === "string" && (AI_SUPPORTED_LANGUAGES as readonly string[]).includes(code);
 }
 
 /**

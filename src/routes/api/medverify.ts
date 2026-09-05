@@ -3,10 +3,7 @@ import { generateText } from "ai";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { getHealthContext } from "@/lib/health-context";
-import {
-  aiLanguageInstruction,
-  isSupportedAiLanguage,
-} from "@/lib/ai-language.server";
+import { aiLanguageInstruction, isSupportedAiLanguage } from "@/lib/ai-language.server";
 
 type VerifyBody = { medicationName: string; language?: string };
 

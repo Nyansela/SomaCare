@@ -11,9 +11,7 @@ export type AuthenticatedRequest = {
  * returns a user-scoped Supabase client (RLS applies) plus the user id.
  * Returns null when the token is missing or invalid so callers can respond 401.
  */
-export async function authenticateRequest(
-  request: Request,
-): Promise<AuthenticatedRequest | null> {
+export async function authenticateRequest(request: Request): Promise<AuthenticatedRequest | null> {
   const auth = request.headers.get("Authorization") ?? "";
   if (!auth.startsWith("Bearer ")) return null;
   const token = auth.slice(7);

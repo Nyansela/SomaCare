@@ -44,12 +44,19 @@ export const Route = createFileRoute("/api/voice/synthesize")({
           const khayaLanguage = language ? LANGUAGE_MAP[language] : undefined;
 
           if (!language || !khayaLanguage) {
-            console.log(`[Voice Log] lang: ${language || "unknown"}, cache: n/a, status: 400, time: ${timestamp}`);
-            return Response.json({ error: "not_yet_supported", language: language || null }, { status: 400 });
+            console.log(
+              `[Voice Log] lang: ${language || "unknown"}, cache: n/a, status: 400, time: ${timestamp}`,
+            );
+            return Response.json(
+              { error: "not_yet_supported", language: language || null },
+              { status: 400 },
+            );
           }
 
           if (!text || typeof text !== "string" || text.trim().length === 0) {
-            console.log(`[Voice Log] lang: ${language}, cache: n/a, status: 400, time: ${timestamp}`);
+            console.log(
+              `[Voice Log] lang: ${language}, cache: n/a, status: 400, time: ${timestamp}`,
+            );
             return Response.json({ error: "text_required" }, { status: 400 });
           }
 
@@ -57,11 +64,14 @@ export const Route = createFileRoute("/api/voice/synthesize")({
           const textHash = await computeHash(trimmedText);
 
           const supabaseUrl = process.env.SUPABASE_URL;
-          const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+          const supabaseKey =
+            process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
           const apiKey = process.env.GHANA_NLP_API_KEY;
 
           if (!supabaseUrl || !supabaseKey) {
-            console.log(`[Voice Log] lang: ${language}, cache: n/a, status: 500, time: ${timestamp}`);
+            console.log(
+              `[Voice Log] lang: ${language}, cache: n/a, status: 500, time: ${timestamp}`,
+            );
             return Response.json({ error: "voice_unavailable" }, { status: 500 });
           }
 
@@ -82,7 +92,9 @@ export const Route = createFileRoute("/api/voice/synthesize")({
               const audioFetch = await fetch(cached.audio_url);
               if (audioFetch.ok) {
                 const audioBuffer = await audioFetch.arrayBuffer();
-                console.log(`[Voice Log] lang: ${language}, cache: hit, status: 200, time: ${timestamp}`);
+                console.log(
+                  `[Voice Log] lang: ${language}, cache: hit, status: 200, time: ${timestamp}`,
+                );
                 return new Response(audioBuffer, {
                   headers: {
                     "Content-Type": "audio/wav",
@@ -96,7 +108,9 @@ export const Route = createFileRoute("/api/voice/synthesize")({
           }
 
           if (!apiKey) {
-            console.log(`[Voice Log] lang: ${language}, cache: miss, status: 500, time: ${timestamp}`);
+            console.log(
+              `[Voice Log] lang: ${language}, cache: miss, status: 500, time: ${timestamp}`,
+            );
             return Response.json({ error: "voice_unavailable" }, { status: 500 });
           }
 
@@ -108,19 +122,23 @@ export const Route = createFileRoute("/api/voice/synthesize")({
                 "Ocp-Apim-Subscription-Key": apiKey,
                 "Content-Type": "application/json",
               },
-            body: JSON.stringify({
-              text: trimmedText,
-              language: khayaLanguage,
-              speaker_id: "female",
-            }),
+              body: JSON.stringify({
+                text: trimmedText,
+                language: khayaLanguage,
+                speaker_id: "female",
+              }),
             });
           } catch {
-            console.log(`[Voice Log] lang: ${language}, cache: miss, status: 502, time: ${timestamp}`);
+            console.log(
+              `[Voice Log] lang: ${language}, cache: miss, status: 502, time: ${timestamp}`,
+            );
             return Response.json({ error: "voice_unavailable" }, { status: 502 });
           }
 
           if (!khayaRes.ok) {
-            console.log(`[Voice Log] lang: ${language}, cache: miss, status: ${khayaRes.status}, time: ${timestamp}`);
+            console.log(
+              `[Voice Log] lang: ${language}, cache: miss, status: ${khayaRes.status}, time: ${timestamp}`,
+            );
             return Response.json({ error: "voice_unavailable" }, { status: 502 });
           }
 
@@ -153,7 +171,9 @@ export const Route = createFileRoute("/api/voice/synthesize")({
             // Storage upload / cache insert failure should not prevent returning audio
           }
 
-          console.log(`[Voice Log] lang: ${language}, cache: miss, status: 200, time: ${timestamp}`);
+          console.log(
+            `[Voice Log] lang: ${language}, cache: miss, status: 200, time: ${timestamp}`,
+          );
           return new Response(audioBuffer, {
             headers: {
               "Content-Type": "audio/wav",

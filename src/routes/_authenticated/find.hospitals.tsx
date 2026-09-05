@@ -23,8 +23,7 @@ const CATEGORIES = [
   { key: "imaging", fallback: "Imaging", query: "radiology imaging" },
 ];
 
-const BROWSER_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as
-  string | undefined;
+const BROWSER_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
 
 // Minimal typings for the Google Maps JS API surface we use.
 // (The full @types/google.maps package is not installed in this project.)
@@ -237,7 +236,6 @@ function FindHospitals() {
   // Re-search when category/query changes
   useEffect(() => {
     if (mapRef.current && coords) runSearch(activeQuery);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeQuery, runSearch, coords]);
 
   // Route map: renders directions from coords → selected

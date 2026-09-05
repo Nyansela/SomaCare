@@ -194,7 +194,10 @@ export const Route = createFileRoute("/api/confirm-action")({
           console.log(
             `[Action Log] user=${userId} tool=${toolName} outcome=failed time=${timestamp} reason=invalid_args`,
           );
-          return Response.json({ error: "invalid_args", details: parsed.error.issues }, { status: 400 });
+          return Response.json(
+            { error: "invalid_args", details: parsed.error.issues },
+            { status: 400 },
+          );
         }
         // The switch below narrows by tool name; flatten the parsed union so
         // each case can access its own schema's fields.
@@ -274,9 +277,8 @@ export const Route = createFileRoute("/api/confirm-action")({
               // AI-generated plans are Plus-gated. The chat tool also checks,
               // but this is the authoritative write path — never create a plan
               // for a user without access.
-              const { hasAccess: hasPlusAccess, TIER_PLUS } = await import(
-                "@/lib/subscription.server",
-              );
+              const { hasAccess: hasPlusAccess, TIER_PLUS } =
+                await import("@/lib/subscription.server");
               if (!(await hasPlusAccess(userId, TIER_PLUS))) {
                 return Response.json(
                   {
@@ -312,9 +314,8 @@ export const Route = createFileRoute("/api/confirm-action")({
             }
             case "generateMealPlan": {
               // Plus-gated — see generateWorkoutPlan above.
-              const { hasAccess: hasPlusAccess, TIER_PLUS } = await import(
-                "@/lib/subscription.server",
-              );
+              const { hasAccess: hasPlusAccess, TIER_PLUS } =
+                await import("@/lib/subscription.server");
               if (!(await hasPlusAccess(userId, TIER_PLUS))) {
                 return Response.json(
                   {

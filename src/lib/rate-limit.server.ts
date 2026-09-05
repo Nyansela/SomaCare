@@ -10,19 +10,13 @@
 
 const buckets = new Map<string, number[]>();
 
-export type RateLimitResult =
-  | { allowed: true }
-  | { allowed: false; retryAfterSeconds: number };
+export type RateLimitResult = { allowed: true } | { allowed: false; retryAfterSeconds: number };
 
 /**
  * Checks (and records) a request against a sliding window. Returns the number
  * of seconds the caller must wait before retrying when the limit is exceeded.
  */
-export function checkRateLimit(
-  key: string,
-  limit: number,
-  windowMs: number,
-): RateLimitResult {
+export function checkRateLimit(key: string, limit: number, windowMs: number): RateLimitResult {
   const now = Date.now();
   const cutoff = now - windowMs;
   const timestamps = (buckets.get(key) ?? []).filter((t) => t > cutoff);

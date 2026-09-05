@@ -38,6 +38,9 @@ interface UseChatOptions {
   onError?: (error: Error) => void;
   onFinish?: (options: { messages: UIMessage[] }) => void;
   onToolCall?: (options: { toolCallId: string; toolName: string; args: unknown }) => unknown;
+  /** Called when the server rejects the request because the free AI usage
+   *  limit was reached (HTTP 429, error "usage_limit_reached"). */
+  onUsageLimit?: (info: { used: number; limit: number | null }) => void;
 }
 
 // ── Lightweight event emitter so useSyncExternalStore can subscribe ─────────
@@ -66,8 +69,7 @@ class ChatState {
   };
 
   setMessages(updater: UIMessage[] | ((prev: UIMessage[]) => UIMessage[])) {
-    this.messages =
-      typeof updater === "function" ? updater(this.messages) : updater;
+    this.messages = typeof updater === "function" ? updater(this.messages) : updater;
     this.notify();
   }
 
@@ -100,9 +102,7 @@ function isUuid(id: string): boolean {
  * matching the `UIMessageChunk` schema. The stream ends with a `data: [DONE]`
  * line.
  */
-async function* parseStream(
-  response: Response,
-): AsyncGenerator<Record<string, unknown>> {
+async function* parseStream(response: Response): AsyncGenerator<Record<string, unknown>> {
   if (!response.body) throw new Error("Empty response body");
   const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
   let buffer = "";
@@ -144,7 +144,7 @@ async function consumeStream(
   let messages = [...initialMessages];
   let currentMsgId = "";
   let currentText = "";
-  let currentToolCalls: Record<string, { id: string; name: string; argsText: string }> = {};
+  const currentToolCalls: Record<string, { id: string; name: string; argsText: string }> = {};
 
   const findOrCreateAssistant = (msgId: string): UIMessage => {
     const existing = messages.find((m) => m.id === msgId);
@@ -159,9 +159,7 @@ async function consumeStream(
   };
 
   const updateAssistantParts = (msgId: string, parts: UIMessage["parts"]) => {
-    messages = messages.map((m) =>
-      m.id === msgId ? { ...m, parts } : m,
-    );
+    messages = messages.map((m) => (m.id === msgId ? { ...m, parts } : m));
   };
 
   for await (const chunk of chunks) {
@@ -218,8 +216,7 @@ async function consumeStream(
       case "tool-input-delta": {
         const toolCallId = chunk.toolCallId as string;
         if (currentToolCalls[toolCallId]) {
-          currentToolCalls[toolCallId].argsText +=
-            (chunk.inputTextDelta as string) || "";
+          currentToolCalls[toolCallId].argsText += (chunk.inputTextDelta as string) || "";
         }
         break;
       }
@@ -320,6 +317,7 @@ export function useChat({
   headers: extraHeaders,
   onError,
   onFinish,
+  onUsageLimit,
 }: UseChatOptions = {}) {
   const stateRef = useRef(new ChatState());
   const abortRef = useRef<AbortController | null>(null);
@@ -401,8 +399,7 @@ export function useChat({
   // Remove a previously-persisted message row (used by regenerate so the old
   // reply doesn't stay next to the new one).
   const removePersisted = useCallback(async (messageId: string) => {
-    const dbId =
-      dbIdRef.current.get(messageId) ?? (isUuid(messageId) ? messageId : null);
+    const dbId = dbIdRef.current.get(messageId) ?? (isUuid(messageId) ? messageId : null);
     if (!dbId) return;
     try {
       const { supabase } = await import("@/integrations/supabase/client");
@@ -465,9 +462,7 @@ export function useChat({
     abortRef.current = null;
     const partial = takePartialReply();
     if (partial) {
-      stateRef.current.setMessages((prev) =>
-        prev.filter((m) => m.id !== partial.id),
-      );
+      stateRef.current.setMessages((prev) => prev.filter((m) => m.id !== partial.id));
       const text = partial.parts
         .map((p) => (p.type === "text" ? p.text : ""))
         .join("")
@@ -534,6 +529,29 @@ export function useChat({
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => "Unknown error");
+        // Surface the free-tier usage limit as its own callback so the UI can
+        // show an upgrade prompt and stop sending (the raw error is thrown too).
+        if (response.status === 429) {
+          try {
+            const parsed = JSON.parse(errorText) as {
+              error?: string;
+              message?: string;
+              used?: number;
+              limit?: number | null;
+            };
+            if (parsed.error === "usage_limit_reached") {
+              onUsageLimit?.({
+                used: parsed.used ?? 0,
+                limit: parsed.limit ?? null,
+              });
+              throw new Error(
+                parsed.message || "You've reached your free AI message limit for this month.",
+              );
+            }
+          } catch {
+            // not JSON — fall through to the generic error
+          }
+        }
         throw new Error(errorText || `HTTP ${response.status}`);
       }
 
@@ -576,15 +594,12 @@ export function useChat({
       stateRef.current.setStatus("ready");
       onFinish?.({ messages: finalMessages });
     },
-    [api, getAuthHeaders, onFinish, persistMessage],
+    [api, getAuthHeaders, onFinish, onUsageLimit, persistMessage],
   );
 
   const sendMessage = useCallback(
     async (message?: SendMessageOptions | string) => {
-      const text =
-        typeof message === "string"
-          ? message
-          : message?.text ?? "";
+      const text = typeof message === "string" ? message : (message?.text ?? "");
 
       if (!text.trim()) return;
 
@@ -612,10 +627,7 @@ export function useChat({
 
       try {
         stateRef.current.setStatus("streaming");
-        await runRequest(
-          messagesForRequest(stateRef.current.messages),
-          controller,
-        );
+        await runRequest(messagesForRequest(stateRef.current.messages), controller);
       } catch (err: unknown) {
         // A newer request has taken over — it owns the state from here on.
         if (abortRef.current !== controller) return;
@@ -632,8 +644,7 @@ export function useChat({
             .trim();
           if (text) void persistMessage(partial);
         }
-        const error =
-          err instanceof Error ? err : new Error(String(err));
+        const error = err instanceof Error ? err : new Error(String(err));
         stateRef.current.setError(error);
         stateRef.current.setStatus("error");
         onError?.(error);
@@ -652,8 +663,7 @@ export function useChat({
     abortActiveRequest();
 
     // Remove last assistant message, then re-send the remaining history
-    const lastAssistant =
-      stateRef.current.messages[stateRef.current.messages.length - 1];
+    const lastAssistant = stateRef.current.messages[stateRef.current.messages.length - 1];
     stateRef.current.setMessages((prev) => {
       const last = prev[prev.length - 1];
       if (last?.role === "assistant") return prev.slice(0, -1);
@@ -672,10 +682,7 @@ export function useChat({
 
     try {
       stateRef.current.setStatus("streaming");
-      await runRequest(
-        messagesForRequest(stateRef.current.messages),
-        controller,
-      );
+      await runRequest(messagesForRequest(stateRef.current.messages), controller);
     } catch (err: unknown) {
       // A newer request has taken over — it owns the state from here on.
       if (abortRef.current !== controller) return;

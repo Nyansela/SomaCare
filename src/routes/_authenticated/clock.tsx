@@ -107,12 +107,19 @@ function ClockPage() {
         });
         if (Capacitor.isNativePlatform()) {
           LocalNotifications.schedule({
-            notifications: [{
-              title: "Adwoa Reminder",
-              body: r.label,
-              id: Math.abs(r.id.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0)) % 100000 + 2000,
-              schedule: { at: new Date(Date.now() + 1000) },
-            }],
+            notifications: [
+              {
+                title: "Adwoa Reminder",
+                body: r.label,
+                id:
+                  (Math.abs(
+                    r.id.split("").reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0),
+                  ) %
+                    100000) +
+                  2000,
+                schedule: { at: new Date(Date.now() + 1000) },
+              },
+            ],
           }).catch(() => {});
         } else if ("Notification" in window && Notification.permission === "granted") {
           new Notification("Adwoa reminder", { body: r.label });

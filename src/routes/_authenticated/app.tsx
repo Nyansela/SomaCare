@@ -172,10 +172,7 @@ function Dashboard() {
         plan.duration_days,
       );
       const [{ data: done }, daysTable] = await Promise.all([
-        supabase
-          .from("plan_day_completions")
-          .select("day_number")
-          .eq("plan_id", plan.id),
+        supabase.from("plan_day_completions").select("day_number").eq("plan_id", plan.id),
         "duration_days" in plan && w.data?.length ? supabase.from("workout_plan_days") : null,
       ]);
       let todaySummary = "";
@@ -185,7 +182,10 @@ function Dashboard() {
           .eq("plan_id", plan.id)
           .eq("day_number", dayNumber)
           .maybeSingle();
-        const exercises = ((dayRows?.exercises as Array<{ name: string }> | null) ?? []).slice(0, 3);
+        const exercises = ((dayRows?.exercises as Array<{ name: string }> | null) ?? []).slice(
+          0,
+          3,
+        );
         todaySummary = exercises.map((e) => e.name).join(", ");
       }
       const doneSet = new Set((done ?? []).map((d) => d.day_number));
@@ -271,7 +271,9 @@ function Dashboard() {
         <section className="soma-card p-3.5 sm:p-5 lg:col-span-4">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
-              <h2 className="truncate font-display text-base font-semibold sm:text-lg">Latest readings</h2>
+              <h2 className="truncate font-display text-base font-semibold sm:text-lg">
+                Latest readings
+              </h2>
               <p className="text-xs text-muted-foreground">From your Health Vault</p>
             </div>
             <Link to="/trackers/vitals" className="shrink-0 text-xs text-primary hover:underline">
@@ -317,9 +319,15 @@ function Dashboard() {
                           {info.unit ? ` ${info.unit}` : ""}
                         </span>
                         {trend === "down" ? (
-                          <TrendingDown className="h-4 w-4 text-emerald-500" aria-label="trending down" />
+                          <TrendingDown
+                            className="h-4 w-4 text-emerald-500"
+                            aria-label="trending down"
+                          />
                         ) : trend === "up" ? (
-                          <TrendingUp className="h-4 w-4 text-destructive" aria-label="trending up" />
+                          <TrendingUp
+                            className="h-4 w-4 text-destructive"
+                            aria-label="trending up"
+                          />
                         ) : trend === "flat" ? (
                           <Minus className="h-4 w-4 text-muted-foreground" aria-label="stable" />
                         ) : null}
@@ -352,7 +360,9 @@ function Dashboard() {
         <section className="soma-card p-3.5 sm:p-5 lg:col-span-4">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
-              <h2 className="truncate font-display text-base font-semibold sm:text-lg">Today's medications</h2>
+              <h2 className="truncate font-display text-base font-semibold sm:text-lg">
+                Today's medications
+              </h2>
               <p className="text-xs text-muted-foreground">Tap to mark as taken</p>
             </div>
             <Link to="/medications" className="shrink-0 text-xs text-primary hover:underline">
@@ -378,14 +388,20 @@ function Dashboard() {
                       <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />
                     )}
                     <div className="min-w-0 flex-1">
-                      <div className={`truncate text-sm ${taken ? "text-muted-foreground line-through" : "font-medium"}`}>
+                      <div
+                        className={`truncate text-sm ${taken ? "text-muted-foreground line-through" : "font-medium"}`}
+                      >
                         {m.name}
                       </div>
                       <div className="truncate text-xs text-muted-foreground">
-                        {[m.dose, m.scheduled_time?.slice(0, 5), m.frequency].filter(Boolean).join(" · ") || "No schedule"}
+                        {[m.dose, m.scheduled_time?.slice(0, 5), m.frequency]
+                          .filter(Boolean)
+                          .join(" · ") || "No schedule"}
                       </div>
                     </div>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${taken ? "bg-emerald-500/15 text-emerald-600" : "bg-muted text-muted-foreground"}`}>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${taken ? "bg-emerald-500/15 text-emerald-600" : "bg-muted text-muted-foreground"}`}
+                    >
                       {taken ? "Taken" : "Not taken"}
                     </span>
                   </button>
@@ -438,7 +454,10 @@ function Dashboard() {
                   variant={activePlans.data.doneToday ? "outline" : "default"}
                   disabled={activePlans.data.doneToday || markPlanDone.isPending}
                   onClick={() => markPlanDone.mutate()}
-                  className={cn(activePlans.data.doneToday ? "" : "soma-gradient soma-glow border-0 text-white", "gap-1.5")}
+                  className={cn(
+                    activePlans.data.doneToday ? "" : "soma-gradient soma-glow border-0 text-white",
+                    "gap-1.5",
+                  )}
                 >
                   {markPlanDone.isPending && !activePlans.data.doneToday ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

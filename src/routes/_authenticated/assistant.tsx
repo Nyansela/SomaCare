@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
@@ -34,6 +34,7 @@ import {
   AudioLines,
   ChevronsDown,
   Crown,
+  X,
 } from "lucide-react";
 import { AdwoaBlob } from "@/components/adwoa-blob";
 import { AppShell } from "@/components/app-shell";
@@ -53,6 +54,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { UpgradePrompt } from "@/components/upgrade-prompt";
+import { useSubscription, getAiUsage } from "@/lib/subscription";
 
 /**
  * Overflow-safe, app-styled markdown renderer for AI messages. Without these
@@ -114,10 +117,7 @@ const mdComponents: Components = {
 
 export const Route = createFileRoute("/_authenticated/assistant")({
   validateSearch: (search: Record<string, unknown>): { ask?: string } => ({
-    ask:
-      typeof search.ask === "string" && search.ask.trim()
-        ? search.ask.slice(0, 500)
-        : undefined,
+    ask: typeof search.ask === "string" && search.ask.trim() ? search.ask.slice(0, 500) : undefined,
   }),
   head: () => ({
     meta: [{ title: "AI Assistant — Adwoa Health" }, { name: "robots", content: "noindex" }],
@@ -503,8 +503,6 @@ function AssistantPage() {
             Main Conversation Canvas
            ═══════════════════════════════════════════════════════════ */}
         <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl bg-background/50 lg:rounded-none">
-
-
           {activeId ? (
             <ChatWindow
               key={activeId}
@@ -604,6 +602,14 @@ function ChatWindow({
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const qc = useQueryClient();
+
+  // ── Free-tier AI usage limit ─────────────────────────────────────
+  // The subscription query carries the server-side counter; getAiUsage()
+  // mirrors the server's 20-messages-per-30-days rule for the free tier.
+  const subscription = useSubscription();
+  const usage = getAiUsage(subscription.data);
+  const [usageBannerDismissed, setUsageBannerDismissed] = useState(false);
+  const usageBlocked = usage.overLimit && !usageBannerDismissed;
 
   // ── Voice playback (Twi TTS) ─────────────────────────────────────
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -721,8 +727,7 @@ function ChatWindow({
           const parsed = (await res.text()) as string;
           const detail = JSON.parse(parsed) as { error?: string; message?: string };
           if (detail.error === "tier_restricted") {
-            message =
-              detail.message || "This feature requires SomaCare Plus or higher.";
+            message = detail.message || "This feature requires SomaCare Plus or higher.";
           }
         } catch {
           // not JSON — keep the generic message
@@ -752,12 +757,20 @@ function ChatWindow({
     id: threadId,
     messages: initialMessages,
     onError: (e) => toast.error(e.message || "Assistant error"),
+    onUsageLimit: () => {
+      // The server says the free allowance is used up — refresh the counter
+      // and bring the upgrade banner back if the user had dismissed it.
+      setUsageBannerDismissed(false);
+      void qc.invalidateQueries({ queryKey: ["subscription"] });
+    },
     onFinish: ({ messages: finalMessages }) => {
       // Keep the react-query cache in sync with what was actually said, so
       // revisiting this thread shows the full conversation immediately
       // instead of a stale snapshot.
       qc.setQueryData(["ai", "messages", threadId], finalMessages);
       onTitleMaybeChanged();
+      // Refresh the usage counter so the remaining-messages line stays honest.
+      void qc.invalidateQueries({ queryKey: ["subscription"] });
     },
   });
 
@@ -773,15 +786,17 @@ function ChatWindow({
 
   // Auto-play Adwoa's reply once streaming finishes
   useEffect(() => {
-    const wasBusy =
-      prevStatusRef.current === "submitted" || prevStatusRef.current === "streaming";
+    const wasBusy = prevStatusRef.current === "submitted" || prevStatusRef.current === "streaming";
     prevStatusRef.current = status;
     if (!wasBusy || status !== "ready") return;
     const last = messages[messages.length - 1];
     if (!last || last.role !== "assistant") return;
     if (playedRef.current.has(last.id)) return;
     playedRef.current.add(last.id);
-    const replyText = last.parts.map((p) => (p.type === "text" ? p.text : "")).join("").trim();
+    const replyText = last.parts
+      .map((p) => (p.type === "text" ? p.text : ""))
+      .join("")
+      .trim();
     if (!replyText) return;
     if (!voiceAutoPlay) return;
     if (liveOpen) return;
@@ -794,7 +809,7 @@ function ChatWindow({
 
   const send = async (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed || busy) return;
+    if (!trimmed || busy || usage.overLimit) return;
     setInput("");
     await sendMessage({ text: trimmed });
   };
@@ -823,6 +838,41 @@ function ChatWindow({
         ref={scrollRef}
         className="relative min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-6 md:px-8"
       >
+        {/* Free-tier usage limit reached — show the upgrade prompt once per
+            session (dismissible, never a forced redirect). */}
+        {usageBlocked && (
+          <div className="mx-auto mb-4 max-w-3xl">
+            <div className="relative rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setUsageBannerDismissed(true)}
+                className="absolute right-3 top-3 rounded-lg p-1 text-muted-foreground transition hover:bg-primary/10 hover:text-foreground"
+                aria-label="Dismiss"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <div className="flex items-start gap-3 pr-8">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/15">
+                  <Crown className="h-5 w-5 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-display text-sm font-bold">
+                    You've used your free AI messages
+                  </h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Free includes {usage.limit ?? 0} conversations per month. Upgrade to SomaCare
+                    Plus for unlimited AI chat, plans and insights.
+                  </p>
+                </div>
+              </div>
+              <Link to="/upgrade" className="mt-3 inline-block">
+                <Button size="sm" className="soma-gradient soma-glow border-0 text-white">
+                  <Sparkles className="mr-1.5 h-4 w-4" /> Upgrade to Plus
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
         {messages.length === 0 && (
           <div className="mx-auto max-w-3xl py-8 text-center">
             <motion.div
@@ -849,14 +899,20 @@ function ChatWindow({
                   onClick={() => send(s.fallback)}
                   className="group relative"
                 >
-                  <div className={cn("rounded-2xl border border-border bg-card p-3 text-left transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98]", "bg-gradient-to-br", s.tint)}>
+                  <div
+                    className={cn(
+                      "rounded-2xl border border-border bg-card p-3 text-left transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98]",
+                      "bg-gradient-to-br",
+                      s.tint,
+                    )}
+                  >
                     <div className="flex items-center gap-3">
                       <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-card shadow-sm">
                         <s.icon className="h-4 w-4 text-primary" />
                       </div>
                       <span className="font-medium text-foreground/90 text-xs">{s.fallback}</span>
-                      </div>
                     </div>
+                  </div>
                 </motion.button>
               ))}
             </div>
@@ -888,12 +944,17 @@ function ChatWindow({
               <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-destructive/15">
-                    <motion.div animate={{ rotate: [0, -8, 8, -4, 0] }} transition={{ duration: 0.5, delay: 0.1 }}>
+                    <motion.div
+                      animate={{ rotate: [0, -8, 8, -4, 0] }}
+                      transition={{ duration: 0.5, delay: 0.1 }}
+                    >
                       <XCircle className="h-5 w-5 text-destructive" />
                     </motion.div>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-destructive/80">Something went wrong</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-destructive/80">
+                      Something went wrong
+                    </p>
                     <p className="mt-0.5 text-sm text-foreground/80">{error.message}</p>
                   </div>
                   <Button
@@ -926,7 +987,7 @@ function ChatWindow({
                 size="icon"
                 variant="outline"
                 onClick={() => setLiveOpen(true)}
-                disabled={busy}
+                disabled={busy || usage.overLimit}
                 className="h-9 w-9 shrink-0 rounded-xl sm:h-10 sm:w-10 sm:rounded-2xl"
                 aria-label="Start live voice conversation"
                 title="Live conversation"
@@ -948,9 +1009,14 @@ function ChatWindow({
                     send(input);
                   }
                 }}
-                placeholder="Ask Adwoa anything about your health or medications…"
+                placeholder={
+                  usage.overLimit
+                    ? "Free AI messages used up — upgrade to keep chatting"
+                    : "Ask Adwoa anything about your health or medications…"
+                }
+                disabled={usageBlocked}
                 rows={1}
-                className="min-h-[44px] max-h-40 resize-none border-0 bg-transparent px-1 py-2.5 text-base shadow-none focus-visible:ring-0 sm:text-[15px]"
+                className="min-h-[44px] max-h-40 resize-none border-0 bg-transparent px-1 py-2.5 text-base shadow-none focus-visible:ring-0 disabled:cursor-not-allowed sm:text-[15px]"
               />
               {busy ? (
                 <Button
@@ -967,7 +1033,7 @@ function ChatWindow({
                 <Button
                   type="submit"
                   size="icon"
-                  disabled={!input.trim()}
+                  disabled={!input.trim() || usageBlocked}
                   className="h-9 w-9 shrink-0 rounded-xl soma-gradient text-white sm:h-10 sm:w-10 sm:rounded-2xl hover:scale-105 active:scale-95 transition-transform"
                   aria-label="Send"
                 >
@@ -976,6 +1042,13 @@ function ChatWindow({
               )}
             </div>
           </div>
+          {usage.limit !== null && (
+            <p className="mt-1.5 text-center text-[10px] leading-snug text-muted-foreground sm:text-[11px]">
+              {usage.overLimit
+                ? "Free AI messages used up — upgrade to SomaCare Plus for unlimited chat."
+                : `${Math.min(usage.used, usage.limit)} of ${usage.limit} free AI messages used this month.`}
+            </p>
+          )}
           <p className="mt-1.5 text-center text-[10px] leading-snug text-muted-foreground sm:text-[11px]">
             Adwoa AI provides general guidance for informational purposes, not formal diagnosis. In
             emergencies contact local health services.
@@ -1030,7 +1103,8 @@ function ThinkingIndicator() {
     >
       <div className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl soma-gradient soma-glow">
         <Sparkles className="h-4 w-4 text-white" />
-      </div>              <div className="rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
+      </div>{" "}
+      <div className="rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
         <div className="flex items-center gap-3">
           <span className="text-xs text-muted-foreground font-medium">{steps[step]}</span>
           <div className="flex items-center gap-1">
@@ -1106,7 +1180,12 @@ function MessageBubble({
       >
         {isUser ? <UserIcon className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
       </div>
-      <div className={cn("flex min-w-0 max-w-[88%] flex-col gap-1 sm:max-w-[82%]", isUser && "items-end")}>
+      <div
+        className={cn(
+          "flex min-w-0 max-w-[88%] flex-col gap-1 sm:max-w-[82%]",
+          isUser && "items-end",
+        )}
+      >
         <div
           className={cn(
             "rounded-3xl px-3.5 py-3 text-sm leading-relaxed shadow-sm sm:px-4 sm:py-3.5 sm:text-[15px]",
@@ -1130,7 +1209,11 @@ function MessageBubble({
                 onClick={copy}
                 className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] text-muted-foreground transition hover:text-foreground"
               >
-                {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                {copied ? (
+                  <Check className="h-3 w-3 text-emerald-500" />
+                ) : (
+                  <Copy className="h-3 w-3" />
+                )}
                 {copied ? "Copied" : "Copy"}
               </button>
             )}
@@ -1192,9 +1275,7 @@ function MessageBubble({
         {/* ── Pending write-action confirmation cards ────────────── */}
         {!isUser &&
           toolParts.some(
-            (part) =>
-              WRITE_TOOLS.includes(part.type.slice(5)) &&
-              !isTierRestrictedTool(part),
+            (part) => WRITE_TOOLS.includes(part.type.slice(5)) && !isTierRestrictedTool(part),
           ) && (
             <div className="mt-1 flex w-full flex-col gap-2">
               {toolParts
@@ -1461,7 +1542,10 @@ function LiveConversationOverlay({
     const last = messages[messages.length - 1];
     if (!last || last.role !== "assistant") return;
     awaitingReplyRef.current = false;
-    const text = last.parts.map((p) => (p.type === "text" ? p.text : "")).join("").trim();
+    const text = last.parts
+      .map((p) => (p.type === "text" ? p.text : ""))
+      .join("")
+      .trim();
     const hasTools = last.parts.some(
       (p) => typeof p.type === "string" && p.type.startsWith("tool-"),
     );
@@ -1544,7 +1628,10 @@ function LiveConversationOverlay({
           className="mx-auto w-full max-w-lg flex-1 space-y-2 overflow-y-auto px-5 pb-2 [mask-image:linear-gradient(to_bottom,transparent,black_12%)]"
         >
           {recent.map((m) => {
-            const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("").trim();
+            const text = m.parts
+              .map((p) => (p.type === "text" ? p.text : ""))
+              .join("")
+              .trim();
             if (!text) return null;
             const isUser = m.role === "user";
             return (
@@ -1552,9 +1639,7 @@ function LiveConversationOverlay({
                 <p
                   className={cn(
                     "max-w-[80%] rounded-2xl px-3 py-2 text-xs leading-relaxed line-clamp-4",
-                    isUser
-                      ? "bg-primary/20 text-foreground"
-                      : "bg-card/70 text-muted-foreground",
+                    isUser ? "bg-primary/20 text-foreground" : "bg-card/70 text-muted-foreground",
                   )}
                 >
                   {text}
@@ -1602,7 +1687,11 @@ function LiveConversationOverlay({
                 : "bg-secondary text-foreground hover:bg-secondary/80",
             )}
           >
-            {phase === "listening" ? <AudioLines className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+            {phase === "listening" ? (
+              <AudioLines className="h-6 w-6" />
+            ) : (
+              <Mic className="h-6 w-6" />
+            )}
           </Button>
           <Button
             size="icon"

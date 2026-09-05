@@ -8,7 +8,14 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -265,7 +272,9 @@ function ProfilePage() {
         },
       },
       accessibility: { ...prev.accessibility, ...(prefs.accessibility as object) },
-      savedThemes: Array.isArray(prefs.savedThemes) ? (prefs.savedThemes as ThemeSettings["savedThemes"]) : [],
+      savedThemes: Array.isArray(prefs.savedThemes)
+        ? (prefs.savedThemes as ThemeSettings["savedThemes"])
+        : [],
     }));
   }, [profileData]);
 
@@ -398,7 +407,13 @@ function ProfilePage() {
       if (!uid) throw new Error("Not authenticated");
 
       const emergencyContacts = clinical.emergency_name
-        ? [{ name: clinical.emergency_name, phone: clinical.emergency_phone, relation: clinical.emergency_relation }]
+        ? [
+            {
+              name: clinical.emergency_name,
+              phone: clinical.emergency_phone,
+              relation: clinical.emergency_relation,
+            },
+          ]
         : [];
 
       const allPrefs = {
@@ -418,10 +433,16 @@ function ProfilePage() {
           avatar_url: identity.avatar_url || null,
           locale: identity.locale,
           allergies: clinical.allergies
-            ? clinical.allergies.split(",").map((s) => s.trim()).filter(Boolean)
+            ? clinical.allergies
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean)
             : [],
           chronic_conditions: clinical.chronic_conditions
-            ? clinical.chronic_conditions.split(",").map((s) => s.trim()).filter(Boolean)
+            ? clinical.chronic_conditions
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean)
             : [],
           emergency_contacts: emergencyContacts,
           preferences: allPrefs,
@@ -499,7 +520,11 @@ function ProfilePage() {
             <div className="relative">
               <div className="flex h-24 w-24 items-center justify-center rounded-full bg-card text-primary font-bold text-3xl overflow-hidden border-4 border-card shadow-lg">
                 {identity.avatar_url ? (
-                  <img src={identity.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                  <img
+                    src={identity.avatar_url}
+                    alt="Avatar"
+                    className="h-full w-full object-cover"
+                  />
                 ) : (
                   <User className="h-10 w-10" />
                 )}
@@ -511,7 +536,11 @@ function ProfilePage() {
                 disabled={uploadingAvatar}
                 onClick={() => avatarFileRef.current?.click()}
               >
-                {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                {uploadingAvatar ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
               </button>
               <input
                 ref={avatarFileRef}
@@ -558,7 +587,8 @@ function ProfilePage() {
                 value={tab.id}
                 className="flex-1 flex items-center gap-1.5 justify-center py-2.5 text-[10px] sm:text-xs md:text-sm min-w-0"
               >
-                <tab.icon className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{tab.label}</span>
+                <tab.icon className="h-3.5 w-3.5 shrink-0" />{" "}
+                <span className="truncate">{tab.label}</span>
               </TabsTrigger>
             ))}
           </TabsList>
@@ -566,13 +596,18 @@ function ProfilePage() {
           {/* ═══════════════════════════════════════════════════════════ */}
           {/*  TAB 1 — Identity & Basics                                */}
           {/* ═══════════════════════════════════════════════════════════ */}
-          <TabsContent value="identity" className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-2">
+          <TabsContent
+            value="identity"
+            className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-2"
+          >
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-4 w-4 text-primary" /> Personal Information
                 </CardTitle>
-                <CardDescription>Your basic identity — used across health records and AI.</CardDescription>
+                <CardDescription>
+                  Your basic identity — used across health records and AI.
+                </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div>
@@ -596,9 +631,13 @@ function ProfilePage() {
                       onClick={() => avatarFileRef.current?.click()}
                     >
                       {uploadingAvatar ? (
-                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading…</>
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading…
+                        </>
                       ) : (
-                        <><Camera className="mr-2 h-4 w-4" /> Choose photo</>
+                        <>
+                          <Camera className="mr-2 h-4 w-4" /> Choose photo
+                        </>
                       )}
                     </Button>
                     {identity.avatar_url && (
@@ -674,25 +713,35 @@ function ProfilePage() {
           {/* ═══════════════════════════════════════════════════════════ */}
           {/*  TAB 2 — Clinical Profile                                 */}
           {/* ═══════════════════════════════════════════════════════════ */}
-          <TabsContent value="clinical" className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-2">
+          <TabsContent
+            value="clinical"
+            className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-2"
+          >
             <div className="grid gap-6 sm:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Heart className="h-4 w-4 text-primary" /> Baselines
                   </CardTitle>
-                  <CardDescription>Static measurements for BMI, dosing, and fitness plans.</CardDescription>
+                  <CardDescription>
+                    Static measurements for BMI, dosing, and fitness plans.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4">
                   <div>
                     <Label>Blood Type</Label>
-                    <Select value={clinical.blood_type} onValueChange={(v) => updateClinical("blood_type", v)}>
+                    <Select
+                      value={clinical.blood_type}
+                      onValueChange={(v) => updateClinical("blood_type", v)}
+                    >
                       <SelectTrigger className="mt-1.5">
                         <SelectValue placeholder="Select blood type" />
                       </SelectTrigger>
                       <SelectContent>
                         {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((bt) => (
-                          <SelectItem key={bt} value={bt}>{bt}</SelectItem>
+                          <SelectItem key={bt} value={bt}>
+                            {bt}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -716,7 +765,9 @@ function ProfilePage() {
                   <CardTitle className="flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-warning" /> Allergies
                   </CardTitle>
-                  <CardDescription>Comma-separated. Adwoa will flag these in nutrition & medication advice.</CardDescription>
+                  <CardDescription>
+                    Comma-separated. Adwoa will flag these in nutrition & medication advice.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <textarea
@@ -736,7 +787,8 @@ function ProfilePage() {
                   <Activity className="h-4 w-4 text-primary" /> Chronic Conditions
                 </CardTitle>
                 <CardDescription>
-                  Lets Adwoa contextualize vitals: "your BP is high, and you have hypertension noted."
+                  Lets Adwoa contextualize vitals: "your BP is high, and you have hypertension
+                  noted."
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -796,7 +848,10 @@ function ProfilePage() {
           {/* ═══════════════════════════════════════════════════════════ */}
           {/*  TAB 3 — Preferences (Appearance + Health)                */}
           {/* ═══════════════════════════════════════════════════════════ */}
-          <TabsContent value="preferences" className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-2">
+          <TabsContent
+            value="preferences"
+            className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-2"
+          >
             {/* Voice & Units */}
             <div className="grid gap-6 sm:grid-cols-2">
               <Card>
@@ -810,7 +865,9 @@ function ProfilePage() {
                   <div className="flex items-center justify-between gap-4">
                     <div className="space-y-0.5">
                       <Label>Speak replies automatically</Label>
-                      <p className="text-xs text-muted-foreground">Play Adwoa's voice as soon as she finishes writing.</p>
+                      <p className="text-xs text-muted-foreground">
+                        Play Adwoa's voice as soon as she finishes writing.
+                      </p>
                     </div>
                     <Switch
                       checked={preferences.voiceAutoPlay}
@@ -828,7 +885,10 @@ function ProfilePage() {
                   <CardDescription>Choose how your health data is displayed.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Select value={preferences.units} onValueChange={(v) => updatePreference("units", v)}>
+                  <Select
+                    value={preferences.units}
+                    onValueChange={(v) => updatePreference("units", v)}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -914,7 +974,9 @@ function ProfilePage() {
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="h-4 w-4 text-primary" /> Vitals Thresholds
                 </CardTitle>
-                <CardDescription>Customize what counts as "abnormal" for your vitals.</CardDescription>
+                <CardDescription>
+                  Customize what counts as "abnormal" for your vitals.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
@@ -926,7 +988,10 @@ function ProfilePage() {
                         type="number"
                         value={preferences.vitalsThresholds.bloodPressure.systolic}
                         onChange={(e) =>
-                          updatePreference("vitalsThresholds.bloodPressure.systolic", parseInt(e.target.value) || 0)
+                          updatePreference(
+                            "vitalsThresholds.bloodPressure.systolic",
+                            parseInt(e.target.value) || 0,
+                          )
                         }
                         className="mt-1.5"
                       />
@@ -937,7 +1002,10 @@ function ProfilePage() {
                         type="number"
                         value={preferences.vitalsThresholds.bloodPressure.diastolic}
                         onChange={(e) =>
-                          updatePreference("vitalsThresholds.bloodPressure.diastolic", parseInt(e.target.value) || 0)
+                          updatePreference(
+                            "vitalsThresholds.bloodPressure.diastolic",
+                            parseInt(e.target.value) || 0,
+                          )
                         }
                         className="mt-1.5"
                       />
@@ -953,7 +1021,10 @@ function ProfilePage() {
                         type="number"
                         value={preferences.vitalsThresholds.heartRate.min}
                         onChange={(e) =>
-                          updatePreference("vitalsThresholds.heartRate.min", parseInt(e.target.value) || 0)
+                          updatePreference(
+                            "vitalsThresholds.heartRate.min",
+                            parseInt(e.target.value) || 0,
+                          )
                         }
                         className="mt-1.5"
                       />
@@ -964,7 +1035,10 @@ function ProfilePage() {
                         type="number"
                         value={preferences.vitalsThresholds.heartRate.max}
                         onChange={(e) =>
-                          updatePreference("vitalsThresholds.heartRate.max", parseInt(e.target.value) || 0)
+                          updatePreference(
+                            "vitalsThresholds.heartRate.max",
+                            parseInt(e.target.value) || 0,
+                          )
                         }
                         className="mt-1.5"
                       />
@@ -980,7 +1054,10 @@ function ProfilePage() {
                         type="number"
                         value={preferences.vitalsThresholds.glucose.min}
                         onChange={(e) =>
-                          updatePreference("vitalsThresholds.glucose.min", parseInt(e.target.value) || 0)
+                          updatePreference(
+                            "vitalsThresholds.glucose.min",
+                            parseInt(e.target.value) || 0,
+                          )
                         }
                         className="mt-1.5"
                       />
@@ -991,7 +1068,10 @@ function ProfilePage() {
                         type="number"
                         value={preferences.vitalsThresholds.glucose.max}
                         onChange={(e) =>
-                          updatePreference("vitalsThresholds.glucose.max", parseInt(e.target.value) || 0)
+                          updatePreference(
+                            "vitalsThresholds.glucose.max",
+                            parseInt(e.target.value) || 0,
+                          )
                         }
                         className="mt-1.5"
                       />
@@ -1002,14 +1082,17 @@ function ProfilePage() {
                   <Label>Weight Change Threshold (kg)</Label>
                   <Slider
                     value={[preferences.vitalsThresholds.weight.changeThreshold]}
-                    onValueChange={(v) => updatePreference("vitalsThresholds.weight.changeThreshold", v[0])}
+                    onValueChange={(v) =>
+                      updatePreference("vitalsThresholds.weight.changeThreshold", v[0])
+                    }
                     min={1}
                     max={10}
                     step={1}
                     className="mt-2"
                   />
                   <p className="text-sm text-muted-foreground mt-1">
-                    Alert me if my weight changes by {preferences.vitalsThresholds.weight.changeThreshold} kg or more.
+                    Alert me if my weight changes by{" "}
+                    {preferences.vitalsThresholds.weight.changeThreshold} kg or more.
                   </p>
                 </div>
               </CardContent>
@@ -1051,7 +1134,10 @@ function ProfilePage() {
           {/* ═══════════════════════════════════════════════════════════ */}
           {/*  TAB 4 — Notifications                                    */}
           {/* ═══════════════════════════════════════════════════════════ */}
-          <TabsContent value="notifications" className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-2">
+          <TabsContent
+            value="notifications"
+            className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-2"
+          >
             {/* ── Push Notifications ───────────────────────────────── */}
             <Card className="relative overflow-hidden">
               <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-primary/60 to-success" />
@@ -1060,9 +1146,14 @@ function ProfilePage() {
                   <CardTitle className="flex items-center gap-2">
                     <Bell className="h-4 w-4 text-primary" /> Push Notifications
                   </CardTitle>
-                  <CardDescription>Master push notification settings & device permissions.</CardDescription>
+                  <CardDescription>
+                    Master push notification settings & device permissions.
+                  </CardDescription>
                 </div>
-                <Badge variant={preferences.pushNotifications.enabled ? "default" : "secondary"} className="mt-1">
+                <Badge
+                  variant={preferences.pushNotifications.enabled ? "default" : "secondary"}
+                  className="mt-1"
+                >
                   {preferences.pushNotifications.enabled ? "Active" : "Off"}
                 </Badge>
               </CardHeader>
@@ -1090,7 +1181,9 @@ function ProfilePage() {
                     <div className="flex items-center justify-between rounded-lg px-4 py-3">
                       <div className="space-y-0.5">
                         <Label className="text-sm">Notification sound</Label>
-                        <p className="text-xs text-muted-foreground">Play a sound with each alert.</p>
+                        <p className="text-xs text-muted-foreground">
+                          Play a sound with each alert.
+                        </p>
                       </div>
                       <Switch
                         checked={preferences.pushNotifications.sound}
@@ -1108,16 +1201,21 @@ function ProfilePage() {
                                 <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                Makes medication reminders high importance with a persistent alarm sound.
+                                Makes medication reminders high importance with a persistent alarm
+                                sound.
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </div>
-                        <p className="text-xs text-muted-foreground">High importance with persistent alarm sound.</p>
+                        <p className="text-xs text-muted-foreground">
+                          High importance with persistent alarm sound.
+                        </p>
                       </div>
                       <Switch
                         checked={preferences.pushNotifications.alarmPriorityMedications}
-                        onCheckedChange={(v) => updatePreference("pushNotifications.alarmPriorityMedications", v)}
+                        onCheckedChange={(v) =>
+                          updatePreference("pushNotifications.alarmPriorityMedications", v)
+                        }
                       />
                     </div>
                   </>
@@ -1148,11 +1246,15 @@ function ProfilePage() {
                 <CardHeader className="flex flex-row items-start justify-between space-y-0">
                   <div className="space-y-1">
                     <CardTitle className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-amber-600 dark:text-amber-400" /> Daily Check-in
+                      <Calendar className="h-4 w-4 text-amber-600 dark:text-amber-400" /> Daily
+                      Check-in
                     </CardTitle>
                     <CardDescription>A gentle nudge to log your vitals each day.</CardDescription>
                   </div>
-                  <Badge variant={preferences.dailyCheckInReminder ? "default" : "secondary"} className="mt-1">
+                  <Badge
+                    variant={preferences.dailyCheckInReminder ? "default" : "secondary"}
+                    className="mt-1"
+                  >
                     {preferences.dailyCheckInReminder ? "On" : "Off"}
                   </Badge>
                 </CardHeader>
@@ -1182,11 +1284,15 @@ function ProfilePage() {
                 <CardHeader className="flex flex-row items-start justify-between space-y-0">
                   <div className="space-y-1">
                     <CardTitle className="flex items-center gap-2">
-                      <Pill className="h-4 w-4 text-violet-600 dark:text-violet-400" /> Medication Reminders
+                      <Pill className="h-4 w-4 text-violet-600 dark:text-violet-400" /> Medication
+                      Reminders
                     </CardTitle>
                     <CardDescription>Never miss a dose with timely alerts.</CardDescription>
                   </div>
-                  <Badge variant={preferences.medicationReminders ? "default" : "secondary"} className="mt-1">
+                  <Badge
+                    variant={preferences.medicationReminders ? "default" : "secondary"}
+                    className="mt-1"
+                  >
                     {preferences.medicationReminders ? "On" : "Off"}
                   </Badge>
                 </CardHeader>
@@ -1222,15 +1328,40 @@ function ProfilePage() {
                   </CardTitle>
                   <CardDescription>Choose which emails you receive.</CardDescription>
                 </div>
-                <Badge variant={preferences.emailNotifications.dailySummary || preferences.emailNotifications.weeklySummary || preferences.emailNotifications.abnormalVitals ? "default" : "secondary"} className="mt-1">
-                  {(preferences.emailNotifications.dailySummary || preferences.emailNotifications.weeklySummary || preferences.emailNotifications.abnormalVitals) ? "Active" : "Off"}
+                <Badge
+                  variant={
+                    preferences.emailNotifications.dailySummary ||
+                    preferences.emailNotifications.weeklySummary ||
+                    preferences.emailNotifications.abnormalVitals
+                      ? "default"
+                      : "secondary"
+                  }
+                  className="mt-1"
+                >
+                  {preferences.emailNotifications.dailySummary ||
+                  preferences.emailNotifications.weeklySummary ||
+                  preferences.emailNotifications.abnormalVitals
+                    ? "Active"
+                    : "Off"}
                 </Badge>
               </CardHeader>
               <CardContent className="space-y-1">
                 {[
-                  { key: "dailySummary" as const, label: "Daily Summary", desc: "A recap of your day's health data." },
-                  { key: "weeklySummary" as const, label: "Weekly Summary", desc: "A weekly digest of your health trends." },
-                  { key: "abnormalVitals" as const, label: "Abnormal Vitals Alerts", desc: "Instant alert when a reading is out of range." },
+                  {
+                    key: "dailySummary" as const,
+                    label: "Daily Summary",
+                    desc: "A recap of your day's health data.",
+                  },
+                  {
+                    key: "weeklySummary" as const,
+                    label: "Weekly Summary",
+                    desc: "A weekly digest of your health trends.",
+                  },
+                  {
+                    key: "abnormalVitals" as const,
+                    label: "Abnormal Vitals Alerts",
+                    desc: "Instant alert when a reading is out of range.",
+                  },
                 ].map((item, i) => (
                   <div key={item.key} className="space-y-0">
                     {i > 0 && <Separator className="my-2" />}
@@ -1241,7 +1372,9 @@ function ProfilePage() {
                       </div>
                       <Switch
                         checked={preferences.emailNotifications[item.key]}
-                        onCheckedChange={(v) => updatePreference(`emailNotifications.${item.key}`, v)}
+                        onCheckedChange={(v) =>
+                          updatePreference(`emailNotifications.${item.key}`, v)
+                        }
                       />
                     </div>
                   </div>
@@ -1253,14 +1386,19 @@ function ProfilePage() {
           {/* ═══════════════════════════════════════════════════════════ */}
           {/*  TAB 5 — Privacy & Security                               */}
           {/* ═══════════════════════════════════════════════════════════ */}
-          <TabsContent value="privacy" className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-2">
+          <TabsContent
+            value="privacy"
+            className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-2"
+          >
             <div className="grid gap-6 sm:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Shield className="h-4 w-4 text-primary" /> Data Sharing
                   </CardTitle>
-                  <CardDescription>Help improve SomaCare by sharing anonymized data.</CardDescription>
+                  <CardDescription>
+                    Help improve SomaCare by sharing anonymized data.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
@@ -1313,7 +1451,8 @@ function ProfilePage() {
                   <Switch disabled />
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Two-factor authentication is not yet available. We're working on adding this feature soon.
+                  Two-factor authentication is not yet available. We're working on adding this
+                  feature soon.
                 </p>
               </CardContent>
             </Card>
@@ -1332,7 +1471,9 @@ function ProfilePage() {
                     <Label>Default Time Range (days)</Label>
                     <Select
                       value={preferences.reports.defaultTimeRange.toString()}
-                      onValueChange={(v) => updatePreference("reports.defaultTimeRange", parseInt(v))}
+                      onValueChange={(v) =>
+                        updatePreference("reports.defaultTimeRange", parseInt(v))
+                      }
                     >
                       <SelectTrigger className="mt-1.5">
                         <SelectValue />
@@ -1354,7 +1495,9 @@ function ProfilePage() {
                           </Label>
                           <Switch
                             checked={value}
-                            onCheckedChange={(v) => updatePreference(`reports.includeSections.${key}`, v)}
+                            onCheckedChange={(v) =>
+                              updatePreference(`reports.includeSections.${key}`, v)
+                            }
                           />
                         </div>
                       ))}
@@ -1388,7 +1531,10 @@ function ProfilePage() {
           {/* ═══════════════════════════════════════════════════════════ */}
           {/*  TAB 6 — Integrations                                     */}
           {/* ═══════════════════════════════════════════════════════════ */}
-          <TabsContent value="integrations" className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-2">
+          <TabsContent
+            value="integrations"
+            className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-2"
+          >
             <div className="grid gap-6 sm:grid-cols-2">
               <Card>
                 <CardHeader>
@@ -1433,7 +1579,9 @@ function ProfilePage() {
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-emerald-600" /> Calendar Sync
                   </CardTitle>
-                  <CardDescription>Sync your health appointments with your calendar.</CardDescription>
+                  <CardDescription>
+                    Sync your health appointments with your calendar.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -1463,7 +1611,10 @@ function ProfilePage() {
           {/* ═══════════════════════════════════════════════════════════ */}
           {/*  TAB 7 — Account & Security                               */}
           {/* ═══════════════════════════════════════════════════════════ */}
-          <TabsContent value="account" className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-2">
+          <TabsContent
+            value="account"
+            className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-2"
+          >
             <div className="grid gap-6 sm:grid-cols-2">
               <Card>
                 <CardHeader>
@@ -1509,7 +1660,9 @@ function ProfilePage() {
                 <CardTitle className="flex items-center gap-2 text-destructive">
                   <AlertTriangle className="h-4 w-4" /> Danger Zone
                 </CardTitle>
-                <CardDescription>Permanently delete your account and all data. This cannot be undone.</CardDescription>
+                <CardDescription>
+                  Permanently delete your account and all data. This cannot be undone.
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Button variant="destructive" disabled>

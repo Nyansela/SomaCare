@@ -2,10 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { generateText } from "ai";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import {
-  aiLanguageInstruction,
-  isSupportedAiLanguage,
-} from "@/lib/ai-language.server";
+import { aiLanguageInstruction, isSupportedAiLanguage } from "@/lib/ai-language.server";
 
 export const Route = createFileRoute("/api/sleep")({
   server: {
@@ -83,8 +80,6 @@ export const Route = createFileRoute("/api/sleep")({
 
         // Calculate sleep statistics
         const sleepStats = calculateSleepStats(sleepLogs || []);
-
-
 
         const chronicConditions = healthVault?.chronic_conditions?.join(", ") || "None";
         const healthGoals = healthVault?.health_goals?.join(", ") || "General wellness";

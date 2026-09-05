@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { Crown, Check, Sparkles, Users, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -9,6 +9,11 @@ import { cn } from "@/lib/utils";
 import { useSubscription, type SubscriptionTier } from "@/lib/subscription";
 
 export const Route = createFileRoute("/_authenticated/upgrade")({
+  validateSearch: (search: Record<string, unknown>) => {
+    const result: { welcome?: boolean } = {};
+    if (search.welcome === true) result.welcome = true;
+    return result;
+  },
   head: () => ({
     meta: [{ title: "Upgrade — SomaCare" }, { name: "robots", content: "noindex" }],
   }),
@@ -58,11 +63,7 @@ const PLANS: TierPlan[] = [
     name: "Family",
     price: "Family",
     tagline: "Plus for the whole household",
-    features: [
-      "Everything in Plus",
-      "Manage plans for family members",
-      "Shared health context",
-    ],
+    features: ["Everything in Plus", "Manage plans for family members", "Shared health context"],
   },
 ];
 
@@ -75,6 +76,12 @@ const TIER_LABEL: Record<SubscriptionTier, string> = {
 function UpgradePage() {
   const subscription = useSubscription();
   const currentTier = subscription.data?.tier ?? "free";
+  const { welcome } = useSearch({ from: "/_authenticated/upgrade" });
+  const navigate = useNavigate();
+
+  const continueFree = () => {
+    void navigate({ to: "/app", replace: true });
+  };
 
   const [checkoutTier, setCheckoutTier] = useState<string | null>(null);
 
@@ -125,6 +132,37 @@ function UpgradePage() {
       }
     >
       <div className="space-y-6">
+        {/* Welcome banner — shown once to new free users right after signup.
+            There is always a way out (Continue with Free), so it never feels
+            like a forced paywall. */}
+        {welcome && currentTier === "free" && (
+          <div className="soma-card relative overflow-hidden p-6">
+            <div className="absolute inset-0 -z-10 soma-gradient opacity-95" />
+            <div className="relative text-white">
+              <h2 className="font-display text-xl font-bold sm:text-2xl">
+                Welcome to SomaCare! 🎉
+              </h2>
+              <p className="mt-1 max-w-xl text-sm text-white/85">
+                Your health workspace is ready. The Free plan covers everyday tracking — and when
+                you're ready for AI-generated plans, personalized insights and unlimited chats,
+                SomaCare Plus is one tap away.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  className="bg-white text-primary hover:bg-white/90"
+                  onClick={continueFree}
+                >
+                  Continue with Free
+                </Button>
+                <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium text-white">
+                  No payment required to start
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Current plan banner */}
         <div className="soma-card flex items-center justify-between gap-3 p-5">
           <div className="flex items-center gap-3">
@@ -135,9 +173,7 @@ function UpgradePage() {
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Current plan
               </p>
-              <p className="font-display text-base font-bold">
-                SomaCare {TIER_LABEL[currentTier]}
-              </p>
+              <p className="font-display text-base font-bold">SomaCare {TIER_LABEL[currentTier]}</p>
             </div>
           </div>
           <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
@@ -213,6 +249,14 @@ function UpgradePage() {
             );
           })}
         </div>
+
+        {welcome && currentTier === "free" && (
+          <div className="flex justify-center">
+            <Button variant="outline" onClick={continueFree}>
+              Not now — continue with Free
+            </Button>
+          </div>
+        )}
 
         <p className="text-center text-xs text-muted-foreground">
           Adwoa AI provides general guidance for informational purposes, not formal diagnosis.

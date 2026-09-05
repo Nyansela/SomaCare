@@ -6,7 +6,9 @@ export type RxNormDrugSuggestion = {
 export async function searchDrugs(query: string): Promise<RxNormDrugSuggestion[]> {
   if (!query || query.trim().length < 2) return [];
   try {
-    const res = await fetch(`https://rxnav.nlm.nih.gov/REST/drugs.json?name=${encodeURIComponent(query.trim())}`);
+    const res = await fetch(
+      `https://rxnav.nlm.nih.gov/REST/drugs.json?name=${encodeURIComponent(query.trim())}`,
+    );
     if (!res.ok) return [];
     const data = (await res.json()) as {
       drugGroup?: {
@@ -32,10 +34,14 @@ export async function searchDrugs(query: string): Promise<RxNormDrugSuggestion[]
   }
 }
 
-export async function normalizeDrugName(name: string): Promise<{ rxcui: string | null; name: string }> {
+export async function normalizeDrugName(
+  name: string,
+): Promise<{ rxcui: string | null; name: string }> {
   if (!name || name.trim().length === 0) return { rxcui: null, name };
   try {
-    const res = await fetch(`https://rxnav.nlm.nih.gov/REST/rxcui.json?name=${encodeURIComponent(name.trim())}`);
+    const res = await fetch(
+      `https://rxnav.nlm.nih.gov/REST/rxcui.json?name=${encodeURIComponent(name.trim())}`,
+    );
     if (!res.ok) return { rxcui: null, name };
     const data = (await res.json()) as { idGroup?: { rxnormId?: string[] } };
     const rxcui = data.idGroup?.rxnormId?.[0] || null;

@@ -16,7 +16,10 @@ export function loadDevVars() {
         const eqIndex = trimmed.indexOf("=");
         if (eqIndex > 0) {
           const key = trimmed.slice(0, eqIndex).trim();
-          const val = trimmed.slice(eqIndex + 1).trim().replace(/^["'](.*)["']$/, "$1");
+          const val = trimmed
+            .slice(eqIndex + 1)
+            .trim()
+            .replace(/^["'](.*)["']$/, "$1");
           if (!process.env[key]) {
             process.env[key] = val;
           }

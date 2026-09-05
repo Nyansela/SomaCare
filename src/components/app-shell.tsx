@@ -31,7 +31,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-
 const navGroups = [
   {
     labelKey: "nav.overview",
@@ -256,16 +255,10 @@ export function AppShell({
               {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
             </div>
             {action}
-            <Link
-              to="/profile"
-              className="group relative"
-              aria-label={t("nav.profile", "Profile")}
-            >
+            <Link to="/profile" className="group relative" aria-label={t("nav.profile", "Profile")}>
               <Avatar className="h-9 w-9 transition ring-2 ring-transparent group-hover:ring-primary/50">
                 <AvatarImage src={profile?.avatar || undefined} />
-                <AvatarFallback
-                  className="soma-gradient text-white text-xs font-semibold"
-                >
+                <AvatarFallback className="soma-gradient text-white text-xs font-semibold">
                   {profile?.name?.slice(0, 2).toUpperCase() || t("nav.you", "You")}
                 </AvatarFallback>
               </Avatar>

@@ -187,10 +187,10 @@ function hslToRgb(hsl: string): [number, number, number] {
 
 /** Phase-specific color overrides — uses accent for idle, distinct hues for others */
 const PHASE_COLORS: Record<BlobPhase, { color1: string; color2: string; intensity: number }> = {
-  idle:       { color1: "", color2: "", intensity: 0.15 },       // filled dynamically
-  listening:  { color1: "#22c55e", color2: "#86efac", intensity: 0.35 },
-  thinking:   { color1: "#6366f1", color2: "#a78bfa", intensity: 0.22 },
-  speaking:   { color1: "#8b5cf6", color2: "#c084fc", intensity: 0.45 },
+  idle: { color1: "", color2: "", intensity: 0.15 }, // filled dynamically
+  listening: { color1: "#22c55e", color2: "#86efac", intensity: 0.35 },
+  thinking: { color1: "#6366f1", color2: "#a78bfa", intensity: 0.22 },
+  speaking: { color1: "#8b5cf6", color2: "#c084fc", intensity: 0.45 },
 };
 
 function getPhaseColors(phase: BlobPhase) {
@@ -219,8 +219,16 @@ function BlobMesh({ phase }: { phase: BlobPhase }) {
     () => ({
       u_intensity: { value: config.intensity },
       u_time: { value: 0 },
-      u_color1: { value: new THREE.Color(...(phase === "idle" ? hslToRgb(config.color1) : hexToRgb(config.color1))) },
-      u_color2: { value: new THREE.Color(...(phase === "idle" ? hslToRgb(config.color2) : hexToRgb(config.color2))) },
+      u_color1: {
+        value: new THREE.Color(
+          ...(phase === "idle" ? hslToRgb(config.color1) : hexToRgb(config.color1)),
+        ),
+      },
+      u_color2: {
+        value: new THREE.Color(
+          ...(phase === "idle" ? hslToRgb(config.color2) : hexToRgb(config.color2)),
+        ),
+      },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],

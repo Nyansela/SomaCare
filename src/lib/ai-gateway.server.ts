@@ -7,8 +7,7 @@ const GEMINI_MODEL_ID = "gemini-3.5-flash-lite";
 
 export class AiProviderNotConfiguredError extends Error {}
 
-export const AI_NOT_CONFIGURED_MESSAGE =
-  "AI provider not configured. Set GEMINI_API_KEY.";
+export const AI_NOT_CONFIGURED_MESSAGE = "AI provider not configured. Set GEMINI_API_KEY.";
 
 /** Names of the providers currently configured (for diagnostics/logging). */
 export function getConfiguredProviderNames(): string[] {

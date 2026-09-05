@@ -49,10 +49,7 @@ function isEmailNotConfirmedError(err: unknown): boolean {
 function isDuplicateNameError(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;
   const msg = String((err as { message?: string }).message ?? "").toLowerCase();
-  return (
-    msg.includes("duplicate key") &&
-    msg.includes("display_name")
-  );
+  return msg.includes("duplicate key") && msg.includes("display_name");
 }
 
 /** Returns a password strength score 0-3 and which checks pass. */
@@ -105,13 +102,21 @@ function AuthPage() {
   // Countdown timer for rate-limit cooldown
   useEffect(() => {
     if (rateLimitSeconds <= 0) {
-      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
       return;
     }
     timerRef.current = setInterval(() => {
       setRateLimitSeconds((s) => (s <= 1 ? 0 : s - 1));
     }, 1000);
-    return () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } };
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
   }, [rateLimitSeconds]);
 
   useEffect(() => {
@@ -179,13 +184,16 @@ function AuthPage() {
     }
   }, []);
 
-  const onNameChange = useCallback((value: string) => {
-    setName(value);
-    if (nameCheckRef.current) clearTimeout(nameCheckRef.current);
-    nameCheckRef.current = setTimeout(() => {
-      checkNameAvailability(value);
-    }, 500);
-  }, [checkNameAvailability]);
+  const onNameChange = useCallback(
+    (value: string) => {
+      setName(value);
+      if (nameCheckRef.current) clearTimeout(nameCheckRef.current);
+      nameCheckRef.current = setTimeout(() => {
+        checkNameAvailability(value);
+      }, 500);
+    },
+    [checkNameAvailability],
+  );
 
   // Cleanup debounce timer
   useEffect(() => {
@@ -359,7 +367,14 @@ function AuthPage() {
   if (emailConfirmationPending) {
     return (
       <div className="relative flex min-h-dvh items-center justify-center p-4 sm:p-6">
-        <div className="fixed inset-0 -z-10 bg-background" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`, backgroundRepeat: 'repeat', opacity: 0.03 }} />
+        <div
+          className="fixed inset-0 -z-10 bg-background"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
+            backgroundRepeat: "repeat",
+            opacity: 0.03,
+          }}
+        />
         <div className="w-full max-w-md space-y-6 text-center">
           <div className="grid h-16 w-16 mx-auto place-items-center rounded-2xl bg-primary/10">
             <Mail className="h-8 w-8 text-primary" />
@@ -372,9 +387,7 @@ function AuthPage() {
           </p>
           <Card>
             <CardContent className="pt-6 space-y-4">
-              <p className="text-sm text-muted-foreground">
-                {t("auth.confirmationInstructions")}
-              </p>
+              <p className="text-sm text-muted-foreground">{t("auth.confirmationInstructions")}</p>
               <Button
                 variant="outline"
                 className="w-full"
@@ -390,9 +403,7 @@ function AuthPage() {
               </Button>
             </CardContent>
           </Card>
-          <p className="text-xs text-muted-foreground">
-            {t("auth.checkSpamFolder")}
-          </p>
+          <p className="text-xs text-muted-foreground">{t("auth.checkSpamFolder")}</p>
           <button
             type="button"
             onClick={() => {
@@ -412,7 +423,14 @@ function AuthPage() {
   return (
     <div className="relative flex min-h-dvh items-center justify-center p-4 sm:p-6">
       {/* Noise texture background */}
-      <div className="fixed inset-0 -z-10 bg-background" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`, backgroundRepeat: 'repeat', opacity: 0.03 }} />
+      <div
+        className="fixed inset-0 -z-10 bg-background"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
+          backgroundRepeat: "repeat",
+          opacity: 0.03,
+        }}
+      />
 
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
@@ -426,9 +444,7 @@ function AuthPage() {
             {tab === "signin" ? t("auth.welcomeBack") : t("auth.createAccount")}
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            {tab === "signin"
-              ? t("auth.signInSubtitle")
-              : t("auth.signUpSubtitle")}
+            {tab === "signin" ? t("auth.signInSubtitle") : t("auth.signUpSubtitle")}
           </p>
         </div>
 
@@ -460,7 +476,9 @@ function AuthPage() {
             <div className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">{t("auth.orContinueWith")}</span>
+            <span className="bg-background px-2 text-muted-foreground">
+              {t("auth.orContinueWith")}
+            </span>
           </div>
         </div>
 
@@ -547,18 +565,9 @@ function AuthPage() {
                 {/* ── PART C: Real-time password strength checklist ──── */}
                 {tab === "signup" && password.length > 0 && (
                   <div className="flex flex-col gap-1 pt-1">
-                    <StrengthCheck
-                      label={t("auth.pwCheckLength")}
-                      met={pwChecks.length}
-                    />
-                    <StrengthCheck
-                      label={t("auth.pwCheckLetter")}
-                      met={pwChecks.letter}
-                    />
-                    <StrengthCheck
-                      label={t("auth.pwCheckNumber")}
-                      met={pwChecks.number}
-                    />
+                    <StrengthCheck label={t("auth.pwCheckLength")} met={pwChecks.length} />
+                    <StrengthCheck label={t("auth.pwCheckLetter")} met={pwChecks.letter} />
+                    <StrengthCheck label={t("auth.pwCheckNumber")} met={pwChecks.number} />
                   </div>
                 )}
               </div>
@@ -637,9 +646,14 @@ function AuthPage() {
         {/* Footer */}
         <p className="text-center text-xs text-muted-foreground">
           {t("auth.termsText")}{" "}
-          <Link to="/auth" className="underline underline-offset-4 hover:text-foreground">{t("auth.terms")}</Link>
-          {" "}{t("auth.and")}{" "}
-          <Link to="/auth" className="underline underline-offset-4 hover:text-foreground">{t("auth.privacy")}</Link>.
+          <Link to="/auth" className="underline underline-offset-4 hover:text-foreground">
+            {t("auth.terms")}
+          </Link>{" "}
+          {t("auth.and")}{" "}
+          <Link to="/auth" className="underline underline-offset-4 hover:text-foreground">
+            {t("auth.privacy")}
+          </Link>
+          .
           <br />
           {t("auth.disclaimer")}
         </p>
@@ -651,7 +665,9 @@ function AuthPage() {
 // ── Small helper: password strength check row ────────────────────────
 function StrengthCheck({ label, met }: { label: string; met: boolean }) {
   return (
-    <span className={`flex items-center gap-1.5 text-xs ${met ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}>
+    <span
+      className={`flex items-center gap-1.5 text-xs ${met ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}
+    >
       {met ? <Check className="h-3 w-3" /> : <X className="h-3 w-3 opacity-40" />}
       {label}
     </span>

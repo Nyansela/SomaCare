@@ -38,10 +38,7 @@ export async function safeCopyToClipboard(text: string): Promise<boolean> {
 }
 
 /** Open a URL. Uses Capacitor Browser on native, window.open on web. */
-export async function safeOpenUrl(
-  url: string,
-  target = "_blank",
-): Promise<void> {
+export async function safeOpenUrl(url: string, target = "_blank"): Promise<void> {
   if (Capacitor.isNativePlatform()) {
     try {
       const { Browser } = await import("@capacitor/browser");

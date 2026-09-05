@@ -65,7 +65,9 @@ function Medications() {
     notes: "",
     rxcui: "",
   });
-  const [drugSuggestions, setDrugSuggestions] = useState<Array<{ name: string; rxcui?: string }>>([]);
+  const [drugSuggestions, setDrugSuggestions] = useState<Array<{ name: string; rxcui?: string }>>(
+    [],
+  );
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Fetch medications

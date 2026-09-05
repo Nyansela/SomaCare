@@ -129,6 +129,7 @@ export type Database = {
           id: string;
           name: string;
           notes: string | null;
+          rxcui: string | null;
           scheduled_time: string | null;
           start_date: string | null;
           updated_at: string;
@@ -144,6 +145,7 @@ export type Database = {
           id?: string;
           name: string;
           notes?: string | null;
+          rxcui?: string | null;
           scheduled_time?: string | null;
           start_date?: string | null;
           updated_at?: string;
@@ -159,6 +161,7 @@ export type Database = {
           id?: string;
           name?: string;
           notes?: string | null;
+          rxcui?: string | null;
           scheduled_time?: string | null;
           start_date?: string | null;
           updated_at?: string;
@@ -201,6 +204,8 @@ export type Database = {
       };
       profiles: {
         Row: {
+          ai_requests_period_start: string | null;
+          ai_requests_used: number;
           allergies: string[] | null;
           avatar_url: string | null;
           blood_type: string | null;
@@ -217,8 +222,11 @@ export type Database = {
           sex: string | null;
           subscription_tier: string;
           updated_at: string;
+          welcome_seen: boolean;
         };
         Insert: {
+          ai_requests_period_start?: string | null;
+          ai_requests_used?: number;
           allergies?: string[] | null;
           avatar_url?: string | null;
           blood_type?: string | null;
@@ -235,8 +243,11 @@ export type Database = {
           sex?: string | null;
           subscription_tier?: string;
           updated_at?: string;
+          welcome_seen?: boolean;
         };
         Update: {
+          ai_requests_period_start?: string | null;
+          ai_requests_used?: number;
           allergies?: string[] | null;
           avatar_url?: string | null;
           blood_type?: string | null;
@@ -253,6 +264,7 @@ export type Database = {
           sex?: string | null;
           subscription_tier?: string;
           updated_at?: string;
+          welcome_seen?: boolean;
         };
         Relationships: [];
       };
@@ -1056,6 +1068,23 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      check_display_name_available: {
+        Args: {
+          name_to_check: string;
+        };
+        Returns: boolean;
+      };
+      consume_ai_usage: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: {
+          used: number;
+          monthly_limit: number | null;
+          over_limit: boolean;
+          period_start: string | null;
+        }[];
+      };
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"];

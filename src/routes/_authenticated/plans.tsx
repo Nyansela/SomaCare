@@ -26,9 +26,19 @@ export const Route = createFileRoute("/_authenticated/plans")({
   component: PlansPage,
 });
 
-type WorkoutPlan = { id: string; title: string; goal: string; duration_days: number; start_date: string };
+type WorkoutPlan = {
+  id: string;
+  title: string;
+  goal: string;
+  duration_days: number;
+  start_date: string;
+};
 type MealPlan = WorkoutPlan;
-type PlanDay = { day_number: number; exercises?: unknown[] | null; meals?: Record<string, string> | null };
+type PlanDay = {
+  day_number: number;
+  exercises?: unknown[] | null;
+  meals?: Record<string, string> | null;
+};
 
 function currentDayNumber(plan: { start_date: string; duration_days: number }): number {
   const start = new Date(`${plan.start_date}T00:00:00`);
@@ -105,7 +115,11 @@ function PlansPage() {
   });
 
   const markDone = useMutation({
-    mutationFn: async (args: { planId: string; planType: "workout" | "meal"; dayNumber: number }) => {
+    mutationFn: async (args: {
+      planId: string;
+      planType: "workout" | "meal";
+      dayNumber: number;
+    }) => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Not authenticated");
       const { error } = await supabase.from("plan_day_completions").upsert({
@@ -123,8 +137,7 @@ function PlansPage() {
   });
 
   const loading = workoutPlans.isLoading || mealPlans.isLoading;
-  const hasPlans =
-    (workoutPlans.data?.length ?? 0) > 0 || (mealPlans.data?.length ?? 0) > 0;
+  const hasPlans = (workoutPlans.data?.length ?? 0) > 0 || (mealPlans.data?.length ?? 0) > 0;
 
   return (
     <AppShell
@@ -245,8 +258,7 @@ function PlanCard({
   onMarkDone: (dayNumber: number) => void;
 }) {
   const today = currentDayNumber(plan);
-  const doneCount =
-    [...(completed ?? [])].filter((k) => k.startsWith(`${plan.id}:`)).length;
+  const doneCount = [...(completed ?? [])].filter((k) => k.startsWith(`${plan.id}:`)).length;
   const doneToday = completed?.has(`${plan.id}:${today}`) ?? false;
   const todayPlan = days?.find((d) => d.day_number === today);
 
@@ -310,10 +322,7 @@ function PlanCard({
             variant={doneToday ? "outline" : "default"}
             disabled={doneToday || marking}
             onClick={() => onMarkDone(today)}
-            className={cn(
-              !doneToday && "soma-gradient soma-glow border-0 text-white",
-              "gap-1.5",
-            )}
+            className={cn(!doneToday && "soma-gradient soma-glow border-0 text-white", "gap-1.5")}
           >
             {doneToday ? (
               <>
@@ -335,16 +344,21 @@ function PlanCard({
           <Skeleton className="mt-3 h-16 w-full" />
         ) : planType === "workout" ? (
           <ul className="mt-3 space-y-1.5">
-            {(((todayPlan?.exercises ?? []) as Array<{ name: string; sets: number; reps: string; notes?: string }>)).map(
-              (ex, i) => (
-                <li key={i} className="flex items-baseline justify-between gap-3 text-sm">
-                  <span className="min-w-0 truncate">{ex.name}</span>
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {ex.sets} × {ex.reps}
-                  </span>
-                </li>
-              ),
-            )}
+            {(
+              (todayPlan?.exercises ?? []) as Array<{
+                name: string;
+                sets: number;
+                reps: string;
+                notes?: string;
+              }>
+            ).map((ex, i) => (
+              <li key={i} className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="min-w-0 truncate">{ex.name}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {ex.sets} × {ex.reps}
+                </span>
+              </li>
+            ))}
             {!todayPlan?.exercises?.length && (
               <li className="text-sm text-muted-foreground">Rest day or no exercises listed.</li>
             )}

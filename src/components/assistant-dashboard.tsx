@@ -32,10 +32,7 @@ export function AssistantDashboard() {
           <Activity className="h-4 w-4 text-primary" />
           <span className="text-sm font-semibold">Health Overview</span>
         </div>
-        <Link
-          to="/app"
-          className="text-[11px] font-medium text-primary hover:underline"
-        >
+        <Link to="/app" className="text-[11px] font-medium text-primary hover:underline">
           Full dashboard
         </Link>
       </div>
@@ -66,10 +63,7 @@ function LatestVitalsCard() {
     },
   });
 
-  const byKind = new Map<
-    string,
-    { unit: string | null; takenAt: string; history: number[] }
-  >();
+  const byKind = new Map<string, { unit: string | null; takenAt: string; history: number[] }>();
   if (latestVitals.data) {
     for (const v of latestVitals.data) {
       const entry = byKind.get(v.kind);
@@ -98,9 +92,7 @@ function LatestVitalsCard() {
   return (
     <div className="rounded-xl border border-border/60 bg-card/50 p-3">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-semibold text-muted-foreground">
-          Latest Vitals
-        </span>
+        <span className="text-xs font-semibold text-muted-foreground">Latest Vitals</span>
         <Link
           to="/trackers/vitals"
           className="text-[10px] font-medium text-primary hover:underline"
@@ -142,9 +134,7 @@ function LatestVitalsCard() {
           })}
         </div>
       ) : (
-        <div className="py-2 text-center text-[11px] text-muted-foreground">
-          No readings yet
-        </div>
+        <div className="py-2 text-center text-[11px] text-muted-foreground">No readings yet</div>
       )}
     </div>
   );
@@ -183,13 +173,8 @@ function MedicationsCard() {
   return (
     <div className="rounded-xl border border-border/60 bg-card/50 p-3">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-semibold text-muted-foreground">
-          Medications
-        </span>
-        <Link
-          to="/medications"
-          className="text-[10px] font-medium text-primary hover:underline"
-        >
+        <span className="text-xs font-semibold text-muted-foreground">Medications</span>
+        <Link to="/medications" className="text-[10px] font-medium text-primary hover:underline">
           Manage
         </Link>
       </div>
@@ -226,9 +211,7 @@ function MedicationsCard() {
           })}
         </div>
       ) : (
-        <div className="py-2 text-center text-[11px] text-muted-foreground">
-          No medications
-        </div>
+        <div className="py-2 text-center text-[11px] text-muted-foreground">No medications</div>
       )}
     </div>
   );
@@ -255,13 +238,8 @@ function AppointmentsCard() {
   return (
     <div className="rounded-xl border border-border/60 bg-card/50 p-3">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-semibold text-muted-foreground">
-          Appointments
-        </span>
-        <Link
-          to="/appointments"
-          className="text-[10px] font-medium text-primary hover:underline"
-        >
+        <span className="text-xs font-semibold text-muted-foreground">Appointments</span>
+        <Link to="/appointments" className="text-[10px] font-medium text-primary hover:underline">
           View all
         </Link>
       </div>
@@ -271,14 +249,9 @@ function AppointmentsCard() {
         <div className="space-y-2">
           {appointments.data.map((a) => {
             const d = new Date(a.starts_at);
-            const when = isToday(d)
-              ? "Today"
-              : isTomorrow(d)
-                ? "Tomorrow"
-                : format(d, "MMM d");
+            const when = isToday(d) ? "Today" : isTomorrow(d) ? "Tomorrow" : format(d, "MMM d");
             const initials =
-              a.provider_name.split(" ").slice(-1)[0]?.slice(0, 2).toUpperCase() ||
-              "DR";
+              a.provider_name.split(" ").slice(-1)[0]?.slice(0, 2).toUpperCase() || "DR";
             return (
               <div key={a.id} className="flex items-center gap-2">
                 <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full soma-gradient text-[10px] font-semibold text-white soma-glow">
@@ -293,9 +266,7 @@ function AppointmentsCard() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-xs font-medium">
-                    {a.provider_name}
-                  </div>
+                  <div className="truncate text-xs font-medium">{a.provider_name}</div>
                   <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                     <span className="flex items-center gap-0.5">
                       <CalendarDays className="h-2.5 w-2.5" /> {when}

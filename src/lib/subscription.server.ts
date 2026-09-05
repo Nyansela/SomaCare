@@ -28,10 +28,7 @@ const TIER_RANK: Record<SubscriptionTier, number> = {
  * This is the ONLY function that should be used to check tier access —
  * do not write ad-hoc tier checks elsewhere.
  */
-export async function hasAccess(
-  userId: string,
-  requiredTier: SubscriptionTier,
-): Promise<boolean> {
+export async function hasAccess(userId: string, requiredTier: SubscriptionTier): Promise<boolean> {
   const { data: profile } = await supabaseAdmin
     .from("profiles")
     .select("subscription_tier, bypass_paywall")
