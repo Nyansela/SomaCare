@@ -1,23 +1,81 @@
-Fix a "document is not defined" SSR crash traced through @floating-ui/react-dom (used by Radix UI dropdowns/popovers/tooltips).
+TASK: Gate Adwoa AI's plan-generation and AI-analysis capabilities to Plus tier and above. Free-tier users retain general conversational access to Adwoa but cannot trigger AI-generated meal plans, workout plans, or AI-driven sleep/nutrition insights.
 
-This is likely caused by a component from the recent UI redesign (possibly the relocated language changer, or another new/changed component) that uses a floating-UI-based element (Select, DropdownMenu, Popover, Tooltip) in a way that executes during server-side rendering instead of being properly client-only.
+═══════════════════════════════════════
+BACKGROUND / CONTEXT
+═══════════════════════════════════════
+This app already has:
+- A tool-call loop in src/routes/api/chat.ts using Gemini 3.5 Flash Lite (@ai-sdk/google) with function/tool calling
+- Existing tools including generateWorkoutPlan and generateMealPlan (write tools requiring user confirmation before executing)
+- A subscription infrastructure: profiles table with subscription_tier ('free'|'premium'|'family') and bypass_paywall (boolean) columns
+- A helper function hasAccess(userId, requiredTier) in src/lib/subscription.server.ts — this is the ONLY function that should be used to check tier access; do not write new ad-hoc tier checks
+- Note: 'premium' in the database may correspond to the user-facing name "Plus" — confirm this mapping in the existing subscription.server.ts code and use whatever the actual enum value is
 
-1. Identify which recently-changed component is causing this. Check the language changer component specifically first (since it was just moved to Settings), and any other new components from the UI redesign.
+═══════════════════════════════════════
+PART 1 — Gate the chat-based tool calls (generateWorkoutPlan, generateMealPlan)
+═══════════════════════════════════════
+1. In src/routes/api/chat.ts, before executing the tool-call loop's handling of generateWorkoutPlan or generateMealPlan (wherever the switch/if-statement dispatches to these specific tool executions), insert a tier check:
+   - Call hasAccess(userId, 'premium') (or whatever the actual tier value is for Plus)
+   - If access is denied, do NOT execute the tool. Instead, return a message to the model (as if the tool executed but declined) explaining the tier restriction, so the model can naturally continue the conversation. Example tool result to feed back to the model:
+     { error: "tier_restricted", message: "This feature requires SomaCare Plus or higher.", feature: "meal_plan_generation" }
+   - The model should then respond to the user naturally, e.g.: "Generating a personalized meal plan is part of SomaCare Plus. Want to know more about upgrading, or is there something else I can help with in the meantime?"
+   - Do NOT hardcode this exact phrasing into the code as a canned response — let the model generate a natural reply using the tool_result error information, consistent with how errors are already surfaced to the model elsewhere in this file.
 
-2. Common causes and fixes:
-   - A component accessing `document` directly in the render body (not inside useEffect) — move any such access into a useEffect hook so it only runs client-side after hydration
-   - A Radix UI component (Select, DropdownMenu, etc.) being rendered unconditionally during SSR when it should only render once mounted client-side — wrap it with a mounted-state check (const [mounted, setMounted] = useState(false); useEffect(() => setMounted(true), []); return mounted ? <Component /> : null; or similar) if the component genuinely can't SSR safely
-   - Check if a `document.getElementById`, `document.querySelector`, or similar call was added directly in a component body rather than in an effect
+2. Confirm accounts with bypass_paywall=true always pass this check regardless of subscription_tier — this should already be handled correctly if hasAccess() is used consistently, but explicitly verify this function's internal logic checks bypass_paywall FIRST before evaluating tier.
 
-3. Search specifically:
-   Get-ChildItem -Path src -Include *.ts,*.tsx -Recurse | Select-String -Pattern "document\."
+═══════════════════════════════════════
+PART 2 — Gate the UI-triggered plan generation (Plans page)
+═══════════════════════════════════════
+3. In src/routes/_authenticated/plans.tsx, find the button/action that triggers workout or meal plan generation directly from the UI (not through chat).
+4. Before allowing this action to fire (the mutation/API call that requests a new plan), check the current user's access via hasAccess() — this may require a client-side check using data already fetched about the user's subscription (from a query/context), or a server-side check in whatever API route this UI action calls.
+5. If access is denied, do NOT call the generation endpoint. Instead, show an upgrade prompt UI element:
+   - A card or modal with a clear headline (e.g. "Unlock AI-Generated Plans") and a short explanation (e.g. "SomaCare Plus lets Adwoa build you a personalized workout or meal plan.")
+   - A clear "Upgrade to Plus" button that navigates to the existing Upgrade/subscription page (built in earlier work) — do not build a new checkout flow here, just link to the existing one
+   - No dead ends: never show a broken/blank state when access is denied
 
-MANDATORY VERIFICATION:
-- Run npm run build
-- Run npx wrangler dev --config wrangler.json (NOT --local)
-- Load the homepage — confirm NO "document is not defined" error and the page actually renders
-- Navigate through several pages (dashboard, settings, plans) to confirm the fix isn't narrowly scoped to just the homepage
+═══════════════════════════════════════
+PART 3 — Gate AI-driven sleep recommendations
+═══════════════════════════════════════
+6. In src/routes/_authenticated/sleep.tsx, identify the specific feature that generates an AI-powered sleep recommendation or analysis (search for "gettingRecommendations" state or similar, and any API call tied to it — likely calls a route like /api/sleep or similar based on the file structure seen earlier today).
+7. Distinguish clearly between:
+   - BASIC SLEEP LOGGING (recording bedtime/wake time, viewing past entries) — this must remain fully available on Free tier, do NOT gate this
+   - AI-GENERATED RECOMMENDATIONS specifically (any feature that sends sleep data to the AI and returns personalized suggestions/insights) — THIS is what gets gated to Plus
+8. Apply the same hasAccess() check before allowing the AI recommendation request to fire. On denial, show the same style of upgrade prompt as Part 2 (reuse a shared UpgradePrompt component if one exists or is worth creating for consistency across Parts 2-4).
 
-Paste actual terminal output showing a clean load across multiple pages.
+═══════════════════════════════════════
+PART 4 — Gate AI-driven nutrition insights
+═══════════════════════════════════════
+9. In src/routes/_authenticated/nutrition.tsx, identify the specific AI-powered nutrition insight/analysis feature (distinct from basic manual meal logging, which must stay free).
+10. Apply the same gating pattern: hasAccess() check before the AI-generation request fires, upgrade prompt shown on denial.
+11. Confirm this does NOT affect the existing generatePlanMutation reference already used for meal plans in this file if that's the SAME code path as Part 1's generateMealPlan tool — avoid double-gating or creating two different code paths for what might be the same underlying feature. Investigate and consolidate if they overlap.
 
-Do NOT touch voice code, tool-call loop, or subscription/Stripe work.
+═══════════════════════════════════════
+SHARED UI COMPONENT (recommended)
+═══════════════════════════════════════
+12. Consider creating a single reusable component (e.g. src/components/upgrade-prompt.tsx) accepting props like { featureName: string, tierRequired: 'plus' | 'family' } that renders a consistent upgrade card/modal across Parts 2-4, rather than duplicating similar UI markup three times. This is a code-quality recommendation, not a strict requirement — use judgment based on how much duplication would otherwise result.
+
+═══════════════════════════════════════
+EXPLICITLY OUT OF SCOPE — DO NOT TOUCH
+═══════════════════════════════════════
+- Language selection (Twi/Ewe/Ga) must remain free for ALL tiers — do not add any tier check here, this was explicitly fixed in prior work
+- Voice synthesis/transcription architecture
+- The tool-call loop's core execution logic for READ-only tools (getVitalsSummary, getMedicationList, etc.) — these remain free-tier accessible
+- Medication interaction checks (RxNorm/openFDA) — already correctly gated to Plus in prior work, do not modify
+- Cloudflare deploy config, wrangler.json
+- Stripe checkout/webhook code
+
+═══════════════════════════════════════
+MANDATORY VERIFICATION — paste actual results, not summaries
+═══════════════════════════════════════
+Test as a FREE-tier account (create or use a test account with subscription_tier='free', bypass_paywall=false):
+1. Chat: ask Adwoa "can you make me a meal plan?" — paste her actual response. Confirm no plan was created in the meal_plans table.
+2. Chat: ask Adwoa "create a workout plan for me" — paste her actual response. Confirm no plan was created in workout_plans table.
+3. UI: navigate to the Plans page, attempt to trigger generation via the UI button — paste what renders (should be upgrade prompt, not actual generation).
+4. UI: on the Sleep page, attempt to trigger the AI recommendation feature — paste what renders.
+5. UI: on the Nutrition page, attempt to trigger the AI insight feature — paste what renders.
+6. Confirm basic sleep logging and basic meal logging (non-AI) still work normally for this Free account — paste confirmation.
+7. Confirm Twi/Ewe/Ga language selection still works normally for this Free account (regression check on the earlier fix) — paste confirmation.
+
+Test as a PLUS-tier account (or an account with bypass_paywall=true):
+8. Repeat checks 1-5 above — confirm all plan/recommendation generation now succeeds normally.
+
+Run npm run build and npx wrangler dev --config wrangler.json (NOT --local) throughout testing — paste terminal output confirming no node:fs error or other crashes introduced by this change.

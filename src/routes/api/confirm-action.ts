@@ -271,6 +271,22 @@ export const Route = createFileRoute("/api/confirm-action")({
               break;
             }
             case "generateWorkoutPlan": {
+              // AI-generated plans are Plus-gated. The chat tool also checks,
+              // but this is the authoritative write path — never create a plan
+              // for a user without access.
+              const { hasAccess: hasPlusAccess, TIER_PLUS } = await import(
+                "@/lib/subscription.server",
+              );
+              if (!(await hasPlusAccess(userId, TIER_PLUS))) {
+                return Response.json(
+                  {
+                    error: "tier_restricted",
+                    message: "This feature requires SomaCare Plus or higher.",
+                    feature: "workout_plan_generation",
+                  },
+                  { status: 403 },
+                );
+              }
               const { data: plan, error: planErr } = await supabase
                 .from("workout_plans")
                 .insert({
@@ -295,6 +311,20 @@ export const Route = createFileRoute("/api/confirm-action")({
               break;
             }
             case "generateMealPlan": {
+              // Plus-gated — see generateWorkoutPlan above.
+              const { hasAccess: hasPlusAccess, TIER_PLUS } = await import(
+                "@/lib/subscription.server",
+              );
+              if (!(await hasPlusAccess(userId, TIER_PLUS))) {
+                return Response.json(
+                  {
+                    error: "tier_restricted",
+                    message: "This feature requires SomaCare Plus or higher.",
+                    feature: "meal_plan_generation",
+                  },
+                  { status: 403 },
+                );
+              }
               const { data: plan, error: planErr } = await supabase
                 .from("meal_plans")
                 .insert({

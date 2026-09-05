@@ -204,6 +204,7 @@ export type Database = {
           allergies: string[] | null;
           avatar_url: string | null;
           blood_type: string | null;
+          bypass_paywall: boolean;
           chronic_conditions: string[] | null;
           created_at: string;
           date_of_birth: string | null;
@@ -214,12 +215,14 @@ export type Database = {
           locale: string | null;
           preferences: Json | null;
           sex: string | null;
+          subscription_tier: string;
           updated_at: string;
         };
         Insert: {
           allergies?: string[] | null;
           avatar_url?: string | null;
           blood_type?: string | null;
+          bypass_paywall?: boolean;
           chronic_conditions?: string[] | null;
           created_at?: string;
           date_of_birth?: string | null;
@@ -230,12 +233,14 @@ export type Database = {
           locale?: string | null;
           preferences?: Json | null;
           sex?: string | null;
+          subscription_tier?: string;
           updated_at?: string;
         };
         Update: {
           allergies?: string[] | null;
           avatar_url?: string | null;
           blood_type?: string | null;
+          bypass_paywall?: boolean;
           chronic_conditions?: string[] | null;
           created_at?: string;
           date_of_birth?: string | null;
@@ -246,6 +251,7 @@ export type Database = {
           locale?: string | null;
           preferences?: Json | null;
           sex?: string | null;
+          subscription_tier?: string;
           updated_at?: string;
         };
         Relationships: [];

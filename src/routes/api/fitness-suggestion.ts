@@ -2,6 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { generateText } from "ai";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import {
+  aiLanguageInstruction,
+  isSupportedAiLanguage,
+} from "@/lib/ai-language.server";
 
 export const Route = createFileRoute("/api/fitness-suggestion")({
   server: {
@@ -31,6 +35,18 @@ export const Route = createFileRoute("/api/fitness-suggestion")({
           return new Response("Unauthorized", { status: 401 });
         }
         const userId = userData.user.id;
+
+        // Resolve UI language (client-sent wins, then profile preference)
+        const body = (await request.json().catch(() => ({}))) as { language?: string };
+        const { data: langProfile } = await supabase
+          .from("profiles")
+          .select("preferences")
+          .eq("id", userId)
+          .maybeSingle();
+        const langPrefs = (langProfile?.preferences as Record<string, unknown>) || {};
+        const userLanguage = isSupportedAiLanguage(body.language)
+          ? body.language
+          : (langPrefs.language as string) || "en";
 
         // Fetch health context
         const [{ data: healthVault }, { data: vitals }, { data: fitnessLogs }] = await Promise.all([
@@ -91,6 +107,8 @@ export const Route = createFileRoute("/api/fitness-suggestion")({
         const weight = healthVault?.body_weight_kg || "";
 
         const prompt = `You are a friendly, encouraging fitness coach in Ghana. Give a single daily workout suggestion suitable for a Ghanaian context (e.g. morning/evening neighborhood walks, home bodyweight exercises, local fitness routines) that's realistic and low-pressure.
+
+${aiLanguageInstruction(userLanguage)}
 
 USER PROFILE:
 - Age: ${age || "Not specified"}

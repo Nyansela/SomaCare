@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SomaCare — Your AI Health Companion</title>
+    <script>
+      // Global error-catching handler for mobile debugging
+      window.onerror = function(msg, url, line, col, error) {
+        showErrorBanner("onerror: " + msg, url, line, col, error);
+      };
+
+      window.addEventListener('unhandledrejection', function(event) {
+        showErrorBanner("unhandledrejection", "", 0, 0, event.reason);
+      });
+
+      function showErrorBanner(title, url, line, col, error) {
+        if (document.getElementById('mobile-error-banner')) return;
+        const div = document.createElement('div');
+        div.id = 'mobile-error-banner';
+        div.style.position = 'fixed';
+        div.style.top = '0';
+        div.style.left = '0';
+        div.style.width = '100%';
+        div.style.height = '100%';
+        div.style.backgroundColor = '#7f1d1d';
+        div.style.color = '#fee2e2';
+        div.style.zIndex = '999999';
+        div.style.padding = '20px';
+        div.style.overflow = 'auto';
+        div.style.fontFamily = 'monospace';
+        div.style.fontSize = '13px';
+        
+        let stack = '';
+        if (error) {
+          stack = error.stack || error.message || String(error);
+        } else {
+          stack = title + ' at ' + url + ':' + line + ':' + col;
+        }
+
+        div.innerHTML = '<h2 style="color: #fca5a5; margin-top:0;">SomaCare Mobile Error</h2>' +
+          '<p><strong>' + escapeHtml(title) + '</strong></p>' +
+          '<pre style="white-space: pre-wrap; word-break: break-all;">' + escapeHtml(stack) + '</pre>';
+        
+        if (document.body) {
+          document.body.appendChild(div);
+        } else {
+          document.addEventListener('DOMContentLoaded', function() {
+            document.body.appendChild(div);
+          });
+        }
+      }
+
+      function escapeHtml(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+      }
+    </script>
+    <link rel="stylesheet" href="./assets/styles-BV-2zwXC.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./assets/index-CNB7A-UE.js"></script>
+  </body>
+</html>

@@ -3,8 +3,12 @@ import { generateText } from "ai";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { getHealthContext } from "@/lib/health-context";
+import {
+  aiLanguageInstruction,
+  isSupportedAiLanguage,
+} from "@/lib/ai-language.server";
 
-type VerifyBody = { medicationName: string };
+type VerifyBody = { medicationName: string; language?: string };
 
 export const Route = createFileRoute("/api/medverify")({
   server: {
@@ -36,11 +40,22 @@ export const Route = createFileRoute("/api/medverify")({
         const userId = userData.user.id;
 
         const body = (await request.json()) as VerifyBody;
-        const { medicationName } = body;
+        const { medicationName, language } = body;
 
         if (!medicationName || medicationName.trim().length === 0) {
           return new Response("Medication name required", { status: 400 });
         }
+
+        // Resolve UI language (client-sent wins, then profile preference)
+        const { data: langProfile } = await supabase
+          .from("profiles")
+          .select("preferences")
+          .eq("id", userId)
+          .maybeSingle();
+        const langPrefs = (langProfile?.preferences as Record<string, unknown>) || {};
+        const userLanguage = isSupportedAiLanguage(language)
+          ? language
+          : (langPrefs.language as string) || "en";
 
         // Get health context
         const healthContext = await getHealthContext(
@@ -64,6 +79,8 @@ export const Route = createFileRoute("/api/medverify")({
 
         // Generate medication safety check
         const prompt = `You are a medication safety checker operating in a Ghanaian healthcare context (considering common local medications, FDA Ghana guidelines, and patient safety practices). Analyze the following medication for a patient and provide safety information in a structured format.
+
+${aiLanguageInstruction(userLanguage)}
 
 PATIENT INFORMATION:
 - Allergies: ${allergies}

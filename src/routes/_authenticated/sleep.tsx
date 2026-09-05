@@ -5,10 +5,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Moon, Sun, Loader2, Star, Clock, TrendingUp, AlertCircle, Info } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import i18n from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, EmptyState } from "@/components/app-shell";
+import { UpgradePrompt } from "@/components/upgrade-prompt";
 import { InfoBanner } from "@/components/ui/info-banner";
 import { Button } from "@/components/ui/button";
+import { useSubscription, hasTierAccess, TIER_PLUS } from "@/lib/subscription";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -58,8 +61,15 @@ type SleepStats = {
 
 function SleepPage() {
   const qc = useQueryClient();
+  const subscription = useSubscription();
+  const isPlus = hasTierAccess(
+    subscription.data?.tier,
+    TIER_PLUS,
+    subscription.data?.bypassPaywall,
+  );
 
   const [gettingRecommendations, setGettingRecommendations] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   // Form state
   const [bedtime, setBedtime] = useState("");
@@ -97,7 +107,7 @@ function SleepPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ language: i18n.language }),
       });
 
       if (!response.ok) {
@@ -162,6 +172,13 @@ function SleepPage() {
   };
 
   const getRecommendations = async () => {
+    // AI-generated sleep recommendations are a Plus feature. Free users get
+    // the upgrade prompt instead of the request firing (the server also
+    // enforces this on /api/sleep).
+    if (!subscription.isLoading && !isPlus) {
+      setShowUpgrade(true);
+      return;
+    }
     setGettingRecommendations(true);
     try {
       qc.invalidateQueries({ queryKey: ["sleep", "recommendations"] });
@@ -230,7 +247,15 @@ function SleepPage() {
       }
     >
       <div className="space-y-6">
-        {/* Log Sleep Form */}
+        {/* Upgrade prompt for gated AI recommendations */}
+        {showUpgrade && (
+          <UpgradePrompt
+            featureName="AI Sleep Recommendations"
+            description="SomaCare Plus turns your sleep data into personalized bedtime, wake-time and routine recommendations."
+          />
+        )}
+
+        {/* Log Sleep Form — always available on every tier */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

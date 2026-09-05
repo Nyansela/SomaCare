@@ -14,12 +14,15 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HealthShareTokenRouteImport } from './routes/health-share/$token'
+import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe-webhook'
 import { Route as ApiSleepRouteImport } from './routes/api/sleep'
 import { Route as ApiNutritionRouteImport } from './routes/api/nutrition'
 import { Route as ApiMedverifyRouteImport } from './routes/api/medverify'
 import { Route as ApiFitnessSuggestionRouteImport } from './routes/api/fitness-suggestion'
+import { Route as ApiCreateCheckoutSessionRouteImport } from './routes/api/create-checkout-session'
 import { Route as ApiConfirmActionRouteImport } from './routes/api/confirm-action'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as AuthenticatedUpgradeRouteImport } from './routes/_authenticated/upgrade'
 import { Route as AuthenticatedStoreRouteImport } from './routes/_authenticated/store'
 import { Route as AuthenticatedSleepRouteImport } from './routes/_authenticated/sleep'
 import { Route as AuthenticatedScheduleRouteImport } from './routes/_authenticated/schedule'
@@ -66,6 +69,11 @@ const HealthShareTokenRoute = HealthShareTokenRouteImport.update({
   path: '/health-share/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
+  id: '/api/stripe-webhook',
+  path: '/api/stripe-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSleepRoute = ApiSleepRouteImport.update({
   id: '/api/sleep',
   path: '/api/sleep',
@@ -86,6 +94,12 @@ const ApiFitnessSuggestionRoute = ApiFitnessSuggestionRouteImport.update({
   path: '/api/fitness-suggestion',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCreateCheckoutSessionRoute =
+  ApiCreateCheckoutSessionRouteImport.update({
+    id: '/api/create-checkout-session',
+    path: '/api/create-checkout-session',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiConfirmActionRoute = ApiConfirmActionRouteImport.update({
   id: '/api/confirm-action',
   path: '/api/confirm-action',
@@ -95,6 +109,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedUpgradeRoute = AuthenticatedUpgradeRouteImport.update({
+  id: '/upgrade',
+  path: '/upgrade',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedStoreRoute = AuthenticatedStoreRouteImport.update({
   id: '/store',
@@ -227,12 +246,15 @@ export interface FileRoutesByFullPath {
   '/schedule': typeof AuthenticatedScheduleRoute
   '/sleep': typeof AuthenticatedSleepRoute
   '/store': typeof AuthenticatedStoreRoute
+  '/upgrade': typeof AuthenticatedUpgradeRoute
   '/api/chat': typeof ApiChatRoute
   '/api/confirm-action': typeof ApiConfirmActionRoute
+  '/api/create-checkout-session': typeof ApiCreateCheckoutSessionRoute
   '/api/fitness-suggestion': typeof ApiFitnessSuggestionRoute
   '/api/medverify': typeof ApiMedverifyRoute
   '/api/nutrition': typeof ApiNutritionRoute
   '/api/sleep': typeof ApiSleepRoute
+  '/api/stripe-webhook': typeof ApiStripeWebhookRoute
   '/health-share/$token': typeof HealthShareTokenRoute
   '/find/hospitals': typeof AuthenticatedFindHospitalsRoute
   '/trackers/vitals': typeof AuthenticatedTrackersVitalsRoute
@@ -260,12 +282,15 @@ export interface FileRoutesByTo {
   '/schedule': typeof AuthenticatedScheduleRoute
   '/sleep': typeof AuthenticatedSleepRoute
   '/store': typeof AuthenticatedStoreRoute
+  '/upgrade': typeof AuthenticatedUpgradeRoute
   '/api/chat': typeof ApiChatRoute
   '/api/confirm-action': typeof ApiConfirmActionRoute
+  '/api/create-checkout-session': typeof ApiCreateCheckoutSessionRoute
   '/api/fitness-suggestion': typeof ApiFitnessSuggestionRoute
   '/api/medverify': typeof ApiMedverifyRoute
   '/api/nutrition': typeof ApiNutritionRoute
   '/api/sleep': typeof ApiSleepRoute
+  '/api/stripe-webhook': typeof ApiStripeWebhookRoute
   '/health-share/$token': typeof HealthShareTokenRoute
   '/find/hospitals': typeof AuthenticatedFindHospitalsRoute
   '/trackers/vitals': typeof AuthenticatedTrackersVitalsRoute
@@ -295,12 +320,15 @@ export interface FileRoutesById {
   '/_authenticated/schedule': typeof AuthenticatedScheduleRoute
   '/_authenticated/sleep': typeof AuthenticatedSleepRoute
   '/_authenticated/store': typeof AuthenticatedStoreRoute
+  '/_authenticated/upgrade': typeof AuthenticatedUpgradeRoute
   '/api/chat': typeof ApiChatRoute
   '/api/confirm-action': typeof ApiConfirmActionRoute
+  '/api/create-checkout-session': typeof ApiCreateCheckoutSessionRoute
   '/api/fitness-suggestion': typeof ApiFitnessSuggestionRoute
   '/api/medverify': typeof ApiMedverifyRoute
   '/api/nutrition': typeof ApiNutritionRoute
   '/api/sleep': typeof ApiSleepRoute
+  '/api/stripe-webhook': typeof ApiStripeWebhookRoute
   '/health-share/$token': typeof HealthShareTokenRoute
   '/_authenticated/find/hospitals': typeof AuthenticatedFindHospitalsRoute
   '/_authenticated/trackers/vitals': typeof AuthenticatedTrackersVitalsRoute
@@ -330,12 +358,15 @@ export interface FileRouteTypes {
     | '/schedule'
     | '/sleep'
     | '/store'
+    | '/upgrade'
     | '/api/chat'
     | '/api/confirm-action'
+    | '/api/create-checkout-session'
     | '/api/fitness-suggestion'
     | '/api/medverify'
     | '/api/nutrition'
     | '/api/sleep'
+    | '/api/stripe-webhook'
     | '/health-share/$token'
     | '/find/hospitals'
     | '/trackers/vitals'
@@ -363,12 +394,15 @@ export interface FileRouteTypes {
     | '/schedule'
     | '/sleep'
     | '/store'
+    | '/upgrade'
     | '/api/chat'
     | '/api/confirm-action'
+    | '/api/create-checkout-session'
     | '/api/fitness-suggestion'
     | '/api/medverify'
     | '/api/nutrition'
     | '/api/sleep'
+    | '/api/stripe-webhook'
     | '/health-share/$token'
     | '/find/hospitals'
     | '/trackers/vitals'
@@ -397,12 +431,15 @@ export interface FileRouteTypes {
     | '/_authenticated/schedule'
     | '/_authenticated/sleep'
     | '/_authenticated/store'
+    | '/_authenticated/upgrade'
     | '/api/chat'
     | '/api/confirm-action'
+    | '/api/create-checkout-session'
     | '/api/fitness-suggestion'
     | '/api/medverify'
     | '/api/nutrition'
     | '/api/sleep'
+    | '/api/stripe-webhook'
     | '/health-share/$token'
     | '/_authenticated/find/hospitals'
     | '/_authenticated/trackers/vitals'
@@ -418,10 +455,12 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiConfirmActionRoute: typeof ApiConfirmActionRoute
+  ApiCreateCheckoutSessionRoute: typeof ApiCreateCheckoutSessionRoute
   ApiFitnessSuggestionRoute: typeof ApiFitnessSuggestionRoute
   ApiMedverifyRoute: typeof ApiMedverifyRoute
   ApiNutritionRoute: typeof ApiNutritionRoute
   ApiSleepRoute: typeof ApiSleepRoute
+  ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   HealthShareTokenRoute: typeof HealthShareTokenRoute
   ApiHealthShareTokenRoute: typeof ApiHealthShareTokenRoute
   ApiMedicationsSearchRoute: typeof ApiMedicationsSearchRoute
@@ -465,6 +504,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HealthShareTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/stripe-webhook': {
+      id: '/api/stripe-webhook'
+      path: '/api/stripe-webhook'
+      fullPath: '/api/stripe-webhook'
+      preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/sleep': {
       id: '/api/sleep'
       path: '/api/sleep'
@@ -493,6 +539,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiFitnessSuggestionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/create-checkout-session': {
+      id: '/api/create-checkout-session'
+      path: '/api/create-checkout-session'
+      fullPath: '/api/create-checkout-session'
+      preLoaderRoute: typeof ApiCreateCheckoutSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/confirm-action': {
       id: '/api/confirm-action'
       path: '/api/confirm-action'
@@ -506,6 +559,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/chat'
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/upgrade': {
+      id: '/_authenticated/upgrade'
+      path: '/upgrade'
+      fullPath: '/upgrade'
+      preLoaderRoute: typeof AuthenticatedUpgradeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/store': {
       id: '/_authenticated/store'
@@ -674,6 +734,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedScheduleRoute: typeof AuthenticatedScheduleRoute
   AuthenticatedSleepRoute: typeof AuthenticatedSleepRoute
   AuthenticatedStoreRoute: typeof AuthenticatedStoreRoute
+  AuthenticatedUpgradeRoute: typeof AuthenticatedUpgradeRoute
   AuthenticatedFindHospitalsRoute: typeof AuthenticatedFindHospitalsRoute
   AuthenticatedTrackersVitalsRoute: typeof AuthenticatedTrackersVitalsRoute
 }
@@ -695,6 +756,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedScheduleRoute: AuthenticatedScheduleRoute,
   AuthenticatedSleepRoute: AuthenticatedSleepRoute,
   AuthenticatedStoreRoute: AuthenticatedStoreRoute,
+  AuthenticatedUpgradeRoute: AuthenticatedUpgradeRoute,
   AuthenticatedFindHospitalsRoute: AuthenticatedFindHospitalsRoute,
   AuthenticatedTrackersVitalsRoute: AuthenticatedTrackersVitalsRoute,
 }
@@ -709,10 +771,12 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   ApiChatRoute: ApiChatRoute,
   ApiConfirmActionRoute: ApiConfirmActionRoute,
+  ApiCreateCheckoutSessionRoute: ApiCreateCheckoutSessionRoute,
   ApiFitnessSuggestionRoute: ApiFitnessSuggestionRoute,
   ApiMedverifyRoute: ApiMedverifyRoute,
   ApiNutritionRoute: ApiNutritionRoute,
   ApiSleepRoute: ApiSleepRoute,
+  ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   HealthShareTokenRoute: HealthShareTokenRoute,
   ApiHealthShareTokenRoute: ApiHealthShareTokenRoute,
   ApiMedicationsSearchRoute: ApiMedicationsSearchRoute,

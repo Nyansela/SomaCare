@@ -2,6 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { generateText } from "ai";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import {
+  aiLanguageInstruction,
+  isSupportedAiLanguage,
+} from "@/lib/ai-language.server";
 
 export const Route = createFileRoute("/api/sleep")({
   server: {
@@ -32,6 +36,33 @@ export const Route = createFileRoute("/api/sleep")({
         }
         const userId = userData.user.id;
 
+        // AI-generated sleep recommendations are a Plus feature. Gate before
+        // doing any model work — the client also checks, but this is the
+        // authoritative guard.
+        const { hasAccess, TIER_PLUS } = await import("@/lib/subscription.server");
+        if (!(await hasAccess(userId, TIER_PLUS))) {
+          return Response.json(
+            {
+              error: "tier_restricted",
+              message: "This feature requires SomaCare Plus or higher.",
+              feature: "sleep_recommendations",
+            },
+            { status: 403 },
+          );
+        }
+
+        // Resolve UI language (client-sent wins, then profile preference)
+        const body = (await request.json().catch(() => ({}))) as { language?: string };
+        const { data: langProfile } = await supabase
+          .from("profiles")
+          .select("preferences")
+          .eq("id", userId)
+          .maybeSingle();
+        const langPrefs = (langProfile?.preferences as Record<string, unknown>) || {};
+        const userLanguage = isSupportedAiLanguage(body.language)
+          ? body.language
+          : (langPrefs.language as string) || "en";
+
         // Fetch recent sleep logs (last 14 days)
         const twoWeeksAgo = new Date();
         twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
@@ -59,6 +90,8 @@ export const Route = createFileRoute("/api/sleep")({
         const healthGoals = healthVault?.health_goals?.join(", ") || "General wellness";
 
         const prompt = `You are a sleep optimization assistant tailored for users in Ghana. Based on the user's recent sleep data, climate considerations (warm/humid nights), environmental factors, and health context, provide personalized sleep recommendations.
+
+${aiLanguageInstruction(userLanguage)}
 
 RECENT SLEEP DATA (last 14 days):
 ${formatSleepData(sleepLogs || [])}

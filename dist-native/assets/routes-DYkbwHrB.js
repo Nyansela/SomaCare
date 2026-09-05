@@ -1,0 +1,1 @@
+import{o as e,t}from"./react-Ca03aNmg.js";import{n}from"./client-CfIUBzv-.js";import{pt as r}from"./index-CNB7A-UE.js";var i=e(t());function a(){let e=r();return(0,i.useEffect)(()=>{n.auth.getSession().then(({data:t})=>{e({to:t.session?`/app`:`/auth`,replace:!0})})},[e]),null}export{a as component};

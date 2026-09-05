@@ -14,6 +14,7 @@ import {
   History,
 } from "lucide-react";
 import { toast } from "sonner";
+import i18n from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, EmptyState } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -153,7 +154,7 @@ function Medications() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ medicationName: verifyMedName }),
+        body: JSON.stringify({ medicationName: verifyMedName, language: i18n.language }),
       });
 
       if (!response.ok) {

@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Utensils, Loader2, Clock, RefreshCw, Apple, Coffee, Moon, Cookie } from "lucide-react";
@@ -6,7 +8,9 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, EmptyState } from "@/components/app-shell";
+import { UpgradePrompt } from "@/components/upgrade-prompt";
 import { Button } from "@/components/ui/button";
+import { useSubscription, hasTierAccess, TIER_PLUS } from "@/lib/subscription";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InfoBanner } from "@/components/ui/info-banner";
@@ -35,6 +39,13 @@ type NutritionPlan = {
 function Nutrition() {
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const subscription = useSubscription();
+  const isPlus = hasTierAccess(
+    subscription.data?.tier,
+    TIER_PLUS,
+    subscription.data?.bypassPaywall,
+  );
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   // Fetch current (latest) nutrition plan
   const currentPlan = useQuery({
@@ -78,7 +89,7 @@ function Nutrition() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ language: i18n.language }),
       });
 
       if (!response.ok) {
@@ -97,7 +108,16 @@ function Nutrition() {
     },
   });
 
-  const generatePlan = () => generatePlanMutation.mutate();
+  const generatePlan = () => {
+    // AI-generated nutrition plans are a Plus feature. Free users get the
+    // upgrade prompt instead of the request firing (the server also enforces
+    // this on /api/nutrition).
+    if (!subscription.isLoading && !isPlus) {
+      setShowUpgrade(true);
+      return;
+    }
+    generatePlanMutation.mutate();
+  };
   const generating = generatePlanMutation.isPending;
 
   const getMealIcon = (mealName: string) => {
@@ -136,6 +156,14 @@ function Nutrition() {
       }
     >
       <div className="space-y-6">
+        {/* Upgrade prompt for gated AI plan generation */}
+        {showUpgrade && (
+          <UpgradePrompt
+            featureName="AI Nutrition Plan"
+            description="SomaCare Plus builds you a personalized Ghanaian meal plan with medication timing, tailored to your health profile."
+          />
+        )}
+
         {/* Disclaimer */}
         <InfoBanner tone="warning">
           <strong>{t("nutrition.medicationTiming", "Medication Timing")}:</strong>{" "}

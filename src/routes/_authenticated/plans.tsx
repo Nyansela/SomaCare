@@ -13,9 +13,11 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, EmptyState } from "@/components/app-shell";
+import { UpgradePrompt } from "@/components/upgrade-prompt";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useSubscription, hasTierAccess, TIER_PLUS } from "@/lib/subscription";
 
 export const Route = createFileRoute("/_authenticated/plans")({
   head: () => ({
@@ -36,6 +38,12 @@ function currentDayNumber(plan: { start_date: string; duration_days: number }): 
 
 function PlansPage() {
   const qc = useQueryClient();
+  const subscription = useSubscription();
+  const isPlus = hasTierAccess(
+    subscription.data?.tier,
+    TIER_PLUS,
+    subscription.data?.bypassPaywall,
+  );
 
   const workoutPlans = useQuery({
     queryKey: ["plans", "workout", "active"],
@@ -138,18 +146,34 @@ function PlansPage() {
           </>
         ) : !hasPlans ? (
           <section className="soma-card p-6 sm:p-8">
-            <EmptyState
-              icon={Trophy}
-              title="No active plans yet"
-              body="Ask Adwoa in the AI Assistant to create a workout or meal plan — then follow it here, day by day."
-              action={
-                <a href="/assistant">
-                  <Button size="sm" className="soma-gradient soma-glow border-0 text-white">
-                    Ask Adwoa
-                  </Button>
-                </a>
-              }
-            />
+            {!subscription.isLoading && !isPlus ? (
+              <>
+                <UpgradePrompt
+                  featureName="AI-Generated Plans"
+                  description="SomaCare Plus lets Adwoa build you a personalized workout or meal plan, tailored to your goals and health."
+                />
+                <p className="mt-4 text-center text-xs text-muted-foreground">
+                  Need something else?{" "}
+                  <a href="/assistant" className="font-medium text-primary hover:underline">
+                    Ask Adwoa anything
+                  </a>{" "}
+                  — general health questions are always free.
+                </p>
+              </>
+            ) : (
+              <EmptyState
+                icon={Trophy}
+                title="No active plans yet"
+                body="Ask Adwoa in the AI Assistant to create a workout or meal plan — then follow it here, day by day."
+                action={
+                  <a href="/assistant">
+                    <Button size="sm" className="soma-gradient soma-glow border-0 text-white">
+                      Ask Adwoa
+                    </Button>
+                  </a>
+                }
+              />
+            )}
           </section>
         ) : (
           <>

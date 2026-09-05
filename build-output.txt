@@ -1,0 +1,203 @@
+
+> build
+> vite build
+
+[33mThe plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the [1mresolve.tsconfigPaths[22m option. You can remove the plugin and set [1mresolve.tsconfigPaths: true[22m in your Vite config instead.[39m
+[36mvite v8.1.3 [32mbuilding client environment for production...[36m[39m
+[2Ktransforming...[33m[plugin rolldown:vite-resolve] Module "node:events" has been externalized for browser compatibility, imported by "C:/Users/Nyansela/Desktop/soma-health-companion-main/node_modules/queue/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[plugin rolldown:vite-resolve] Module "node:crypto" has been externalized for browser compatibility, imported by "C:/Users/Nyansela/Desktop/soma-health-companion-main/node_modules/js-md5/src/md5.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[plugin rolldown:vite-resolve] Module "node:buffer" has been externalized for browser compatibility, imported by "C:/Users/Nyansela/Desktop/soma-health-companion-main/node_modules/js-md5/src/md5.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[plugin rolldown:vite-resolve] Module "node:events" has been externalized for browser compatibility, imported by "c:/Users/Nyansela/Desktop/soma-health-companion-main/node_modules/queue/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[plugin rolldown:vite-resolve] Module "node:crypto" has been externalized for browser compatibility, imported by "c:/Users/Nyansela/Desktop/soma-health-companion-main/node_modules/js-md5/src/md5.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[plugin rolldown:vite-resolve] Module "node:buffer" has been externalized for browser compatibility, imported by "c:/Users/Nyansela/Desktop/soma-health-companion-main/node_modules/js-md5/src/md5.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+✓ 7899 modules transformed.
+rendering chunks...
+computing gzip size...
+.output/public/assets/styles-BV-2zwXC.css    130.51 kB │ gzip:    20.08 kB
+.output/public/assets/esm-BKeUIYoC.js          0.31 kB │ gzip:     0.22 kB
+.output/public/assets/web-B-yj5jyg.js          0.36 kB │ gzip:     0.24 kB
+.output/public/assets/web-CP5C8EYK.js          0.36 kB │ gzip:     0.24 kB
+.output/public/assets/web-UYJMhGle.js          0.84 kB │ gzip:     0.40 kB
+.output/public/assets/web-BBjKJOOJ.js          3.35 kB │ gzip:     1.05 kB
+.output/public/assets/web-DLA0z8ue.js          3.35 kB │ gzip:     1.05 kB
+.output/public/assets/index-DT4oj63A.js    5,789.79 kB │ gzip: 1,783.14 kB
+
+[33m[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0msrc/integrations/supabase/client.ts is dynamically imported by src/lib/use-chat.ts but also statically imported by src/routes/__root.tsx, src/routes/_authenticated/app.tsx, src/routes/_authenticated/appointments.tsx, src/routes/_authenticated/assistant.tsx, src/routes/_authenticated/emergency.tsx, ..., dynamic import will not move module into another chunk.
+[39m
+[33m[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[33m[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0mnode_modules/sonner/dist/index.mjs is dynamically imported by src/components/ui/sonner.tsx but also statically imported by src/components/health-vault/HealthVaultShareManager.tsx, src/components/theme-settings-panel.tsx, dynamic import will not move module into another chunk.
+[39m
+[33m[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0msrc/lib/capacitor-web.ts is dynamically imported by src/routes/_authenticated/assistant.tsx but also statically imported by src/routes/_authenticated/records.tsx, src/components/health-vault/HealthVaultShareManager.tsx, dynamic import will not move module into another chunk.
+[39m
+[32m✓ built in 27.45s[39m
+[36mvite v8.1.3 [32mbuilding ssr environment for production...[36m[39m
+[2Ktransforming...✓ 144 modules transformed.
+rendering chunks...
+computing gzip size...
+node_modules/.nitro/vite/services/ssr/assets/styles-BV-2zwXC.css                     130.51 kB │ gzip:  20.08 kB
+node_modules/.nitro/vite/services/ssr/assets/capacitor-web-DD53Tm8a.js                 0.09 kB │ gzip:   0.09 kB
+node_modules/.nitro/vite/services/ssr/assets/empty-plugin-adapters-D9UWiqvJ.js         0.22 kB │ gzip:   0.16 kB
+node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-BbM0HtKs.js    0.67 kB │ gzip:   0.40 kB
+node_modules/.nitro/vite/services/ssr/assets/env-loader.server-tvL_eXPi.js             0.85 kB │ gzip:   0.46 kB
+node_modules/.nitro/vite/services/ssr/assets/ai-gateway.server-BZ2WDhZu.js             1.02 kB │ gzip:   0.59 kB
+node_modules/.nitro/vite/services/ssr/assets/start-BHsKxyCz.js                         1.07 kB │ gzip:   0.56 kB
+node_modules/.nitro/vite/services/ssr/assets/createStart-Dt05N14y.js                   1.65 kB │ gzip:   0.57 kB
+node_modules/.nitro/vite/services/ssr/assets/client.server-Bw6iWMJ-.js                 1.72 kB │ gzip:   0.78 kB
+node_modules/.nitro/vite/services/ssr/assets/client-C2bCer_0.js                        1.99 kB │ gzip:   1.05 kB
+node_modules/.nitro/vite/services/ssr/index.js                                         4.74 kB │ gzip:   1.97 kB
+node_modules/.nitro/vite/services/ssr/assets/server-RU38s2CF.js                       58.72 kB │ gzip:  15.10 kB
+node_modules/.nitro/vite/services/ssr/assets/router-NyhiHHER.js                      732.88 kB │ gzip: 157.00 kB
+
+[33m[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0msrc/lib/capacitor-web.ts is dynamically imported by src/routes/_authenticated/assistant.tsx but also statically imported by src/routes/_authenticated/records.tsx, src/components/health-vault/HealthVaultShareManager.tsx, dynamic import will not move module into another chunk.
+[39m
+[32m✓ built in 1.38s[39m
+
+[90m[[90mnitro[90m][39m [35mo[39m Building [[35mNitro[39m] [2m(preset: [36mcloudflare-module[39m, compatibility: [36m2026-09-03[39m)[22m
+[90m[[90mnitro[90m][39m [32m√[39m Generated public [36m.output/public[39m
+[36mvite v8.1.3 [32mbuilding nitro environment for production...[36m[39m
+
+[43m[30m WARN [39m[49m [36minlineDynamicImports[39m option is ignored because the [36mcodeSplitting[39m option is specified.
+
+[2Ktransforming...✓ 5465 modules transformed.
+rendering chunks...
+computing gzip size...
+.output/server/_ssr/capacitor-web-DD53Tm8a.mjs                       0.09 kB │ gzip:   0.09 kB
+.output/server/_libs/devlop.mjs                                      0.13 kB │ gzip:   0.12 kB
+.output/server/_libs/radix-ui__number.mjs                            0.17 kB │ gzip:   0.15 kB
+.output/server/_ssr/empty-plugin-adapters-D9UWiqvJ.mjs               0.23 kB │ gzip:   0.16 kB
+.output/server/_libs/bail.mjs                                        0.25 kB │ gzip:   0.19 kB
+.output/server/_libs/is-plain-obj.mjs                                0.41 kB │ gzip:   0.24 kB
+.output/server/_libs/radix-ui__primitive.mjs                         0.42 kB │ gzip:   0.23 kB
+.output/server/_libs/radix-ui__react-direction.mjs                   0.58 kB │ gzip:   0.31 kB
+.output/server/_libs/comma-separated-tokens.mjs                      0.59 kB │ gzip:   0.35 kB
+.output/server/_chunks/ssr-renderer.mjs                              0.60 kB │ gzip:   0.36 kB
+.output/server/_libs/estree-util-is-identifier-name.mjs              0.65 kB │ gzip:   0.38 kB
+.output/server/_libs/decode-named-character-reference+[...].mjs      0.71 kB │ gzip:   0.44 kB
+.output/server/_libs/html-url-attributes.mjs                         0.71 kB │ gzip:   0.42 kB
+.output/server/_tanstack-start-manifest_v-BbM0HtKs.mjs               0.73 kB │ gzip:   0.43 kB
+.output/server/_libs/radix-ui__react-label.mjs                       0.92 kB │ gzip:   0.47 kB
+.output/server/_ssr/env-loader.server-tvL_eXPi.mjs                   0.95 kB │ gzip:   0.50 kB
+.output/server/_libs/radix-ui__react-arrow.mjs                       0.98 kB │ gzip:   0.50 kB
+.output/server/_ssr/start-BHsKxyCz.mjs                               1.06 kB │ gzip:   0.57 kB
+.output/server/_libs/capacitor__browser.mjs                          1.06 kB │ gzip:   0.49 kB
+.output/server/_ssr/ai-gateway.server-BZ2WDhZu.mjs                   1.14 kB │ gzip:   0.65 kB
+.output/server/_libs/hookable.mjs                                    1.16 kB │ gzip:   0.51 kB
+.output/server/_libs/radix-ui__react-separator.mjs                   1.31 kB │ gzip:   0.58 kB
+.output/server/_ssr/createStart-Dt05N14y.mjs                         1.56 kB │ gzip:   0.57 kB
+.output/server/_libs/react-is.mjs                                    1.61 kB │ gzip:   0.65 kB
+.output/server/_ssr/client.server-Bw6iWMJ-.mjs                       1.82 kB │ gzip:   0.83 kB
+.output/server/_runtime.mjs                                          1.90 kB │ gzip:   0.87 kB
+.output/server/_ssr/client-C2bCer_0.mjs                              2.17 kB │ gzip:   1.12 kB
+.output/server/_libs/prop-types.mjs                                  2.27 kB │ gzip:   0.84 kB
+.output/server/_libs/extend.mjs                                      2.60 kB │ gzip:   0.97 kB
+.output/server/_libs/class-variance-authority+clsx.mjs               3.17 kB │ gzip:   1.24 kB
+.output/server/_libs/d3-path.mjs                                     3.24 kB │ gzip:   1.16 kB
+.output/server/_libs/radix-ui__react-collection.mjs                  3.28 kB │ gzip:   1.02 kB
+.output/server/_ssr/ssr.mjs                                          4.68 kB │ gzip:   1.97 kB
+.output/server/_libs/d3-interpolate.mjs                              5.02 kB │ gzip:   1.61 kB
+.output/server/_libs/radix-ui__react-avatar.mjs                      5.11 kB │ gzip:   1.56 kB
+.output/server/_libs/radix-ui__react-tabs.mjs                        5.72 kB │ gzip:   1.67 kB
+.output/server/_libs/radix-ui__react-switch.mjs                      5.96 kB │ gzip:   1.84 kB
+.output/server/_libs/capacitor__local-notifications.mjs              5.99 kB │ gzip:   1.64 kB
+.output/server/_libs/react-pdf__renderer.mjs                         6.47 kB │ gzip:   2.10 kB
+.output/server/_libs/ai-sdk__provider.mjs                            6.50 kB │ gzip:   1.84 kB
+.output/server/_libs/ungap__structured-clone.mjs                     6.65 kB │ gzip:   2.03 kB
+.output/server/_libs/lovable.dev__cloud-auth-js.mjs                  6.70 kB │ gzip:   2.49 kB
+.output/server/_libs/tanstack__react-query.mjs                       7.35 kB │ gzip:   1.94 kB
+.output/server/_libs/d3-array.mjs                                    8.04 kB │ gzip:   2.25 kB
+.output/server/_libs/react-pdf__fns.mjs                              8.17 kB │ gzip:   2.60 kB
+.output/server/_libs/eventemitter3.mjs                               8.31 kB │ gzip:   2.05 kB
+.output/server/_libs/radix-ui__react-roving-focus.mjs                8.48 kB │ gzip:   2.43 kB
+.output/server/_libs/@radix-ui/react-checkbox+[...].mjs              8.67 kB │ gzip:   2.53 kB
+.output/server/_libs/h3-v2.mjs                                       9.62 kB │ gzip:   2.98 kB
+.output/server/_libs/d3-color.mjs                                   10.35 kB │ gzip:   3.57 kB
+.output/server/_libs/radix-ui__react-popper.mjs                     10.37 kB │ gzip:   3.08 kB
+.output/server/_libs/react-i18next.mjs                              10.53 kB │ gzip:   3.41 kB
+.output/server/_libs/d3-format.mjs                                  10.58 kB │ gzip:   3.02 kB
+.output/server/index.mjs                                            11.27 kB │ gzip:   3.58 kB
+.output/server/_libs/supabase__functions-js.mjs                     12.12 kB │ gzip:   3.32 kB
+.output/server/_libs/noble__ciphers.mjs                             13.64 kB │ gzip:   4.14 kB
+.output/server/_libs/@react-pdf/image+[...].mjs                     14.30 kB │ gzip:   4.94 kB
+.output/server/_libs/fast-equals.mjs                                14.37 kB │ gzip:   3.62 kB
+.output/server/_libs/tanstack__history.mjs                          16.58 kB │ gzip:   3.61 kB
+.output/server/_libs/h3+rou3+srvx.mjs                               16.96 kB │ gzip:   4.35 kB
+.output/server/_libs/radix-ui__react-tooltip.mjs                    18.34 kB │ gzip:   4.17 kB
+.output/server/_libs/radix-ui__react-slider.mjs                     19.61 kB │ gzip:   4.81 kB
+.output/server/_libs/@capacitor/app+[...].mjs                       19.88 kB │ gzip:   5.69 kB
+.output/server/_libs/decimal.js-light.mjs                           23.25 kB │ gzip:   6.88 kB
+.output/server/_libs/d3-shape.mjs                                   24.72 kB │ gzip:   5.02 kB
+.output/server/_libs/@floating-ui/dom+[...].mjs                     25.85 kB │ gzip:   6.56 kB
+.output/server/_libs/@floating-ui/core+[...].mjs                    25.89 kB │ gzip:   6.36 kB
+.output/server/_libs/@floating-ui/react-dom+[...].mjs               31.22 kB │ gzip:   7.97 kB
+.output/server/_libs/supabase__supabase-js.mjs                      34.03 kB │ gzip:   9.90 kB
+.output/server/_libs/character-entities.mjs                         35.30 kB │ gzip:  12.27 kB
+.output/server/_libs/react-smooth.mjs                               37.83 kB │ gzip:   8.15 kB
+.output/server/_libs/@radix-ui/react-select+[...].mjs               45.08 kB │ gzip:   9.54 kB
+.output/server/_libs/supabase__phoenix.mjs                          49.12 kB │ gzip:  12.36 kB
+.output/server/_libs/sonner.mjs                                     52.03 kB │ gzip:  11.82 kB
+.output/server/_libs/lucide-react.mjs                               53.37 kB │ gzip:  10.19 kB
+.output/server/_ssr/server-RU38s2CF.mjs                             56.96 kB │ gzip:  14.93 kB
+.output/server/_libs/d3-scale+[...].mjs                             58.24 kB │ gzip:  12.10 kB
+.output/server/_libs/tanstack__query-core.mjs                       66.02 kB │ gzip:  13.95 kB
+.output/server/_libs/hast-util-to-jsx-runtime+[...].mjs             67.99 kB │ gzip:  17.37 kB
+.output/server/_libs/mdast-util-to-hast+[...].mjs                   71.54 kB │ gzip:  15.01 kB
+.output/server/_libs/i18next.mjs                                    73.39 kB │ gzip:  18.14 kB
+.output/server/_libs/supabase__realtime-js.mjs                      77.88 kB │ gzip:  19.88 kB
+.output/server/_libs/react-markdown+[...].mjs                       78.21 kB │ gzip:  18.77 kB
+.output/server/_libs/@react-pdf/render+[...].mjs                    82.56 kB │ gzip:  18.29 kB
+.output/server/_libs/@radix-ui/react-alert-dialog+[...].mjs         83.82 kB │ gzip:  19.55 kB
+.output/server/_libs/@tanstack/router-core+[...].mjs                86.57 kB │ gzip:  22.17 kB
+.output/server/_libs/date-fns.mjs                                  101.49 kB │ gzip:  18.60 kB
+.output/server/_libs/supabase__postgrest-js.mjs                    105.41 kB │ gzip:  21.66 kB
+.output/server/_libs/@heroui/react+[...].mjs                       109.58 kB │ gzip:  21.09 kB
+.output/server/_libs/@supabase/storage-js+[...].mjs                118.93 kB │ gzip:  22.09 kB
+.output/server/_libs/ai-sdk__provider-utils+zod.mjs                158.02 kB │ gzip:  32.12 kB
+.output/server/_libs/lodash.mjs                                    160.56 kB │ gzip:  29.38 kB
+.output/server/_libs/mdast-util-from-markdown+[...].mjs            191.26 kB │ gzip:  36.41 kB
+.output/server/_libs/ai.mjs                                        274.99 kB │ gzip:  49.80 kB
+.output/server/_libs/@ai-sdk/openai-compatible+[...].mjs           282.46 kB │ gzip:  59.04 kB
+.output/server/_libs/supabase__auth-js.mjs                         300.79 kB │ gzip:  59.88 kB
+.output/server/_libs/framer-motion.mjs                             352.31 kB │ gzip:  92.20 kB
+.output/server/_libs/@react-pdf/reconciler+[...].mjs               373.30 kB │ gzip:  93.31 kB
+.output/server/_libs/@react-pdf/layout+[...].mjs                   511.50 kB │ gzip: 140.54 kB
+.output/server/_libs/recharts+[...].mjs                            515.32 kB │ gzip:  96.62 kB
+.output/server/_libs/@tanstack/react-router+[...].mjs              652.19 kB │ gzip: 137.02 kB
+.output/server/_ssr/router-NyhiHHER.mjs                            799.14 kB │ gzip: 159.58 kB
+.output/server/_libs/@react-pdf/font+[...].mjs                   1,990.63 kB │ gzip: 323.13 kB
+.output/server/_libs/@react-three/fiber+[...].mjs                2,130.59 kB │ gzip: 432.69 kB
+
+[33m[33m[IMPORT_IS_UNDEFINED] [0mImport `open` will always be undefined because there is no matching export in 'node_modules/fontkit/dist/browser-module.mjs'
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m node_modules/@react-pdf/font/lib/index.js:262:26 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m262 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249md[0m[38;5;249ma[0m[38;5;249mt[0m[38;5;249ma[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m[38;5;249ma[0m[38;5;249mw[0m[38;5;249ma[0m[38;5;249mi[0m[38;5;249mt[0m[38;5;249m [0mfontkit.open[38;5;249m([0m[38;5;249mt[0m[38;5;249mh[0m[38;5;249mi[0m[38;5;249ms[0m[38;5;249m.[0m[38;5;249ms[0m[38;5;249mr[0m[38;5;249mc[0m[38;5;249m,[0m[38;5;249m [0m[38;5;249mp[0m[38;5;249mo[0m[38;5;249ms[0m[38;5;249mt[0m[38;5;249ms[0m[38;5;249mc[0m[38;5;249mr[0m[38;5;249mi[0m[38;5;249mp[0m[38;5;249mt[0m[38;5;249mN[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;249m)[0m[38;5;249m;[0m
+ [38;5;240m    │[0m                          ──────┬─────  
+ [38;5;240m    │[0m                                ╰─────── 
+[38;5;246m─────╯[0m
+[39m
+[33m[33m[IMPORT_IS_UNDEFINED] [0mImport `openSync` will always be undefined because there is no matching export in 'node_modules/fontkit/dist/browser-module.mjs'
+       [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m node_modules/@react-pdf/pdfkit/lib/pdfkit.js:37618:16 [38;5;246m][0m
+       [38;5;246m│[0m
+ [38;5;246m37618 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249mf[0m[38;5;249mo[0m[38;5;249mn[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0mfontkit.openSync[38;5;249m([0m[38;5;249ms[0m[38;5;249mr[0m[38;5;249mc[0m[38;5;249m,[0m[38;5;249m [0m[38;5;249mf[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249mi[0m[38;5;249ml[0m[38;5;249my[0m[38;5;249m)[0m[38;5;249m;[0m
+ [38;5;240m      │[0m                ────────┬───────  
+ [38;5;240m      │[0m                        ╰───────── 
+[38;5;246m───────╯[0m
+[39m
+[32m✓ built in 8.91s[39m
+
+[90m[[90mnitro[90m][39m [43m[30m WARN [39m[49m [cloudflare] Wrangler config [36mmain[39m is overridden and will be ignored.
+
+
+[90m[[90mnitro[90m][39m [43m[30m WARN [39m[49m [cloudflare] Wrangler config [36massets[39m is overridden and will be ignored.
+
+[36mi[39m Generated [36m.output/server/wrangler.json[39m
+[36mi[39m Generated [36m.wrangler/deploy/config.json[39m
+[90m[[90mnitro[90m][39m [36mi[39m Adding Nitro fallback to [36m_headers[39m to handle all unmatched routes.
+[36mi[39m Generated [36m.output/public/_headers[39m
+[36mi[39m Generated [36m.output/nitro.json[39m
+
+[90m[[90mnitro[90m][39m [32m√[39m You can preview this build using [36mnpx vite preview[39m
+[90m[[90mnitro[90m][39m [32m√[39m You can deploy this build using [36mnpx nitro deploy --prebuilt[39m

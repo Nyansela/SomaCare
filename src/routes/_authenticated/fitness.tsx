@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -225,7 +226,7 @@ function FitnessPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ language: i18n.language }),
       });
 
       if (!response.ok) {

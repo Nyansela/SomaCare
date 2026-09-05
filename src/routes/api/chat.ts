@@ -11,8 +11,13 @@ import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { getHealthContext, formatHealthContextForAI } from "@/lib/health-context";
 import { getDrugLabel } from "@/lib/openfda.server";
+import {
+  aiLanguageInstruction,
+  aiLanguageName,
+  isSupportedAiLanguage,
+} from "@/lib/ai-language.server";
 
-type ChatBody = { messages?: UIMessage[]; threadId?: string };
+type ChatBody = { messages?: UIMessage[]; threadId?: string; language?: string };
 
 /**
  * Write-action tools. These intentionally have NO `execute` function:
@@ -60,71 +65,107 @@ const addMedicationTool = tool({
   }),
 });
 
-const generateWorkoutPlanTool = tool({
-  description:
-    "Create a multi-day workout plan tailored to the user's goal. You choose an appropriate duration_days based on the goal (e.g. a quick fitness kickstart might be 7 days, weight loss 14-30 days) and generate the full day-by-day exercise content yourself. Requires user confirmation before anything is saved.",
-  inputSchema: z.object({
-    title: z.string().describe("Short plan title, e.g. '4-Week Fat Loss Kickstart'"),
-    goal: z.string().describe("The user's fitness goal, e.g. 'weight loss'"),
-    fitnessLevel: z.enum(["beginner", "intermediate", "advanced"]).describe("User's fitness level"),
-    duration_days: z
-      .number()
-      .int()
-      .min(3)
-      .max(30)
-      .describe("Number of days YOU decide is appropriate for this goal (3-30). One plan day per calendar day."),
-    days: z
-      .array(
-        z.object({
-          day_number: z.number().int().min(1),
-          exercises: z.array(
-            z.object({
-              name: z.string(),
-              sets: z.number().int().min(1),
-              reps: z.string().describe("e.g. '10-12' or '30 seconds'"),
-              rest_seconds: z.number().int().min(0),
-              notes: z.string().optional(),
-            }),
-          ),
-        }),
-      )
-      .describe(
-        "One entry per day from day_number 1 up to duration_days. Favour exercises needing little or no equipment.",
-      ),
-  }),
-});
-
-const generateMealPlanTool = tool({
-  description:
-    "Create a multi-day meal plan tailored to the user's goal using authentic Ghanaian foods (waakye, jollof, fufu, banku, kontomire, red red, kelewele, etc.), respecting their allergies and dietary restrictions. You choose an appropriate duration_days based on the goal and generate full day-by-day meal content yourself. Requires user confirmation before anything is saved.",
-  inputSchema: z.object({
-    title: z.string().describe("Short plan title, e.g. 'Heart-Healthy Ghanaian Meal Plan'"),
-    goal: z.string().describe("The user's nutrition goal, e.g. 'weight loss', 'lower blood pressure'"),
-    dietaryRestrictions: z
-      .string()
-      .optional()
-      .describe("Allergies or dietary restrictions to respect"),
-    duration_days: z
-      .number()
-      .int()
-      .min(3)
-      .max(30)
-      .describe("Number of days YOU decide is appropriate for this goal (3-30)."),
-    days: z
-      .array(
-        z.object({
-          day_number: z.number().int().min(1),
-          meals: z.object({
-            breakfast: z.string(),
-            lunch: z.string(),
-            dinner: z.string(),
-            snacks: z.string().optional(),
+function createWorkoutPlanTool(userId: string) {
+  return tool({
+    description:
+      "Create a multi-day workout plan tailored to the user's goal. You choose an appropriate duration_days based on the goal (e.g. a quick fitness kickstart might be 7 days, weight loss 14-30 days) and generate the full day-by-day exercise content yourself. Requires user confirmation before anything is saved.",
+    inputSchema: z.object({
+      title: z.string().describe("Short plan title, e.g. '4-Week Fat Loss Kickstart'"),
+      goal: z.string().describe("The user's fitness goal, e.g. 'weight loss'"),
+      fitnessLevel: z.enum(["beginner", "intermediate", "advanced"]).describe("User's fitness level"),
+      duration_days: z
+        .number()
+        .int()
+        .min(3)
+        .max(30)
+        .describe("Number of days YOU decide is appropriate for this goal (3-30). One plan day per calendar day."),
+      days: z
+        .array(
+          z.object({
+            day_number: z.number().int().min(1),
+            exercises: z.array(
+              z.object({
+                name: z.string(),
+                sets: z.number().int().min(1),
+                reps: z.string().describe("e.g. '10-12' or '30 seconds'"),
+                rest_seconds: z.number().int().min(0),
+                notes: z.string().optional(),
+              }),
+            ),
           }),
-        }),
-      )
-      .describe("One entry per day from day_number 1 up to duration_days, using Ghanaian dishes."),
-  }),
-});
+        )
+        .describe(
+          "One entry per day from day_number 1 up to duration_days. Favour exercises needing little or no equipment.",
+        ),
+    }),
+    execute: async () => {
+      // AI-generated workout plans are a Plus feature. When access is denied,
+      // report back to the model (as a tool result) so it can explain the
+      // restriction naturally instead of proposing a plan that will never be
+      // created.
+      const { hasAccess, TIER_PLUS } = await import("@/lib/subscription.server");
+      const allowed = await hasAccess(userId, TIER_PLUS);
+      if (!allowed) {
+        return {
+          error: "tier_restricted",
+          message: "This feature requires SomaCare Plus or higher.",
+          feature: "workout_plan_generation",
+        };
+      }
+      // Access granted: the plan is only written after the user confirms the
+      // action card (see /api/confirm-action), so signal that to the model
+      // rather than claiming the plan was created.
+      return { status: "awaiting_user_confirmation" };
+    },
+  });
+}
+
+function createMealPlanTool(userId: string) {
+  return tool({
+    description:
+      "Create a multi-day meal plan tailored to the user's goal using authentic Ghanaian foods (waakye, jollof, fufu, banku, kontomire, red red, kelewele, etc.), respecting their allergies and dietary restrictions. You choose an appropriate duration_days based on the goal and generate full day-by-day meal content yourself. Requires user confirmation before anything is saved.",
+    inputSchema: z.object({
+      title: z.string().describe("Short plan title, e.g. 'Heart-Healthy Ghanaian Meal Plan'"),
+      goal: z.string().describe("The user's nutrition goal, e.g. 'weight loss', 'lower blood pressure'"),
+      dietaryRestrictions: z
+        .string()
+        .optional()
+        .describe("Allergies or dietary restrictions to respect"),
+      duration_days: z
+        .number()
+        .int()
+        .min(3)
+        .max(30)
+        .describe("Number of days YOU decide is appropriate for this goal (3-30)."),
+      days: z
+        .array(
+          z.object({
+            day_number: z.number().int().min(1),
+            meals: z.object({
+              breakfast: z.string(),
+              lunch: z.string(),
+              dinner: z.string(),
+              snacks: z.string().optional(),
+            }),
+          }),
+        )
+        .describe("One entry per day from day_number 1 up to duration_days, using Ghanaian dishes."),
+    }),
+    execute: async () => {
+      // AI-generated meal plans are a Plus feature — see createWorkoutPlanTool.
+      const { hasAccess, TIER_PLUS } = await import("@/lib/subscription.server");
+      const allowed = await hasAccess(userId, TIER_PLUS);
+      if (!allowed) {
+        return {
+          error: "tier_restricted",
+          message: "This feature requires SomaCare Plus or higher.",
+          feature: "meal_plan_generation",
+        };
+      }
+      return { status: "awaiting_user_confirmation" };
+    },
+  });
+}
 
 /**
  * Confirmed-write: adapt an existing ACTIVE plan — rename, change goal,
@@ -246,7 +287,7 @@ export const Route = createFileRoute("/api/chat")({
         const userId = userData.user.id;
 
         const body = (await request.json()) as ChatBody;
-        const { messages, threadId } = body;
+        const { messages, threadId, language: uiLanguage } = body;
         if (!Array.isArray(messages) || !threadId) {
           return new Response("Bad request", { status: 400 });
         }
@@ -275,15 +316,13 @@ export const Route = createFileRoute("/api/chat")({
           .eq("id", userId)
           .maybeSingle();
         const userPrefs = (profileData?.preferences as Record<string, unknown>) || {};
-        const userLanguage = (userPrefs.language as string) || "en";
-        const langName =
-          userLanguage === "tw"
-            ? "Twi (Akan)"
-            : userLanguage === "ee"
-              ? "Ewe"
-              : userLanguage === "ga"
-                ? "Ga"
-                : "English";
+        // The language the user has the UI in right now wins; fall back to the
+        // persisted profile preference so the reply matches what's on screen.
+        const userLanguage =
+          isSupportedAiLanguage(uiLanguage)
+            ? uiLanguage
+            : (userPrefs.language as string) || "en";
+        const langName = aiLanguageName(userLanguage);
 
         // Format health context for AI
         const formattedHealthContext = formatHealthContextForAI(healthContext);
@@ -293,8 +332,7 @@ export const Route = createFileRoute("/api/chat")({
 IMPORTANT CONTEXT ABOUT THE USER:
 ${formattedHealthContext}
 
-PREFERRED LANGUAGE:
-- Respond conversationally in the user's preferred language: ${langName} (${userLanguage}). Ensure natural phrasing and appropriate health/medical terminology in this language.
+${aiLanguageInstruction(userLanguage)}
 
 Your instructions:
 - Assume a Ghanaian user context by default — local foods, common local health conditions/context (e.g., malaria awareness, hypertension, type 2 diabetes management), metric units (kg, cm, °C), awareness of local healthcare facilities (CHPS compounds, polyclinics, teaching hospitals), and respect for common local remedies/herbal practices (mentioned respectfully alongside medical advice, never replacing it).
@@ -334,28 +372,11 @@ Low-friction writes (logPlanDayComplete, logWaterIntake) execute immediately wit
 
 Style: warm, concise, structured with short paragraphs and bullet lists where helpful. Use markdown.`;
 
-        // Persist the latest user message
-        const lastMsg = messages[messages.length - 1];
-        if (lastMsg?.role === "user") {
-          await supabase.from("ai_messages").insert({
-            thread_id: threadId,
-            user_id: userId,
-            role: "user",
-            parts:
-              lastMsg.parts as unknown as Database["public"]["Tables"]["ai_messages"]["Insert"]["parts"],
-          });
-
-          // Auto-title thread from first user message
-          if (thread.title === "New conversation") {
-            const text = lastMsg.parts
-              .map((p) => (p.type === "text" ? p.text : ""))
-              .join(" ")
-              .slice(0, 60);
-            if (text.trim()) {
-              await supabase.from("ai_threads").update({ title: text }).eq("id", threadId);
-            }
-          }
-        }
+        // Message persistence happens client-side now (src/lib/use-chat.ts):
+        // the client writes each user + assistant message to ai_messages as it
+        // is sent/streamed, so nothing is lost when a stream is aborted or the
+        // user navigates away (server-side onFinish does not run for aborted
+        // streams) and messages can never be written twice.
 
         // ── Tools that execute immediately (read-only + low-friction writes) ──
 
@@ -704,6 +725,11 @@ Style: warm, concise, structured with short paragraphs and bullet lists where he
         });
 
         // Use the AI gateway model with the agentic tool-calling loop.
+        // Plan-generation tools are created per-request so their execute can
+        // run the Plus tier check for THIS user.
+        const generateWorkoutPlanTool = createWorkoutPlanTool(userId);
+        const generateMealPlanTool = createMealPlanTool(userId);
+
         const result = streamText({
           model: aiModel,
           system: systemPrompt,
@@ -776,20 +802,13 @@ Style: warm, concise, structured with short paragraphs and bullet lists where he
                   }
                 }
 
-                await supabaseAdmin.from("ai_messages").insert({
-                  thread_id: threadId,
-                  user_id: userId,
-                  role: "assistant",
-                  parts:
-                    assistant.parts as unknown as Database["public"]["Tables"]["ai_messages"]["Insert"]["parts"],
-                });
-                await supabaseAdmin
-                  .from("ai_threads")
-                  .update({ updated_at: new Date().toISOString() })
-                  .eq("id", threadId);
+                // The assistant message itself is persisted client-side (see
+                // src/lib/use-chat.ts). onFinish does not run when the client
+                // aborts the stream, so writing here would lose aborted replies
+                // and duplicate completed ones.
               }
             } catch (err) {
-              console.error("Error saving assistant message in onFinish:", err);
+              console.error("Error in chat onFinish:", err);
             }
           },
           onError: (error) => {

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import i18n from "@/i18n";
+import type { Database } from "@/integrations/supabase/types";
 
 // UIMessage type — inline to avoid importing `ai` which pulls in @ai-sdk/gateway
 // (that requires `node:fs` and crashes on Cloudflare Workers).
@@ -86,6 +88,10 @@ function createId(): string {
   // Simple UUID-like ID — avoids importing `ai` which brings in @ai-sdk/gateway
   // (requires `node:fs`, crashes on Cloudflare Workers).
   return crypto.randomUUID();
+}
+
+function isUuid(id: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 }
 
 /**
@@ -242,6 +248,29 @@ async function consumeStream(
         }
         break;
       }
+      case "tool-output-available": {
+        // An executed tool streams its result here (e.g. a tier_restricted
+        // outcome from the plan-generation tools) — attach it to the tool
+        // part so the UI can react to it.
+        const toolCallId = chunk.toolCallId as string;
+        const output = chunk.output as Record<string, unknown> | undefined;
+        const msg = findOrCreateAssistant(currentMsgId);
+        const toolPartIdx = msg.parts.findIndex(
+          (p) =>
+            typeof p.type === "string" &&
+            p.type.startsWith("tool-") &&
+            (p as unknown as { toolCallId?: string }).toolCallId === toolCallId,
+        );
+        if (toolPartIdx >= 0 && output !== undefined) {
+          const newParts = [...msg.parts];
+          newParts[toolPartIdx] = {
+            ...newParts[toolPartIdx],
+            output,
+          } as unknown as UIMessage["parts"][number];
+          updateAssistantParts(currentMsgId, newParts);
+        }
+        break;
+      }
       case "tool-input-error": {
         // Tool call had an error — mark as error state
         const toolCallId = chunk.toolCallId as string;
@@ -297,11 +326,118 @@ export function useChat({
   const threadIdRef = useRef(id);
   threadIdRef.current = id;
 
-  // Initialise messages
+  // Id of the assistant message the CURRENT request is streaming, so we can
+  // drop the partial reply if the request is aborted or superseded.
+  const streamingMsgIdRef = useRef<string | null>(null);
+
+  // Cached authenticated user id, used to persist messages client-side.
+  const userIdRef = useRef<string | null>(null);
+
+  // Maps client message ids (user uuids and stream-generated assistant ids)
+  // to the uuid used as the row id in Supabase, so a regenerated reply can
+  // remove its previous row instead of duplicating history.
+  const dbIdRef = useRef(new Map<string, string>());
+
+  const getUserId = useCallback(async (): Promise<string | null> => {
+    if (userIdRef.current) return userIdRef.current;
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data } = await supabase.auth.getUser();
+      if (data.user) userIdRef.current = data.user.id;
+    } catch {
+      // Ignore — persistence is best-effort.
+    }
+    return userIdRef.current;
+  }, []);
+
+  // Persist a message to Supabase so the conversation survives navigation and
+  // app restarts. The client is the writer because the server's onFinish does
+  // not run when the stream is aborted — see src/routes/api/chat.ts.
+  const persistMessage = useCallback(
+    async (message: UIMessage) => {
+      const threadId = threadIdRef.current;
+      if (!threadId) return;
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const userId = userIdRef.current ?? (await getUserId());
+        if (!userId) return;
+        const dbId = dbIdRef.current.get(message.id) ?? createId();
+        dbIdRef.current.set(message.id, dbId);
+        await supabase.from("ai_messages").insert({
+          id: dbId,
+          thread_id: threadId,
+          user_id: userId,
+          role: message.role,
+          parts:
+            message.parts as unknown as Database["public"]["Tables"]["ai_messages"]["Insert"]["parts"],
+        });
+        // Touch the thread so it stays at the top of the sidebar list.
+        await supabase
+          .from("ai_threads")
+          .update({ updated_at: new Date().toISOString() })
+          .eq("id", threadId);
+        // Auto-title the thread from its first user message.
+        if (message.role === "user") {
+          const text = message.parts
+            .map((p) => (p.type === "text" ? p.text : ""))
+            .join(" ")
+            .trim()
+            .slice(0, 60);
+          if (text) {
+            await supabase
+              .from("ai_threads")
+              .update({ title: text })
+              .eq("id", threadId)
+              .eq("title", "New conversation");
+          }
+        }
+      } catch (err) {
+        console.error("[chat] failed to persist message:", err);
+      }
+    },
+    [getUserId],
+  );
+
+  // Remove a previously-persisted message row (used by regenerate so the old
+  // reply doesn't stay next to the new one).
+  const removePersisted = useCallback(async (messageId: string) => {
+    const dbId =
+      dbIdRef.current.get(messageId) ?? (isUuid(messageId) ? messageId : null);
+    if (!dbId) return;
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      await supabase.from("ai_messages").delete().eq("id", dbId);
+    } catch {
+      // Ignore — the new reply simply follows the old row.
+    }
+  }, []);
+
+  // Claim (and clear) the id of the in-flight assistant reply so callers can
+  // decide whether to persist or drop it.
+  const takePartialReply = useCallback((): UIMessage | null => {
+    const partialId = streamingMsgIdRef.current;
+    streamingMsgIdRef.current = null;
+    if (!partialId) return null;
+    return stateRef.current.messages.find((m) => m.id === partialId) ?? null;
+  }, []);
+
+  // Hydrate messages from thread history. History can arrive AFTER this hook
+  // first mounts (the parent loads ai_messages asynchronously), so re-apply
+  // initialMessages whenever it changes — but only while the conversation is
+  // still pristine (nothing added on top of the hydrated history), otherwise
+  // we'd wipe an in-flight chat with a stale fetch.
+  const hydratedRef = useRef<UIMessage[] | null>(null);
   useEffect(() => {
-    stateRef.current.setMessages(initialMessages);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+    const current = stateRef.current.messages;
+    const pristine =
+      hydratedRef.current === null ||
+      (hydratedRef.current.length === current.length &&
+        hydratedRef.current.every((m, i) => m.id === current[i]?.id));
+    if (pristine) {
+      stateRef.current.setMessages(initialMessages);
+      hydratedRef.current = initialMessages;
+    }
+  }, [id, initialMessages]);
 
   const messages = useSyncExternalStore(
     stateRef.current.subscribe,
@@ -321,6 +457,128 @@ export function useChat({
     stateRef.current.getErrorSnapshot,
   );
 
+  // Stop the in-flight request and remove the partial reply it was streaming.
+  // Whatever was already streamed is persisted first so it doesn't vanish
+  // from the conversation history.
+  const abortActiveRequest = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    const partial = takePartialReply();
+    if (partial) {
+      stateRef.current.setMessages((prev) =>
+        prev.filter((m) => m.id !== partial.id),
+      );
+      const text = partial.parts
+        .map((p) => (p.type === "text" ? p.text : ""))
+        .join("")
+        .trim();
+      if (text) void persistMessage(partial);
+    }
+  }, [persistMessage, takePartialReply]);
+
+  // Build the message list sent to the server: drop any partial reply that is
+  // still mid-stream and keep only the tail of the conversation, so the
+  // model's context window never overflows on long threads (the full history
+  // is persisted to the DB either way).
+  const messagesForRequest = useCallback((msgs: UIMessage[]): UIMessage[] => {
+    let clean = msgs;
+    const partialId = streamingMsgIdRef.current;
+    if (partialId) {
+      clean = clean.filter((m) => m.id !== partialId);
+    }
+    const MAX_CONTEXT_MESSAGES = 40;
+    if (clean.length > MAX_CONTEXT_MESSAGES) {
+      clean = clean.slice(-MAX_CONTEXT_MESSAGES);
+      // Always start the window on a user message so the model receives a
+      // complete turn rather than a dangling assistant reply.
+      const firstUser = clean.findIndex((m) => m.role === "user");
+      if (firstUser > 0) clean = clean.slice(firstUser);
+    }
+    return clean;
+  }, []);
+
+  const getAuthHeaders = useCallback(async (): Promise<Record<string, string>> => {
+    const authHeaders: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...extraHeaders,
+    };
+    try {
+      const { data: sessionData } = await (
+        await import("@/integrations/supabase/client")
+      ).supabase.auth.getSession();
+      if (sessionData.session?.access_token) {
+        authHeaders.Authorization = `Bearer ${sessionData.session.access_token}`;
+      }
+    } catch {
+      // No session — the server will reject with 401.
+    }
+    return authHeaders;
+  }, [extraHeaders]);
+
+  // POST the conversation and stream the reply into the shared state.
+  const runRequest = useCallback(
+    async (bodyMessages: UIMessage[], controller: AbortController) => {
+      const authHeaders = await getAuthHeaders();
+      const response = await fetch(api, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+          messages: bodyMessages,
+          threadId: threadIdRef.current,
+          // Always tell the server which language the UI is currently in, so
+          // the assistant replies in the language the user is actually seeing.
+          language: i18n.language || "en",
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        throw new Error(errorText || `HTTP ${response.status}`);
+      }
+
+      // Messages present when this request started; any assistant message that
+      // appears afterwards is this request's own reply.
+      const requestStartIds = new Set(stateRef.current.messages.map((m) => m.id));
+
+      const finalMessages = await consumeStream(
+        parseStream(response),
+        (msgs) => {
+          // A newer request has taken over — never let a dying stream write
+          // to state (its chunks would resurrect a dropped partial reply).
+          if (abortRef.current !== controller) return;
+          if (streamingMsgIdRef.current === null) {
+            for (let i = msgs.length - 1; i >= 0; i--) {
+              const m = msgs[i];
+              if (m.role === "assistant" && !requestStartIds.has(m.id)) {
+                streamingMsgIdRef.current = m.id;
+                break;
+              }
+            }
+          }
+          stateRef.current.setMessages(msgs);
+        },
+        stateRef.current.messages,
+      );
+
+      // Superseded by a newer request while streaming — leave state alone.
+      if (abortRef.current !== controller) return;
+
+      streamingMsgIdRef.current = null;
+
+      // Persist the completed reply so it survives navigation and app restarts.
+      const finalAssistant = finalMessages[finalMessages.length - 1];
+      if (finalAssistant?.role === "assistant") {
+        await persistMessage(finalAssistant);
+      }
+
+      stateRef.current.setMessages(finalMessages);
+      stateRef.current.setStatus("ready");
+      onFinish?.({ messages: finalMessages });
+    },
+    [api, getAuthHeaders, onFinish, persistMessage],
+  );
+
   const sendMessage = useCallback(
     async (message?: SendMessageOptions | string) => {
       const text =
@@ -329,6 +587,11 @@ export function useChat({
           : message?.text ?? "";
 
       if (!text.trim()) return;
+
+      // Never run two streams at once: stop the previous request and drop the
+      // partial reply it produced, so the new question is answered on its own
+      // instead of being merged with the old one.
+      abortActiveRequest();
 
       // Append user message
       const userMsg: UIMessage = {
@@ -340,60 +603,34 @@ export function useChat({
       stateRef.current.setStatus("submitted");
       stateRef.current.setError(null);
 
-      // Build request
-      const { data: sessionData } = await (
-        await import("@/integrations/supabase/client")
-      ).supabase.auth.getSession();
-      const authHeaders: Record<string, string> = {
-        "Content-Type": "application/json",
-        ...extraHeaders,
-      };
-      if (sessionData.session?.access_token) {
-        authHeaders.Authorization = `Bearer ${sessionData.session.access_token}`;
-      }
+      // Persist the user's message right away so it survives navigation even
+      // if the request is interrupted.
+      void persistMessage(userMsg);
 
-      const body = {
-        messages: stateRef.current.messages,
-        threadId: threadIdRef.current,
-      };
-
-      abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
 
       try {
         stateRef.current.setStatus("streaming");
-
-        const response = await fetch(api, {
-          method: "POST",
-          headers: authHeaders,
-          body: JSON.stringify(body),
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text().catch(() => "Unknown error");
-          throw new Error(errorText || `HTTP ${response.status}`);
-        }
-
-        const finalMessages = await consumeStream(
-          parseStream(response),
-          (msgs) => {
-            stateRef.current.setMessages(msgs);
-          },
-          stateRef.current.messages,
+        await runRequest(
+          messagesForRequest(stateRef.current.messages),
+          controller,
         );
-
-        stateRef.current.setMessages(finalMessages);
-        stateRef.current.setStatus("ready");
-        onFinish?.({ messages: finalMessages });
       } catch (err: unknown) {
-        if (
-          err instanceof DOMException &&
-          err.name === "AbortError"
-        ) {
+        // A newer request has taken over — it owns the state from here on.
+        if (abortRef.current !== controller) return;
+        if (err instanceof DOMException && err.name === "AbortError") {
           stateRef.current.setStatus("ready");
           return;
+        }
+        // Keep whatever was streamed before the failure.
+        const partial = takePartialReply();
+        if (partial) {
+          const text = partial.parts
+            .map((p) => (p.type === "text" ? p.text : ""))
+            .join("")
+            .trim();
+          if (text) void persistMessage(partial);
         }
         const error =
           err instanceof Error ? err : new Error(String(err));
@@ -402,23 +639,31 @@ export function useChat({
         onError?.(error);
       }
     },
-    [api, extraHeaders, onError, onFinish],
+    [abortActiveRequest, onError, runRequest, messagesForRequest, persistMessage, takePartialReply],
   );
 
   const stop = useCallback(() => {
-    abortRef.current?.abort();
+    abortActiveRequest();
     stateRef.current.setStatus("ready");
-  }, []);
+  }, [abortActiveRequest]);
 
   const regenerate = useCallback(async () => {
-    // Remove last assistant message, then re-send
+    // Stop any in-flight request and persist/drop its partial reply first
+    abortActiveRequest();
+
+    // Remove last assistant message, then re-send the remaining history
+    const lastAssistant =
+      stateRef.current.messages[stateRef.current.messages.length - 1];
     stateRef.current.setMessages((prev) => {
       const last = prev[prev.length - 1];
       if (last?.role === "assistant") return prev.slice(0, -1);
       return prev;
     });
-    // Trigger a new request with the remaining messages
-    abortRef.current?.abort();
+    if (lastAssistant?.role === "assistant") {
+      // Also remove the old reply from the database so it isn't duplicated.
+      await removePersisted(lastAssistant.id);
+    }
+
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -426,46 +671,14 @@ export function useChat({
     stateRef.current.setError(null);
 
     try {
-      const { data: sessionData } = await (
-        await import("@/integrations/supabase/client")
-      ).supabase.auth.getSession();
-      const authHeaders: Record<string, string> = {
-        "Content-Type": "application/json",
-        ...extraHeaders,
-      };
-      if (sessionData.session?.access_token) {
-        authHeaders.Authorization = `Bearer ${sessionData.session.access_token}`;
-      }
-
       stateRef.current.setStatus("streaming");
-
-      const response = await fetch(api, {
-        method: "POST",
-        headers: authHeaders,
-        body: JSON.stringify({
-          messages: stateRef.current.messages,
-          threadId: threadIdRef.current,
-        }),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => "Unknown error");
-        throw new Error(errorText || `HTTP ${response.status}`);
-      }
-
-      const finalMessages = await consumeStream(
-        parseStream(response),
-        (msgs) => {
-          stateRef.current.setMessages(msgs);
-        },
-        stateRef.current.messages,
+      await runRequest(
+        messagesForRequest(stateRef.current.messages),
+        controller,
       );
-
-      stateRef.current.setMessages(finalMessages);
-      stateRef.current.setStatus("ready");
-      onFinish?.({ messages: finalMessages });
     } catch (err: unknown) {
+      // A newer request has taken over — it owns the state from here on.
+      if (abortRef.current !== controller) return;
       if (err instanceof DOMException && err.name === "AbortError") {
         stateRef.current.setStatus("ready");
         return;
@@ -475,7 +688,7 @@ export function useChat({
       stateRef.current.setStatus("error");
       onError?.(error);
     }
-  }, [api, extraHeaders, onError, onFinish]);
+  }, [abortActiveRequest, onError, runRequest, messagesForRequest, removePersisted]);
 
   return {
     messages,

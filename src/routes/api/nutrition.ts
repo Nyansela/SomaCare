@@ -2,6 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { generateText } from "ai";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import {
+  aiLanguageInstruction,
+  isSupportedAiLanguage,
+} from "@/lib/ai-language.server";
 
 export const Route = createFileRoute("/api/nutrition")({
   server: {
@@ -31,6 +35,33 @@ export const Route = createFileRoute("/api/nutrition")({
           return new Response("Unauthorized", { status: 401 });
         }
         const userId = userData.user.id;
+
+        // AI-generated nutrition plans are a Plus feature. Gate before doing
+        // any model work — the client also checks, but this is the
+        // authoritative guard.
+        const { hasAccess, TIER_PLUS } = await import("@/lib/subscription.server");
+        if (!(await hasAccess(userId, TIER_PLUS))) {
+          return Response.json(
+            {
+              error: "tier_restricted",
+              message: "This feature requires SomaCare Plus or higher.",
+              feature: "nutrition_plan_generation",
+            },
+            { status: 403 },
+          );
+        }
+
+        // Resolve UI language (client-sent wins, then profile preference)
+        const body = (await request.json().catch(() => ({}))) as { language?: string };
+        const { data: langProfile } = await supabase
+          .from("profiles")
+          .select("preferences")
+          .eq("id", userId)
+          .maybeSingle();
+        const langPrefs = (langProfile?.preferences as Record<string, unknown>) || {};
+        const userLanguage = isSupportedAiLanguage(body.language)
+          ? body.language
+          : (langPrefs.language as string) || "en";
 
         // Fetch health context
         const [{ data: profile }, { data: healthVault }, { data: medications }] = await Promise.all(
@@ -74,6 +105,8 @@ export const Route = createFileRoute("/api/nutrition")({
             .join(", ") || "None";
 
         const prompt = `You are a nutrition planning assistant specializing in authentic Ghanaian cuisine (e.g., waakye, banku with tilapia, jollof rice, kenkey, fufu with light soup, red red, kelewele, plantain-based meals). Generate a personalized daily meal plan with Ghanaian dishes and medication timing for a user, explaining why dishes fit their health profile.
+
+${aiLanguageInstruction(userLanguage)}
 
 USER PROFILE:
 - Age: ${age || "Not specified"}

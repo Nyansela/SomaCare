@@ -33,6 +33,7 @@ import {
   PhoneOff,
   AudioLines,
   ChevronsDown,
+  Crown,
 } from "lucide-react";
 import { AdwoaBlob } from "@/components/adwoa-blob";
 import { AppShell } from "@/components/app-shell";
@@ -216,7 +217,13 @@ type AnyToolPart = {
   toolCallId?: string;
   state?: string;
   input?: Record<string, unknown>;
+  output?: Record<string, unknown> | null;
 };
+
+/** True when a write-tool's execution was refused by a tier restriction. */
+function isTierRestrictedTool(part: AnyToolPart): boolean {
+  return !!part.output && part.output.error === "tier_restricted";
+}
 
 function humanSummary(toolName: string, input: Record<string, unknown>): string {
   const s = (v: unknown) => (typeof v === "string" ? v : "");
@@ -709,7 +716,18 @@ function ChatWindow({
         body: JSON.stringify({ tool: toolName, args: input, confirmed }),
       });
       if (!res.ok && confirmed) {
-        toast.error("Couldn't complete that action — please try again.");
+        let message = "Couldn't complete that action — please try again.";
+        try {
+          const parsed = (await res.text()) as string;
+          const detail = JSON.parse(parsed) as { error?: string; message?: string };
+          if (detail.error === "tier_restricted") {
+            message =
+              detail.message || "This feature requires SomaCare Plus or higher.";
+          }
+        } catch {
+          // not JSON — keep the generic message
+        }
+        toast.error(message);
       }
     } catch {
       toast.error("Couldn't complete that action — please try again.");
@@ -734,7 +752,13 @@ function ChatWindow({
     id: threadId,
     messages: initialMessages,
     onError: (e) => toast.error(e.message || "Assistant error"),
-    onFinish: () => onTitleMaybeChanged(),
+    onFinish: ({ messages: finalMessages }) => {
+      // Keep the react-query cache in sync with what was actually said, so
+      // revisiting this thread shows the full conversation immediately
+      // instead of a stale snapshot.
+      qc.setQueryData(["ai", "messages", threadId], finalMessages);
+      onTitleMaybeChanged();
+    },
   });
 
   useEffect(() => {
@@ -1145,9 +1169,33 @@ function MessageBubble({
           </div>
         )}
 
+        {/* ── Tier-restricted write actions (no confirmation card) ── */}
+        {!isUser && toolParts.some((part) => isTierRestrictedTool(part)) && (
+          <div className="mt-1 flex w-full flex-col gap-2">
+            {toolParts
+              .filter((part) => isTierRestrictedTool(part))
+              .map((part) => (
+                <div
+                  key={part.toolCallId}
+                  className="flex items-center gap-2.5 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-xs"
+                >
+                  <Crown className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="font-medium">
+                    {(part.output?.message as string) ||
+                      "This feature requires SomaCare Plus or higher."}
+                  </span>
+                </div>
+              ))}
+          </div>
+        )}
+
         {/* ── Pending write-action confirmation cards ────────────── */}
         {!isUser &&
-          toolParts.some((part) => WRITE_TOOLS.includes(part.type.slice(5))) && (
+          toolParts.some(
+            (part) =>
+              WRITE_TOOLS.includes(part.type.slice(5)) &&
+              !isTierRestrictedTool(part),
+          ) && (
             <div className="mt-1 flex w-full flex-col gap-2">
               {toolParts
                 .filter((part) => WRITE_TOOLS.includes(part.type.slice(5)))
